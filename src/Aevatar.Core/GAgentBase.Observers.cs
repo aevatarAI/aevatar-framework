@@ -125,7 +125,6 @@ public abstract partial class GAgentBase<TState, TEvent>
                 try
                 {
                     var eventResult = await (dynamic)method.Invoke(this, [eventType])!;
-                    _streamIdDictionary.TryGetValue(_correlationId!.Value, out var streamId);
                     eventResult.CorrelationId = _correlationId;
                     var eventWrapper =
                         new EventWrapper<EventBase>(eventResult, eventId, this.GetGrainId());
