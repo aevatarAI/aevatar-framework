@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using Aevatar.Core.Abstractions;
 using Aevatar.EventSourcing.Core;
+using Aevatar.EventSourcing.Core.Hosting;
 using Aevatar.EventSourcing.Core.LogConsistency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -37,7 +38,7 @@ public sealed class TestKitSilo
 
     private readonly TestGrainRuntime _grainRuntime;
 
-    private readonly Dictionary<Type, IGrainBase> _createdGrains = new();
+    private readonly Dictionary<GrainId, IGrainBase> _createdGrains = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TestKitSilo"/> class.
@@ -58,7 +59,7 @@ public sealed class TestKitSilo
         mockOptionsManager.Setup(m => m.Value).Returns(new TypeManifestOptions());
         var codecProvider = new CodecProvider(ServiceProvider, mockOptionsManager.Object);
         LogConsistencyProvider =
-            new TestLogConsistencyProvider(ServiceProvider, TestLogConsistentStorage, TestGrainStorage);
+            new TestLogConsistencyProvider(ServiceProvider, new InMemoryLogConsistentStorage(), TestGrainStorage);
         ServiceProvider.AddKeyedService<ILogViewAdaptorFactory>("LogStorage", LogConsistencyProvider);
         ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
             new DeepCopier(codecProvider, new CopyContextPool(codecProvider)), null!);
@@ -71,14 +72,12 @@ public sealed class TestKitSilo
         ServiceProvider.AddService<IGrainRuntime>(GrainRuntime);
         _grainCreator = new TestGrainCreator(GrainRuntime, ReminderRegistry, TestGrainStorage, ServiceProvider);
 
-        // var manager = new AgentDescriptionManager();
-        // ServiceProvider.AddService(manager);
-        // ServiceProvider.AddService(new AutoGenExecutor(NullLogger<AutoGenExecutor>.Instance, GrainFactory, manager, new TestChatAgentProvider()));
         ServiceProvider.AddService<IGrainStorage>(TestGrainStorage);
         var provider = new ServiceCollection()
             .AddSingleton<GrainTypeResolver>()
             .AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>()
             .AddSerializer()
+            .AddInMemoryBasedLogConsistencyProvider("LogStorage")
             .BuildServiceProvider();
 
         _grainTypeResolver = provider.GetRequiredService<GrainTypeResolver>();
@@ -244,9 +243,11 @@ public sealed class TestKitSilo
     public async Task<T> CreateGrainAsync<T>(IdSpan identity, CancellationToken cancellation = default)
         where T : IGrainBase
     {
-        if (_createdGrains.ContainsKey(typeof(T)))
+        var grainType = _grainTypeResolver.GetGrainType(typeof(T));
+        var grainId = GrainId.Create(grainType, identity);
+        if (_createdGrains.TryGetValue(grainId, out var storedGrain))
         {
-            var createdGrain = (T)_createdGrains[typeof(T)];
+            var createdGrain = (T)storedGrain;
             if (typeof(IGAgent).IsAssignableFrom(typeof(T)) && ((IGAgent)createdGrain).GetGrainId().Key == identity)
             {
                 return createdGrain;
@@ -287,13 +288,8 @@ public sealed class TestKitSilo
         await grain.OnActivateAsync(cancellation).ConfigureAwait(false);
         _activatedGrains.Add(grain);
 
-        _createdGrains[typeof(T)] = grain;
+        _createdGrains[grainId] = grain;
 
         return (T)grain;
-    }
-
-    public bool IsGrainTypeCreated(Type grainType)
-    {
-        return _createdGrains.ContainsKey(grainType);
     }
 }

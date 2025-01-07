@@ -1,11 +1,13 @@
 using Aevatar.Core.Tests.TestEvents;
 using Aevatar.Core.Tests.TestGAgents;
+using Aevatar.EventSourcing.Core;
 using Aevatar.GAgents.Tests;
 using Shouldly;
 
 namespace Aevatar.Core.Tests;
 
 [Trait("Category", "BVT")]
+[Collection("Non-Parallel Collection")]
 public class EventSourcingTests : GAgentTestKitBase
 {
     [Fact(DisplayName = "Implementation of LogViewAdaptor works.")]
@@ -25,12 +27,6 @@ public class EventSourcingTests : GAgentTestKitBase
             Greeting = "First event"
         });
 
-        // Assert.
-        await TestHelper.WaitUntilAsync(_ => CheckCount(1));
-        Silo.TestLogConsistentStorage.Storage.Count.ShouldBe(1);
-        Silo.TestLogConsistentStorage.Storage.First().Value.Count.ShouldBe(1);
-        (await GetLatestVersionAsync()).ShouldBe(0);
-
         // Act: Deactivate and re-activate the logViewGAgent.
         await Silo.DeactivateAsync(logViewGAgent);
         logViewGAgent = await Silo.CreateGrainAsync<LogViewAdaptorTestGAgent>(guid);
@@ -42,13 +38,11 @@ public class EventSourcingTests : GAgentTestKitBase
         });
 
         // Assert.
-        await TestHelper.WaitUntilAsync(_ => CheckCount(2));
-        Silo.TestLogConsistentStorage.Storage.Count.ShouldBe(1);
-        Silo.TestLogConsistentStorage.Storage.Last().Value.Count.ShouldBe(2);
-        var logViewGAgentState = await logViewGAgent.GetStateAsync();
-        await TestHelper.WaitUntilAsync(_ => CheckCount(logViewGAgentState, 2));
-        logViewGAgentState.Content.Count.ShouldBe(2);
-        (await GetLatestVersionAsync()).ShouldBe(1);
+        {
+            var logViewGAgentState = await logViewGAgent.GetStateAsync();
+            await TestHelper.WaitUntilAsync(_ => CheckCount(logViewGAgentState, 2));
+            logViewGAgentState.Content.Count.ShouldBe(2);
+        }
 
         // Act: Third event.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -56,14 +50,21 @@ public class EventSourcingTests : GAgentTestKitBase
             Greeting = "Third event"
         });
 
-        await TestHelper.WaitUntilAsync(_ => CheckCount(3));
-        (await GetLatestVersionAsync()).ShouldBe(2);
-    }
+        // Assert.
+        {
+            var logViewGAgentState = await logViewGAgent.GetStateAsync();
+            await TestHelper.WaitUntilAsync(_ => CheckCount(logViewGAgentState, 3));
+            logViewGAgentState.Content.Count.ShouldBe(3);
+        }
 
-    private async Task<bool> CheckCount(int expectedCount)
-    {
-        return Silo.TestLogConsistentStorage.Storage.Count == 1
-               && Silo.TestLogConsistentStorage.Storage.Last().Value.Count == expectedCount;
+        // Asset: Check the log storage.
+        InMemoryLogConsistentStorage.Storage.Count.ShouldBeGreaterThanOrEqualTo(3);
+        InMemoryLogConsistentStorage.Storage.ShouldContainKey(GetStreamName(logViewGAgent.GetGrainId()));
+        InMemoryLogConsistentStorage.Storage[GetStreamName(logViewGAgent.GetGrainId())].Count.ShouldBe(4);
+        InMemoryLogConsistentStorage.Storage.ShouldContainKey(GetStreamName(groupGAgent.GetGrainId()));
+        InMemoryLogConsistentStorage.Storage[GetStreamName(groupGAgent.GetGrainId())].Count.ShouldBe(2);
+        InMemoryLogConsistentStorage.Storage.ShouldContainKey(GetStreamName(publishingGAgent.GetGrainId()));
+        InMemoryLogConsistentStorage.Storage[GetStreamName(publishingGAgent.GetGrainId())].Count.ShouldBe(1);
     }
 
     private async Task<bool> CheckCount(LogViewAdaptorTestGState state, int expectedCount)
@@ -71,9 +72,8 @@ public class EventSourcingTests : GAgentTestKitBase
         return state.Content.Count == expectedCount;
     }
 
-    private async Task<int> GetLatestVersionAsync()
+    private string GetStreamName(GrainId grainId)
     {
-        return await Silo.TestLogConsistentStorage.GetLastVersionAsync(string.Empty,
-            GrainId.Create(string.Empty, string.Empty));
+        return $"Aevatar/EventSourcingTest/log/{grainId.ToString()}";
     }
 }

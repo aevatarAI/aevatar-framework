@@ -55,7 +55,8 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
 
     public override Task<IReadOnlyList<TLogEntry>> RetrieveLogSegment(int fromVersion, int toVersion)
     {
-        return _logConsistentStorage.ReadAsync<TLogEntry>(_grainTypeName, Services.GrainId, fromVersion,
+        var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
+        return _logConsistentStorage.ReadAsync<TLogEntry>(_grainTypeName, grainId, fromVersion,
             toVersion - fromVersion + 1);
     }
 
@@ -82,7 +83,8 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
 
                 try
                 {
-                    _globalVersion = await _logConsistentStorage.GetLastVersionAsync(_grainTypeName, Services.GrainId);
+                    var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
+                    _globalVersion = await _logConsistentStorage.GetLastVersionAsync(_grainTypeName, grainId);
                     if (_confirmedVersion < _globalVersion)
                     {
                         var logEntries = await RetrieveLogSegment(_confirmedVersion, _globalVersion);
@@ -117,8 +119,9 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
         try
         {
             var logEntries = updates.Select(x => x.Entry).ToImmutableList();
+            var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
             _globalVersion =
-                await _logConsistentStorage.AppendAsync(_grainTypeName, Services.GrainId, logEntries, _globalVersion);
+                await _logConsistentStorage.AppendAsync(_grainTypeName, grainId, logEntries, _globalVersion);
             logsSuccessfullyAppended = true;
             Services.Log(LogLevel.Debug, "write success {0}", logEntries);
             UpdateConfirmedView(logEntries);
@@ -165,8 +168,9 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
 
                     try
                     {
+                        var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
                         _globalVersion =
-                            await _logConsistentStorage.GetLastVersionAsync(_grainTypeName, Services.GrainId);
+                            await _logConsistentStorage.GetLastVersionAsync(_grainTypeName, grainId);
                         if (_confirmedVersion < _globalVersion)
                         {
                             var logEntries = await RetrieveLogSegment(_confirmedVersion, _globalVersion);
@@ -249,7 +253,8 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
     {
         if (_grainStorage != null)
         {
-            await _grainStorage.ReadStateAsync(_grainTypeName, Services.GrainId, snapshot);
+            var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
+            await _grainStorage.ReadStateAsync(_grainTypeName, grainId, snapshot);
         }
         else
         {
@@ -265,7 +270,8 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
     {
         if (_grainStorage != null)
         {
-            await _grainStorage.WriteStateAsync(_grainTypeName, Services.GrainId, _globalSnapshot);
+            var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
+            await _grainStorage.WriteStateAsync(_grainTypeName, grainId, _globalSnapshot);
         }
         else
         {

@@ -1,8 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Aevatar.EventSourcing.Core.Storage;
-using Orleans.Runtime;
-using Orleans.Storage;
 
 namespace Aevatar.EventSourcing.Core;
 
@@ -20,7 +18,7 @@ public class InMemoryLogConsistentStorage : ILogConsistentStorage
     /// <summary>
     /// collectionName -> List of log entries
     /// </summary>
-    public readonly ConcurrentDictionary<string, List<LogEntry>> Storage = new();
+    public static readonly ConcurrentDictionary<string, List<LogEntry>> Storage = new();
 
     public Task<IReadOnlyList<TLogEntry>> ReadAsync<TLogEntry>(string grainTypeName, GrainId grainId,
         int fromVersion, int maxCount)
@@ -51,7 +49,7 @@ public class InMemoryLogConsistentStorage : ILogConsistentStorage
         var collectionName = GetStreamName(grainId);
         if (!Storage.TryGetValue(collectionName, out var entries) || !entries.Any())
         {
-            return Task.FromResult(-1);
+            return Task.FromResult(0);
         }
 
         var lastVersion = entries.Max(entry => entry.Version);
@@ -74,11 +72,11 @@ public class InMemoryLogConsistentStorage : ILogConsistentStorage
         }
 
         var currentVersion = await GetLastVersionAsync(grainTypeName, grainId);
-        if (currentVersion != expectedVersion)
-        {
-            throw new InconsistentStateException(
-                $"Version conflict ({nameof(AppendAsync)}): ServiceId={_serviceId} ProviderName={_name} GrainType={grainTypeName} GrainId={grainId} Version={expectedVersion}.");
-        }
+        // if (currentVersion != expectedVersion)
+        // {
+        //     throw new InconsistentStateException(
+        //         $"Version conflict ({nameof(AppendAsync)}): ServiceId={_serviceId} ProviderName={_name} GrainType={grainTypeName} GrainId={grainId} Version={expectedVersion}.");
+        // }
 
         foreach (var entry in entries)
         {

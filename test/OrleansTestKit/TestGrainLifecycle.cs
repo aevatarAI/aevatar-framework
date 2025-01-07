@@ -15,8 +15,17 @@ internal sealed class TestGrainLifecycle : IGrainLifecycle
     {
         ArgumentNullException.ThrowIfNull(observer);
 
+        // TODO: This is a workaround to avoid LogViewAdaptor initialization executed multiple times,
+        // should exist a better way to manage grain lifecycle.
+        var existingItem = _observers.FirstOrDefault(o => o.Stage == stage);
+        if (existingItem.Observer != null)
+        {
+            _observers.Remove(existingItem);
+        }
+
         var item = (Stage: stage, Observer: observer);
         _observers.Add(item);
+
         return new LambdaDisposable(() =>
         {
             _observers.Remove(item);
