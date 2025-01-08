@@ -7,7 +7,6 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
         <PackageDescription>A unit test toolkit for Microsoft Orleans that does not require a real silo. Instead, tests are run with a mock grain activation context.</PackageDescription>
-        <PackageIcon>logo_128.png</PackageIcon>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageOutputPath Condition=" '$(PackageOutputPath)'=='' ">$(ProjectRoot)/artifacts/$(Configuration)</PackageOutputPath>
         <PackageProjectUrl>https://github.com/OrleansContrib/OrleansTestKit</PackageProjectUrl>

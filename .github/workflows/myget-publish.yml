@@ -1,0 +1,65 @@
+name: Publish MyGet Package
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+run-name: Publish MyGet Package from ${{ github.ref }}
+
+env:
+  DOTNET_INSTALL_DIR: "./.dotnet"
+
+concurrency:
+  group: workflow-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        servicename: [
+          Aevatar.Core,
+          Aevatar.Core.Abstractions,
+          Aevatar.EventSourcing.Core
+        ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet Packages
+        id: nuget-packages
+        uses: actions/cache@v4
+        env:
+          cache-name: nuget-package-cache
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-${{ env.cache-name }}
+
+      - name: Restore dependencies
+        run: dotnet restore src/${{ matrix.servicename }}/${{ matrix.servicename }}.csproj
+        
+      - name: Get the version from git tags
+        id: get_version
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          VERSION=${TAG#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build the project
+        run: dotnet build src/${{ matrix.servicename }}/${{ matrix.servicename }}.csproj --configuration Release --no-restore
+
+      - name: Pack the MyGet package
+        run: dotnet pack src/${{ matrix.servicename }}/${{ matrix.servicename }}.csproj --configuration Release --no-build --output ./nupkg -p:PackageVersion=${{ env.VERSION }}
+
+      - name: Publish the MyGet package
+        env:
+          MYGET_URL: ${{ secrets.MYGET_URL }}
+          MYGET_API_KEY: ${{ secrets.MYGET_API_KEY }}
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key $MYGET_API_KEY --source $MYGET_URL
