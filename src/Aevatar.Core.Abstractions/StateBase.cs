@@ -3,24 +3,24 @@ namespace Aevatar.Core.Abstractions;
 [GenerateSerializer]
 public abstract class StateBase
 {
-    [Id(0)] public List<GrainId> Subscribers { get; set; } = [];
-    [Id(1)] public GrainId Subscription { get; set; }
+    [Id(0)] public List<GrainId> Children { get; set; } = [];
+    [Id(1)] public GrainId Parent { get; set; }
 
-    public void Apply(AddSubscriberGEvent addSubscriber)
+    public void Apply(AddChildGEvent addChild)
     {
-        if (!Subscribers.Contains(addSubscriber.Subscriber))
+        if (!Children.Contains(addChild.Child))
         {
-            Subscribers.Add(addSubscriber.Subscriber);
+            Children.Add(addChild.Child);
         }
     }
     
-    public void Apply(RemoveSubscriberGEvent removeSubscriber)
+    public void Apply(RemoveChildGEvent removeChild)
     {
-        Subscribers.Remove(removeSubscriber.Subscriber);
+        Children.Remove(removeChild.Child);
     }
     
-    public void Apply(SetSubscriptionGEvent setSubscription)
+    public void Apply(SetParentGEvent setParent)
     {
-        Subscription = setSubscription.Subscription;
+        Parent = setParent.Parent;
     }
 }

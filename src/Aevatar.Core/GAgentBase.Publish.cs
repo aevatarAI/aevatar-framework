@@ -18,20 +18,22 @@ public abstract partial class GAgentBase<TState, TEvent>
     {
         _correlationId ??= Guid.NewGuid();
         @event.CorrelationId = _correlationId;
-        Logger.LogInformation($"Published event {@event}, {_correlationId}");
-        ;
+        Logger.LogInformation("Published event {@Event}, {CorrelationId}", @event, _correlationId);
+
         var eventId = Guid.NewGuid();
-        if (State.Subscription.IsDefault)
+        if (State.Parent.IsDefault)
         {
             Logger.LogInformation(
-                $"Event {@event} is the first time appeared to silo: {JsonConvert.SerializeObject(@event)}");
+                "Event {@Event} is the first time appeared to silo: {EventJson}",
+                @event, JsonConvert.SerializeObject(@event));
             // This event is the first time appeared to silo.
             await SendEventToSelfAsync(new EventWrapper<T>(@event, eventId, this.GetGrainId()));
         }
         else
         {
             Logger.LogInformation(
-                $"{this.GetGrainId().ToString()} is publishing event upwards: {JsonConvert.SerializeObject(@event)}");
+                "{GrainId} is publishing event upwards: {EventJson}",
+                this.GetGrainId().ToString(), JsonConvert.SerializeObject(@event));
             await PublishEventUpwardsAsync(@event, eventId);
         }
 
@@ -45,7 +47,7 @@ public abstract partial class GAgentBase<TState, TEvent>
 
     private async Task SendEventUpwardsAsync<T>(EventWrapper<T> eventWrapper) where T : EventBase
     {
-        var stream = GetStream(State.Subscription.ToString());
+        var stream = GetStream(State.Parent.ToString());
         await stream.OnNextAsync(eventWrapper);
     }
 
@@ -70,14 +72,14 @@ public abstract partial class GAgentBase<TState, TEvent>
 
     private async Task SendEventDownwardsAsync<T>(EventWrapper<T> eventWrapper) where T : EventBase
     {
-        if (State.Subscribers.IsNullOrEmpty())
+        if (State.Children.IsNullOrEmpty())
         {
             return;
         }
 
-        Logger.LogInformation($"{this.GetGrainId().ToString()} has {State.Subscribers.Count} subscribers.");
+        Logger.LogInformation($"{this.GetGrainId().ToString()} has {State.Children.Count} children.");
 
-        foreach (var grainId in State.Subscribers)
+        foreach (var grainId in State.Children)
         {
             var gAgent = GrainFactory.GetGrain<IGAgent>(grainId);
             await gAgent.ActivateAsync();

@@ -2,7 +2,7 @@
 namespace Aevatar.Core.Abstractions;
 
 [GenerateSerializer]
-public class RemoveSubscriberGEvent : GEventBase
+public class RemoveChildGEvent : GEventBase
 {
-    [Id(0)] public GrainId Subscriber { get; set; }
+    [Id(0)] public GrainId Child { get; set; }
 }

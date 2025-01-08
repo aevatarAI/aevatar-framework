@@ -17,8 +17,8 @@ public interface IGAgent : IGrainWithGuidKey
     Task SubscribeToAsync(IGAgent gAgent);
     Task UnregisterAsync(IGAgent gAgent);
     Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false);
-    Task<List<GrainId>> GetSubscribersAsync();
-    Task<GrainId> GetSubscriptionAsync();
+    Task<List<GrainId>> GetChildrenAsync();
+    Task<GrainId> GetParentAsync();
 }
 
 public interface IStateGAgent<TState> : IGAgent

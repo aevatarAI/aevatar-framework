@@ -24,8 +24,4 @@
       <ProjectReference Include="..\Aevatar.Core.Abstractions\Aevatar.Core.Abstractions.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Events\" />
-    </ItemGroup>
-
 </Project>

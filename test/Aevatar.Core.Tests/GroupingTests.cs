@@ -14,7 +14,7 @@ public class GroupingTests : GAgentTestKitBase
         var groupGAgent = await Silo.CreateGrainAsync<GroupGAgent>(Guid.NewGuid());
 
         // Assert: Subscribers should be empty because no member is registered.
-        var subscribers = await groupGAgent.GetSubscribersAsync();
+        var subscribers = await groupGAgent.GetChildrenAsync();
         subscribers.Count.ShouldBe(0);
     }
 
@@ -26,7 +26,7 @@ public class GroupingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(naiveTestGAgent);
 
         // Assert: Check group's states from GrainStorage.
-        var subscribers = await groupGAgent.GetSubscribersAsync();
+        var subscribers = await groupGAgent.GetChildrenAsync();
         subscribers.Count.ShouldBe(1);
         subscribers.First().ShouldBe(naiveTestGAgent.GetGrainId());
     }
@@ -42,7 +42,7 @@ public class GroupingTests : GAgentTestKitBase
         await groupGAgent.UnregisterAsync(naiveTestGAgent);
 
         // Assert: Check group's states from GrainStorage.
-        var subscribers = await groupGAgent.GetSubscribersAsync();
+        var subscribers = await groupGAgent.GetChildrenAsync();
         subscribers.Count.ShouldBe(0);
     }
 
@@ -56,7 +56,7 @@ public class GroupingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(naiveTestGAgent1, naiveTestGAgent2, naiveTestGAgent3);
 
         // Assert: Check group's states from GrainStorage.
-        var subscribers = await groupGAgent.GetSubscribersAsync();
+        var subscribers = await groupGAgent.GetChildrenAsync();
         subscribers.Count.ShouldBe(3);
     }
 
@@ -72,7 +72,7 @@ public class GroupingTests : GAgentTestKitBase
         // Assert: Check each group's states from GrainStorage.
         foreach (var groupGAgent in new List<GroupGAgent> { groupGAgent1, groupGAgent2, groupGAgent3 })
         {
-            var subscribers = await groupGAgent.GetSubscribersAsync();
+            var subscribers = await groupGAgent.GetChildrenAsync();
             subscribers.Count.ShouldBe(1);
             subscribers.First().ShouldBe(naiveTestGAgent.GetGrainId());
         }
@@ -92,7 +92,7 @@ public class GroupingTests : GAgentTestKitBase
 
         // Assert: Check groupGAgent1's states from GrainStorage.
         {
-            var subscribers = await groupGAgent1.GetSubscribersAsync();
+            var subscribers = await groupGAgent1.GetChildrenAsync();
             subscribers.Count.ShouldBe(0);
         }
 
@@ -101,7 +101,7 @@ public class GroupingTests : GAgentTestKitBase
 
         // Assert: Check groupGAgent2's states from GrainStorage.
         {
-            var subscribers = await groupGAgent2.GetSubscribersAsync();
+            var subscribers = await groupGAgent2.GetChildrenAsync();
             subscribers.Count.ShouldBe(0);
         }
 
@@ -110,7 +110,7 @@ public class GroupingTests : GAgentTestKitBase
 
         // Assert: Check groupGAgent3's states from GrainStorage.
         {
-            var subscribers = await groupGAgent3.GetSubscribersAsync();
+            var subscribers = await groupGAgent3.GetChildrenAsync();
             subscribers.Count.ShouldBe(0);
         }
     }
@@ -189,7 +189,7 @@ public class GroupingTests : GAgentTestKitBase
         var guid = Guid.NewGuid();
         var gAgent = await Silo.CreateGrainAsync<NaiveTestGAgent>(guid);
         await gAgent.RegisterAsync(gAgent);
-        var subscribers = await gAgent.GetSubscribersAsync();
+        var subscribers = await gAgent.GetChildrenAsync();
         subscribers.Count.ShouldBe(0);
     }
 
@@ -201,7 +201,7 @@ public class GroupingTests : GAgentTestKitBase
         await gAgent.RegisterAsync(gAgent);
         var groupGAgent = await CreateGroupGAgentAsync(gAgent, gAgent);
         
-        var subscribers = await groupGAgent.GetSubscribersAsync();
+        var subscribers = await groupGAgent.GetChildrenAsync();
         subscribers.Count.ShouldBe(1);
     }
 }
