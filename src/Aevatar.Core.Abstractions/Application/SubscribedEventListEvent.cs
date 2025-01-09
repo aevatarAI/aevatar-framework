@@ -8,7 +8,7 @@ public class SubscribedEventListEvent : EventBase
     /// Key: GAgent Type.
     /// Value: Subscribed Event Types.
     /// </summary>
-    [Id(0)] public Dictionary<Type, List<Type>> Value { get; set; }
+    [Id(0)] public required Dictionary<Type, List<Type>> Value { get; set; }
 
-    [Id(1)] public Type GAgentType { get; set; }
+    [Id(1)] public required Type GAgentType { get; set; }
 }

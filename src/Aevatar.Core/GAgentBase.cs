@@ -115,6 +115,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent> : Journ
         {
             return new SubscribedEventListEvent
             {
+                Value = new Dictionary<Type, List<Type>>(),
                 GAgentType = GetType()
             };
         }
