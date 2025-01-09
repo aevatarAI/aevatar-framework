@@ -9,7 +9,7 @@ public interface IMarketingLeaderTestGAgent : IGAgent;
 public class MarketingLeaderTestGAgentState : NaiveTestGAgentState;
 
 [GAgent("marketingLeader", "test")]
-public class MarketingLeaderTestGAgent : GAgentBase<MarketingLeaderTestGAgentState, NaiveTestGEvent>, IMarketingLeaderTestGAgent
+public class MarketingLeaderTestGAgent : GAgentBase<MarketingLeaderTestGAgentState, NaiveTestStateLogEvent>, IMarketingLeaderTestGAgent
 {
     public MarketingLeaderTestGAgent(ILogger<MarketingLeaderTestGAgent> logger) : base(logger)
     {

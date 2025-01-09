@@ -10,7 +10,7 @@ public interface IDeveloperTestGAgent : IGAgent;
 public class DeveloperTestGAgentState : NaiveTestGAgentState;
 
 [GAgent("developer", "test")]
-public class DeveloperTestGAgent : GAgentBase<DeveloperTestGAgentState, NaiveTestGEvent>, IDeveloperTestGAgent
+public class DeveloperTestGAgent : GAgentBase<DeveloperTestGAgentState, NaiveTestStateLogEvent>, IDeveloperTestGAgent
 {
     public DeveloperTestGAgent(ILogger<MarketingLeaderTestGAgent> logger) : base(logger)
     {

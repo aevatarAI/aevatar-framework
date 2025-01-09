@@ -2,7 +2,7 @@
 namespace Aevatar.Core.Abstractions;
 
 [GenerateSerializer]
-public class SetParentGEvent : StateLogEventBase
+public class SetParentStateLogEvent : StateLogEventBase
 {
     [Id(0)] public GrainId Parent { get; set; }
 }

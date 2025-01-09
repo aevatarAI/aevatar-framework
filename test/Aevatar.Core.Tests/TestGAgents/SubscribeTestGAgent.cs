@@ -9,10 +9,10 @@ public class SubscribeTestGAgentState : StateBase
     [Id(0)]  public Dictionary<Type, List<Type>> SubscriptionInfo { get; set; }
 }
 
-public class SubscribeTestGEvent : StateLogEventBase<SubscribeTestGEvent>;
+public class SubscribeTestStateLogEvent : StateLogEventBase<SubscribeTestStateLogEvent>;
 
 [GAgent("subscribeTest", "test")]
-public class SubscribeTestGAgent : GAgentBase<SubscribeTestGAgentState, SubscribeTestGEvent>
+public class SubscribeTestGAgent : GAgentBase<SubscribeTestGAgentState, SubscribeTestStateLogEvent>
 {
     public SubscribeTestGAgent(ILogger logger) : base(logger)
     {

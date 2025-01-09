@@ -15,7 +15,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
             return;
         }
 
-        base.RaiseEvent(new AddChildGEvent<TStateLogEvent>
+        base.RaiseEvent(new AddChildStateLogEvent<TStateLogEvent>
         {
             Child = grainId
         });
@@ -26,7 +26,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
     {
         if (!State.Children.IsNullOrEmpty())
         {
-            base.RaiseEvent(new RemoveChildGEvent
+            base.RaiseEvent(new RemoveChildStateLogEvent
             {
                 Child = grainId
             });
@@ -36,7 +36,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
     
     
     [GenerateSerializer]
-    public class RemoveChildGEvent : StateLogEventBase<TStateLogEvent>
+    public class RemoveChildStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public GrainId Child { get; set; }
     }
@@ -45,14 +45,14 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
     
     //TODO: move to interface
     [GenerateSerializer]
-    public class SetParentGEvent : StateLogEventBase<TStateLogEvent>
+    public class SetParentStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public GrainId Parent { get; set; }
     }
     
     private async Task SetParentAsync(GrainId grainId)
     {
-        base.RaiseEvent(new SetParentGEvent
+        base.RaiseEvent(new SetParentStateLogEvent
         {
             Parent = grainId
         });

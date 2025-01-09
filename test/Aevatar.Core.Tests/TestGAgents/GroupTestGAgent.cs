@@ -1,7 +1,7 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Tests.TestEvents;
-using Aevatar.Core.Tests.TestGEvents;
+using Aevatar.Core.Tests.TestStateLogEvents;
 using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests.TestGAgents;
@@ -14,7 +14,7 @@ public class GroupTestGAgentState : StateBase
 }
 
 [GAgent("groupTest", "test")]
-public class GroupTestGAgent: GAgentBase<GroupTestGAgentState, GroupGEvent>
+public class GroupTestGAgent: GAgentBase<GroupTestGAgentState, GroupStateLogEvent>
 {
     public GroupTestGAgent(ILogger<GroupTestGAgent> logger) : base(logger)
     {

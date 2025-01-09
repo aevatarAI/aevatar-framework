@@ -9,7 +9,7 @@ public class InitializeDtoTestGAgentState : StateBase
     [Id(0)]  public List<string> Content { get; set; }
 }
 
-public class InitializeDtoTestGEvent : StateLogEventBase<InitializeDtoTestGEvent>
+public class InitializeDtoTestStateLogEvent : StateLogEventBase<InitializeDtoTestStateLogEvent>
 {
     [Id(0)] public Guid Id { get; set; }
 }
@@ -21,7 +21,7 @@ public class InitializeDto : InitializeDtoBase
 
 [GAgent("initialize")]
 public class InitializeDtoTestGAgent : GAgentBase<InitializeDtoTestGAgentState,
-    InitializeDtoTestGEvent,EventBase, InitializeDto>
+    InitializeDtoTestStateLogEvent,EventBase, InitializeDto>
 {
     public InitializeDtoTestGAgent(ILogger<InitializeDtoTestGAgent> logger) : base(logger)
     {

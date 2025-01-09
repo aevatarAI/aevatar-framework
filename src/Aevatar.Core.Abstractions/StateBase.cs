@@ -7,7 +7,7 @@ public abstract class StateBase
     [Id(1)] public GrainId Parent { get; set; }
     [Id(2)] public Type? InitializeDtoType { get; set; }
 
-    public void Apply(AddChildGEvent addChild)
+    public void Apply(AddChildStateLogEvent addChild)
     {
         if (!Children.Contains(addChild.Child))
         {
@@ -15,17 +15,17 @@ public abstract class StateBase
         }
     }
     
-    public void Apply(RemoveChildGEvent removeChild)
+    public void Apply(RemoveChildStateLogEvent removeChild)
     {
         Children.Remove(removeChild.Child);
     }
     
-    public void Apply(SetParentGEvent setParent)
+    public void Apply(SetParentStateLogEvent setParent)
     {
         Parent = setParent.Parent;
     }
 
-    public void Apply(SetInitializeDtoTypeGEvent setInitializeDtoType)
+    public void Apply(SetInitializeDtoTypeStateLogEvent setInitializeDtoType)
     {
         InitializeDtoType = setInitializeDtoType.InitializeDtoType;
     }

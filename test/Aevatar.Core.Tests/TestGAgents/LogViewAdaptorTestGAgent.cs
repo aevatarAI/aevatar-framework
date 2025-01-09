@@ -11,7 +11,7 @@ public interface ILogViewAdaptorTestGAgent
 
 [GAgent("logViewAdaptorTest", "test")]
 public class LogViewAdaptorTestGAgent
-    : GAgentBase<LogViewAdaptorTestGState, LogViewAdaptorTestGEvent>, ILogViewAdaptorTestGAgent
+    : GAgentBase<LogViewAdaptorTestGState, LogViewAdaptorTestStateLogEvent>, ILogViewAdaptorTestGAgent
 {
     public LogViewAdaptorTestGAgent(ILogger logger) : base(logger)
     {
@@ -26,9 +26,9 @@ public class LogViewAdaptorTestGAgent
     {
         if (State.Content.IsNullOrEmpty())
         {
-            State.Content = new Dictionary<Guid, LogViewAdaptorTestGEvent>();
+            State.Content = new Dictionary<Guid, LogViewAdaptorTestStateLogEvent>();
         }
-        RaiseEvent(new LogViewAdaptorTestGEvent
+        RaiseEvent(new LogViewAdaptorTestStateLogEvent
         {
             Greeting = eventData.Greeting
         });
@@ -41,9 +41,9 @@ public class LogViewAdaptorTestGState : StateBase
 {
     [Id(0)] public Guid Id { get; set; }
 
-    [Id(1)] public Dictionary<Guid, LogViewAdaptorTestGEvent> Content { get; set; } = new();
+    [Id(1)] public Dictionary<Guid, LogViewAdaptorTestStateLogEvent> Content { get; set; } = new();
 
-    public void Apply(LogViewAdaptorTestGEvent gEvent)
+    public void Apply(LogViewAdaptorTestStateLogEvent gEvent)
     {
         if (Id == Guid.Empty)
         {
@@ -55,7 +55,7 @@ public class LogViewAdaptorTestGState : StateBase
 }
 
 [GenerateSerializer]
-public class LogViewAdaptorTestGEvent : StateLogEventBase<LogViewAdaptorTestGEvent>
+public class LogViewAdaptorTestStateLogEvent : StateLogEventBase<LogViewAdaptorTestStateLogEvent>
 {
     [Id(0)] public Guid Id { get; set; } = Guid.NewGuid();
     [Id(2)] public string Greeting { get; set; }

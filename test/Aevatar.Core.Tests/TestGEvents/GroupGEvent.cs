@@ -1,8 +1,8 @@
 using Aevatar.Core.Abstractions;
 
-namespace Aevatar.Core.Tests.TestGEvents;
+namespace Aevatar.Core.Tests.TestStateLogEvents;
 
-public class GroupGEvent : StateLogEventBase<GroupGEvent>
+public class GroupStateLogEvent : StateLogEventBase<GroupStateLogEvent>
 {
     
 }
