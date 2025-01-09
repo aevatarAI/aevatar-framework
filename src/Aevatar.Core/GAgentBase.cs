@@ -12,9 +12,10 @@ namespace Aevatar.Core;
 [GAgent("base")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public abstract partial class GAgentBase<TState, TGEvent> : JournaledGrain<TState>, IStateGAgent<TState>
+public abstract partial class GAgentBase<TState, TGEvent, TEvent> : JournaledGrain<TState, GEventBase<TGEvent>>, IStateGAgent<TState>
     where TState : StateBase, new()
-    where TGEvent : GEventBase
+    where TGEvent : GEventBase<TGEvent>
+    where TEvent: EventBase
 {
     protected IStreamProvider StreamProvider => this.GetStreamProvider(AevatarCoreConstants.StreamProvider);
 

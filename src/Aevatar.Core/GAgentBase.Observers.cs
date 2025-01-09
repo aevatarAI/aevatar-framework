@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
-public abstract partial class GAgentBase<TState, TGEvent>
+public abstract partial class GAgentBase<TState, TGEvent, TEvent>
 {
     [AggregateExecutionTime]
     private Task UpdateObserverList()
@@ -74,13 +74,19 @@ public abstract partial class GAgentBase<TState, TGEvent>
         }
 
         var parameterType = initializeMethod.GetParameters()[0].ParameterType;
-        RaiseEvent(new SetInitializeDtoTypeGEvent
+        RaiseEvent(new InnerSetInitializeDtoTypeGEvent
         {
             InitializeDtoType = parameterType
         });
         ConfirmEvents();
 
         return Task.CompletedTask;
+    }
+    
+    [GenerateSerializer]
+    public class InnerSetInitializeDtoTypeGEvent : GEventBase<TGEvent>
+    {
+        [Id(0)] public Type InitializeDtoType { get; set; }
     }
 
     private IEnumerable<MethodInfo> GetEventHandlerMethods()

@@ -3,8 +3,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
-public abstract partial class GAgentBase<TState, TGEvent>
+public abstract partial class GAgentBase<TState, TGEvent, TEvent>
 {
+    
+    
     private async Task AddChildAsync(GrainId grainId)
     {
         if (State.Children.Contains(grainId))
@@ -13,7 +15,7 @@ public abstract partial class GAgentBase<TState, TGEvent>
             return;
         }
 
-        base.RaiseEvent(new AddChildGEvent
+        base.RaiseEvent(new AddChildGEvent<TGEvent>
         {
             Child = grainId
         });
@@ -31,7 +33,23 @@ public abstract partial class GAgentBase<TState, TGEvent>
             await ConfirmEvents();
         }
     }
+    
+    
+    [GenerateSerializer]
+    public class RemoveChildGEvent : GEventBase<TGEvent>
+    {
+        [Id(0)] public GrainId Child { get; set; }
+    }
 
+    
+    
+    //TODO: move to interface
+    [GenerateSerializer]
+    public class SetParentGEvent : GEventBase<TGEvent>
+    {
+        [Id(0)] public GrainId Parent { get; set; }
+    }
+    
     private async Task SetParentAsync(GrainId grainId)
     {
         base.RaiseEvent(new SetParentGEvent

@@ -3,16 +3,16 @@ using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 
 namespace Aevatar.Core;
-
+/*
 [GAgent("baseWithInitialization")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public abstract class GAgentBaseWithInitialization<TState, TEvent, TInitializeDto> : GAgentBase<TState, TEvent>
+public abstract class GAgentBase<TState, TGEvent, TEvent, TInitializeDto> : GAgentBase<TState, TGEvent, TEvent>
     where TState : StateBase, new()
     where TEvent : GEventBase
     where TInitializeDto : InitializeDtoBase
 {
-    protected GAgentBaseWithInitialization(ILogger logger) : base(logger)
+    protected GAgentBase(ILogger logger) : base(logger)
     {
     }
     
@@ -22,4 +22,4 @@ public abstract class GAgentBaseWithInitialization<TState, TEvent, TInitializeDt
     {
         return Task.FromResult(typeof(TInitializeDto))!;
     }
-}
+}*/
