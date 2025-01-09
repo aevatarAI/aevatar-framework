@@ -55,7 +55,7 @@ public class LogViewAdaptorTestGState : StateBase
 }
 
 [GenerateSerializer]
-public class LogViewAdaptorTestGEvent : GEventBase
+public class LogViewAdaptorTestGEvent : StateLogEventBase
 {
     [Id(0)] public Guid Id { get; set; } = Guid.NewGuid();
     [Id(2)] public string Greeting { get; set; }

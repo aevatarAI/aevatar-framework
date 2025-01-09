@@ -10,7 +10,7 @@ public class NaiveTestGAgentState : StateBase
     [Id(0)]  public List<string> Content { get; set; }
 }
 
-public class NaiveTestGEvent : GEventBase
+public class NaiveTestGEvent : StateLogEventBase
 {
     [Id(0)] public Guid Id { get; set; }
 }

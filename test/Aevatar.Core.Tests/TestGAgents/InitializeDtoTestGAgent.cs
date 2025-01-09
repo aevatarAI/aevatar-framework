@@ -9,7 +9,7 @@ public class InitializeDtoTestGAgentState : StateBase
     [Id(0)]  public List<string> Content { get; set; }
 }
 
-public class InitializeDtoTestGEvent : GEventBase
+public class InitializeDtoTestGEvent : StateLogEventBase
 {
     [Id(0)] public Guid Id { get; set; }
 }

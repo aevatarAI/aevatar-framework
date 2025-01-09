@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
-public abstract partial class GAgentBase<TState, TGEvent, TEvent>
+public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
 {
     [AggregateExecutionTime]
     private Task UpdateObserverList()
@@ -84,7 +84,7 @@ public abstract partial class GAgentBase<TState, TGEvent, TEvent>
     }
     
     [GenerateSerializer]
-    public class InnerSetInitializeDtoTypeGEvent : GEventBase<TGEvent>
+    public class InnerSetInitializeDtoTypeGEvent : StateLogEvent<TStateLogEvent>
     {
         [Id(0)] public Type InitializeDtoType { get; set; }
     }

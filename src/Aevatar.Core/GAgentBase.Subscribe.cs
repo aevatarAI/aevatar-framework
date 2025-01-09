@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
-public abstract partial class GAgentBase<TState, TGEvent, TEvent>
+public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
 {
     
     
@@ -15,7 +15,7 @@ public abstract partial class GAgentBase<TState, TGEvent, TEvent>
             return;
         }
 
-        base.RaiseEvent(new AddChildGEvent<TGEvent>
+        base.RaiseEvent(new AddChildGEvent<TStateLogEvent>
         {
             Child = grainId
         });
@@ -36,7 +36,7 @@ public abstract partial class GAgentBase<TState, TGEvent, TEvent>
     
     
     [GenerateSerializer]
-    public class RemoveChildGEvent : GEventBase<TGEvent>
+    public class RemoveChildGEvent : StateLogEvent<TStateLogEvent>
     {
         [Id(0)] public GrainId Child { get; set; }
     }
@@ -45,7 +45,7 @@ public abstract partial class GAgentBase<TState, TGEvent, TEvent>
     
     //TODO: move to interface
     [GenerateSerializer]
-    public class SetParentGEvent : GEventBase<TGEvent>
+    public class SetParentGEvent : StateLogEvent<TStateLogEvent>
     {
         [Id(0)] public GrainId Parent { get; set; }
     }

@@ -12,9 +12,9 @@ namespace Aevatar.Core;
 [GAgent("base")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public abstract partial class GAgentBase<TState, TGEvent, TEvent> : JournaledGrain<TState, GEventBase<TGEvent>>, IStateGAgent<TState>
+public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent> : JournaledGrain<TState, StateLogEvent<TStateLogEvent>>, IStateGAgent<TState>
     where TState : StateBase, new()
-    where TGEvent : GEventBase<TGEvent>
+    where TStateLogEvent : StateLogEvent<TStateLogEvent>
     where TEvent: EventBase
 {
     protected IStreamProvider StreamProvider => this.GetStreamProvider(AevatarCoreConstants.StreamProvider);
@@ -230,7 +230,7 @@ public abstract partial class GAgentBase<TState, TGEvent, TEvent> : JournaledGra
     {
         await HandleRaiseEventAsync();
         //TODO:  need optimize use kafka,ensure Es written successfully
-        var gEvent = @event as GEventBase;
+        var gEvent = @event as StateLogEventBase;
         if (EventDispatcher != null)
         {
             await EventDispatcher.PublishAsync(gEvent!.Id, this.GetGrainId(), gEvent);

@@ -10,7 +10,7 @@ public class BadEventHandlerTestGAgentState
     [Id(0)]  public List<string> Content { get; set; }
 }
 
-public class BadEventHandlerTestGEvent : GEventBase;
+public class BadEventHandlerTestGEvent : StateLogEventBase;
 
 [GAgent("badEventHandlerTest")]
 public class BadEventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, EventHandlerTestGEvent>
