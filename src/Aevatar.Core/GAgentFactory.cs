@@ -6,18 +6,18 @@ namespace Aevatar.Core;
 
 public interface IGAgentFactory
 {
-    Task<IGAgent> GetGAgentAsync(GrainId grainId, InitializeDtoBase? initializeDto = null);
+    Task<IGAgent> GetGAgentAsync(GrainId grainId, InitializationDtoEventBase? initializeDto = null);
 
     Task<IGAgent> GetGAgentAsync(string alias, Guid primaryKey,
-        string ns = AevatarGAgentConstants.GAgentDefaultNamespace, InitializeDtoBase? initializeDto = null);
+        string ns = AevatarGAgentConstants.GAgentDefaultNamespace, InitializationDtoEventBase? initializeDto = null);
 
     Task<IGAgent> GetGAgentAsync(string alias, string ns = AevatarGAgentConstants.GAgentDefaultNamespace,
-        InitializeDtoBase? initializeDto = null);
+        InitializationDtoEventBase? initializeDto = null);
 
-    Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(Guid primaryKey, InitializeDtoBase? initializeDto = null)
+    Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(Guid primaryKey, InitializationDtoEventBase? initializeDto = null)
         where TGrainInterface : IGAgent;
 
-    Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(InitializeDtoBase? initializeDto = null)
+    Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(InitializationDtoEventBase? initializeDto = null)
         where TGrainInterface : IGAgent;
 }
 
@@ -33,7 +33,7 @@ public class GAgentFactory : IGAgentFactory
             _clusterClient.ServiceProvider.GetRequiredKeyedService<IStreamProvider>(AevatarCoreConstants.StreamProvider);
     }
 
-    public async Task<IGAgent> GetGAgentAsync(GrainId grainId, InitializeDtoBase? initializeDto = null)
+    public async Task<IGAgent> GetGAgentAsync(GrainId grainId, InitializationDtoEventBase? initializeDto = null)
     {
         var gAgent = _clusterClient.GetGrain<IGAgent>(grainId);
         if (initializeDto != null)
@@ -44,7 +44,7 @@ public class GAgentFactory : IGAgentFactory
         return gAgent;
     }
 
-    public async Task<IGAgent> GetGAgentAsync(string alias, Guid primaryKey, string ns = "aevatar", InitializeDtoBase? initializeDto = null)
+    public async Task<IGAgent> GetGAgentAsync(string alias, Guid primaryKey, string ns = "aevatar", InitializationDtoEventBase? initializeDto = null)
     {
         var gAgent = _clusterClient.GetGrain<IGAgent>(GrainId.Create($"{ns}/{alias}", primaryKey.ToString()));
         await gAgent.ActivateAsync();
@@ -57,12 +57,12 @@ public class GAgentFactory : IGAgentFactory
         return gAgent;
     }
 
-    public async Task<IGAgent> GetGAgentAsync(string alias, string ns = "aevatar", InitializeDtoBase? initializeDto = null)
+    public async Task<IGAgent> GetGAgentAsync(string alias, string ns = "aevatar", InitializationDtoEventBase? initializeDto = null)
     {
         return await GetGAgentAsync(alias, Guid.NewGuid(), ns, initializeDto);
     }
 
-    public async Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(Guid primaryKey, InitializeDtoBase? initializeDto = null)
+    public async Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(Guid primaryKey, InitializationDtoEventBase? initializeDto = null)
         where TGrainInterface : IGAgent
     {
         var gAgent = _clusterClient.GetGrain<TGrainInterface>(primaryKey);
@@ -75,7 +75,7 @@ public class GAgentFactory : IGAgentFactory
         return gAgent;
     }
 
-    public Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(InitializeDtoBase? initializeDto = null)
+    public Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(InitializationDtoEventBase? initializeDto = null)
         where TGrainInterface : IGAgent
     {
         var guid = Guid.NewGuid();

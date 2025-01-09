@@ -14,7 +14,7 @@ public class InitializeDtoTestStateLogEvent : StateLogEventBase<InitializeDtoTes
     [Id(0)] public Guid Id { get; set; }
 }
 
-public class InitializeDto : InitializeDtoBase
+public class InitializeDto : InitializationDtoEventBase
 {
     [Id(0)] public string InitialGreeting { get; set; }
 }
