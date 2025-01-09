@@ -2,7 +2,7 @@ using Orleans.Streams;
 
 namespace Aevatar.Core.Abstractions;
 
-public interface IGAgent : IGrainWithGuidKey
+public interface IGAgent : IGrainWithGuidKey, IAsyncObserver<EventWrapperBase>
 {
     /// <summary>
     /// Used for activating the agent manually.

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
-public abstract partial class GAgentBase<TState, TEvent>
+public abstract partial class GAgentBase<TState, TGEvent>
 {
     [AggregateExecutionTime]
     private Task UpdateObserverList()
