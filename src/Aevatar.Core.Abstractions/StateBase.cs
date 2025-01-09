@@ -7,6 +7,7 @@ public abstract class StateBase
     [Id(1)] public GrainId Parent { get; set; }
     [Id(2)] public Type? InitializeDtoType { get; set; }
 
+    /*
     public void Apply(AddChildStateLogEvent addChild)
     {
         if (!Children.Contains(addChild.Child))
@@ -28,5 +29,5 @@ public abstract class StateBase
     public void Apply(SetInitializeDtoTypeStateLogEvent setInitializeDtoType)
     {
         InitializeDtoType = setInitializeDtoType.InitializeDtoType;
-    }
+    }*/
 }
