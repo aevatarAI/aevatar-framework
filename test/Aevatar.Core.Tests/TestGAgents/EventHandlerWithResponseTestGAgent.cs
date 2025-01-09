@@ -10,7 +10,7 @@ public class EventHandlerWithResponseTestGAgentState : StateBase
     [Id(0)]  public List<string> Content { get; set; }
 }
 
-public class EventHandlerWithResponseTestGEvent : StateLogEventBase;
+public class EventHandlerWithResponseTestGEvent : StateLogEventBase<EventHandlerWithResponseTestGEvent>;
 
 [GAgent("eventHandlerWithResponseTest", "test")]
 public class

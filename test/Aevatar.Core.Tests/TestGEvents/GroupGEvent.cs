@@ -2,7 +2,7 @@ using Aevatar.Core.Abstractions;
 
 namespace Aevatar.Core.Tests.TestGEvents;
 
-public class GroupGEvent : StateLogEventBase
+public class GroupGEvent : StateLogEventBase<GroupGEvent>
 {
     
 }
