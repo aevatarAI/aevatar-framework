@@ -84,7 +84,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
     }
     
     [GenerateSerializer]
-    public class InnerSetInitializeDtoTypeGEvent : StateLogEvent<TStateLogEvent>
+    public class InnerSetInitializeDtoTypeGEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public Type InitializeDtoType { get; set; }
     }

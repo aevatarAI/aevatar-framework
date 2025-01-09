@@ -9,12 +9,22 @@ using Orleans.Streams;
 
 namespace Aevatar.Core;
 
+
+
 [GAgent("base")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent> : JournaledGrain<TState, StateLogEvent<TStateLogEvent>>, IStateGAgent<TState>
+public abstract partial class
+    GAgentBase<TState, TStateLogEvent>(ILogger logger) : GAgentBase<TState, TStateLogEvent, EventBase>(logger)
     where TState : StateBase, new()
-    where TStateLogEvent : StateLogEvent<TStateLogEvent>
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>;
+
+[GAgent("base")]
+[StorageProvider(ProviderName = "PubSubStore")]
+[LogConsistencyProvider(ProviderName = "LogStorage")]
+public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent> : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>
+    where TState : StateBase, new()
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent: EventBase
 {
     protected IStreamProvider StreamProvider => this.GetStreamProvider(AevatarCoreConstants.StreamProvider);

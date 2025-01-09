@@ -8,13 +8,13 @@ public abstract class StateLogEventBase
 }
 
 [GenerateSerializer]
-public abstract class StateLogEvent<T> : StateLogEventBase
-    where T:StateLogEvent<T>
+public abstract class StateLogEventBase<T> : StateLogEventBase
+    where T:StateLogEventBase<T>
 {
     
 }
 
-public class TestStateLogEvent : StateLogEvent<TestStateLogEvent>
+public class TestStateLogEvent : StateLogEventBase<TestStateLogEvent>
 {
     
 }

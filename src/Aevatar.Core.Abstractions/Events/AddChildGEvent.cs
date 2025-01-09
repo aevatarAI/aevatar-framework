@@ -9,8 +9,8 @@ public class AddChildGEvent : StateLogEventBase
 
 
 [GenerateSerializer]
-public class AddChildGEvent<TGEvent> : StateLogEvent<TGEvent>
-where TGEvent : StateLogEvent<TGEvent>
+public class AddChildGEvent<TGEvent> : StateLogEventBase<TGEvent>
+where TGEvent : StateLogEventBase<TGEvent>
 {
     [Id(0)] public GrainId Child { get; set; }
 }

@@ -36,7 +36,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
     
     
     [GenerateSerializer]
-    public class RemoveChildGEvent : StateLogEvent<TStateLogEvent>
+    public class RemoveChildGEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public GrainId Child { get; set; }
     }
@@ -45,7 +45,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
     
     //TODO: move to interface
     [GenerateSerializer]
-    public class SetParentGEvent : StateLogEvent<TStateLogEvent>
+    public class SetParentGEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public GrainId Parent { get; set; }
     }
