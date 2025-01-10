@@ -67,7 +67,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddTransient(typeof(IObjectMapper), typeof(DefaultObjectMapper));
                     services.AddTransient(typeof(IAutoObjectMappingProvider),
                         typeof(AutoMapperAutoObjectMappingProvider));
-                    services.AddTransient(sp => new MapperAccessor()
+                    services.AddTransient<IMapperAccessor>(sp => new MapperAccessor()
                     {
                         Mapper = sp.GetRequiredService<IMapper>()
                     });
