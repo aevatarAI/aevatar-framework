@@ -44,10 +44,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
                         try
                         {
                             var invokeParameter =
-                                new EventWrapper<EventBase>(eventType, eventId, this.GetGrainId())
-                                {
-                                    CorrelationId = _correlationId
-                                };
+                                new EventWrapper<EventBase>(eventType, eventId, this.GetGrainId());
                             var result = eventHandlerMethod.Invoke(this, [invokeParameter]);
                             await (Task)result!;
                         }
@@ -176,6 +173,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
                 {
                     var eventResult = await (dynamic)method.Invoke(this, [eventType])!;
                     eventResult.CorrelationId = _correlationId;
+                    eventResult.PublisherGrainId = this.GetGrainId();
                     var eventWrapper =
                         new EventWrapper<EventBase>(eventResult, eventId, this.GetGrainId());
                     await PublishAsync(eventWrapper);
