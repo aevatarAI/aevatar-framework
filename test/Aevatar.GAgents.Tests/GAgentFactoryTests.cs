@@ -42,7 +42,7 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
         }
 
         {
-            var gAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<NaiveTestGAgentState>>();
+            var gAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<ProxyTestGAgentState>>();
             gAgent.ShouldNotBeNull();
             Should.NotThrow(() => gAgent.GetPrimaryKey());
             gAgent.GetGrainId().ShouldBe(GrainId.Create("aevatar/naiveTest", gAgent.GetPrimaryKey().ToString("N")));
@@ -63,14 +63,14 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
     {
         // Arrange & Act.
         var guid = Guid.NewGuid();
-        var gAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<NaiveTestGAgentState>>(guid,
-            new NaiveGAgentInitialize
+        var gAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<ProxyTestGAgentState>>(guid,
+            new NaiveGAgentInitializationEvent
             {
                 InitialGreeting = "Test"
             });
 
         var initializeDtoType = await gAgent.GetInitializationTypeAsync();
-        initializeDtoType.ShouldBe(typeof(NaiveGAgentInitialize));
+        initializeDtoType.ShouldBe(typeof(NaiveGAgentInitializationEvent));
 
         await TestHelper.WaitUntilAsync(_ => CheckState(gAgent), TimeSpan.FromSeconds(20));
 
@@ -94,7 +94,7 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
         }
 
         {
-            var gAgent = await _gAgentFactory.GetGAgentAsync("naiveTest", initializeDto: new NaiveGAgentInitialize
+            var gAgent = await _gAgentFactory.GetGAgentAsync("naiveTest", initializeDto: new NaiveGAgentInitializationEvent
             {
                 InitialGreeting = "Test"
             });
@@ -119,7 +119,7 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
         availableGAgents.Count.ShouldBeGreaterThan(20);
     }
 
-    private async Task<bool> CheckState(IStateGAgent<NaiveTestGAgentState> gAgent)
+    private async Task<bool> CheckState(IStateGAgent<ProxyTestGAgentState> gAgent)
     {
         var state = await gAgent.GetStateAsync();
         return !state.Content.IsNullOrEmpty();
