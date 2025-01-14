@@ -34,33 +34,53 @@ public class ProxyGAgent : GAgentBase<ProxyGAgentState, ProxyStateLogEvent, Prox
 
     public override async Task InitializeAsync(ProxyGAgentInitialization initializeDto)
     {
-        RaiseEvent(new SetEventHandlerCode
+        RaiseEvent(new SetPluginCode
         {
-            EventHandlerCode = initializeDto.EventHandlerCode
+            PluginCode = initializeDto.PluginCode
         });
         await ConfirmEvents();
     }
 
     [GenerateSerializer]
-    public class SetEventHandlerCode : ProxyStateLogEvent
+    public class SetPluginCode : ProxyStateLogEvent
     {
-        [Id(0)] public byte[] EventHandlerCode { get; set; }
+        [Id(0)] public byte[] PluginCode { get; set; }
     }
 
     protected override void GAgentTransitionState(ProxyGAgentState state, StateLogEventBase<ProxyStateLogEvent> @event)
     {
-        switch (@event)
+        if (@event is SetPluginCode setPluginCode)
         {
-            case SetEventHandlerCode setEventHandlerCode:
-                state.EventHandlerCode = setEventHandlerCode.EventHandlerCode;
-                break;
+            State.PluginCode = setPluginCode.PluginCode;
+            return;
+        }
+
+        if (State.PluginCode.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        var assembly = Assembly.Load(State.PluginCode!);
+        var logEventConsistencyTypes = GetLogEventConsistencyTypes(assembly);
+        if (logEventConsistencyTypes == null) return;
+        foreach (var logEventConsistencyType in logEventConsistencyTypes)
+        {
+            var logEventConsistencyInstance = Activator.CreateInstance(logEventConsistencyType)!;
+            if (logEventConsistencyInstance is not ILogEventConsistency logEventConsistency) continue;
+            logEventConsistency.State = State;
+            logEventConsistency.Apply((ProxyStateLogEvent)@event);
         }
     }
 
     [AllEventHandler]
     public async Task ExecuteEventHandlersAsync(EventWrapperBase eventData)
     {
-        var assembly = Assembly.Load(State.EventHandlerCode);
+        if (State.PluginCode.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        var assembly = Assembly.Load(State.PluginCode!);
         var handlerTypes = GetHandlerTypes(assembly);
 
         foreach (var handlerType in handlerTypes)
@@ -88,6 +108,15 @@ public class ProxyGAgent : GAgentBase<ProxyGAgentState, ProxyStateLogEvent, Prox
             .Where(t => t.GetInterfaces()
                             .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == handlerInterfaceType) &&
                         t is { IsInterface: false, IsAbstract: false });
+    }
+
+    private IEnumerable<Type>? GetLogEventConsistencyTypes(Assembly? assembly)
+    {
+        if (assembly == null) return null;
+        var handlerInterfaceType = typeof(ILogEventConsistency);
+        return assembly.GetTypes()
+            .Where(t => handlerInterfaceType.IsAssignableFrom(t)
+                        && t is { IsInterface: false, IsAbstract: false });
     }
 
     private Type GetHandlerInterfaceType(Type handlerType)
