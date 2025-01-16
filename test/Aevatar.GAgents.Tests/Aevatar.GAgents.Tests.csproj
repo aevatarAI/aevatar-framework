@@ -26,12 +26,18 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Aevatar.ProxyGAgent\Aevatar.ProxyGAgent.csproj" />
         <ProjectReference Include="..\Aevatar.Core.Tests\Aevatar.Core.Tests.csproj" />
+        <ProjectReference Include="..\Aevatar.Plugins.Test\Aevatar.Plugins.Test.csproj" />
         <ProjectReference Include="..\Aevatar.TestBase\Aevatar.TestBase.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <Content Include="appsettings.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <None Remove="ProxyGAgentPlugins\*.dll" />
+        <Content Include="ProxyGAgentPlugins\*.dll">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>

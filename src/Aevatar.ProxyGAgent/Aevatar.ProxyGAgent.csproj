@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Aevatar.ProxyGAgent</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\test\Aevatar.ProxyGAgent.Sdk\Aevatar.ProxyGAgent.Sdk.csproj" />
+      <ProjectReference Include="..\Aevatar.Core.Abstractions\Aevatar.Core.Abstractions.csproj" />
+      <ProjectReference Include="..\Aevatar.Core\Aevatar.Core.csproj" />
+    </ItemGroup>
+
+</Project>
