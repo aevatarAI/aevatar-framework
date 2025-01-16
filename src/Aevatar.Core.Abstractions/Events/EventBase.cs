@@ -4,6 +4,6 @@ namespace Aevatar.Core.Abstractions;
 [GenerateSerializer]
 public abstract class EventBase
 {
-    public Guid? CorrelationId { get; set; }
-    public StreamId? StreamId { get; set; }
+    [Id(0)] public Guid? CorrelationId { get; set; }
+    [Id(1)] public GrainId PublisherGrainId { get; set; }
 }
