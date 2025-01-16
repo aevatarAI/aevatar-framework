@@ -28,8 +28,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
         }
 
         GAgentTransitionState(state, @event);
-        // TODO: Figure why threw exception.
-        //base.TransitionState(state, @event);
+        base.TransitionState(state, @event);
     }
 
     protected virtual void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
