@@ -19,9 +19,9 @@ public class AevatarGAgentsTestModule : AbpModule
         base.ConfigureServices(context);
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarGAgentsTestModule>(); });
         
-        //var brainFactoryMock = new Mock<IBrainFactory>();
+        var brainFactoryMock = new Mock<IBrainFactory>();
         // Configure your mock here if needed
         
-        //context.Services.AddSingleton(brainFactoryMock.Object);
+        context.Services.AddSingleton(brainFactoryMock.Object);
     }
 }
