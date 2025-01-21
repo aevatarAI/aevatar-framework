@@ -9,6 +9,7 @@ public class EventWrapper<T> : EventWrapperBase where T : EventBase
     [Id(2)] public GrainId GrainId { get; private set; }
     [Id(3)] public Guid? CorrelationId { get; set; }
     [Id(4)] public GrainId PublisherGrainId { get; set; }
+    [Id(5)] public List<GrainId>? Children { get; set; }
 
     public EventWrapper(T @event, Guid eventId, GrainId grainId)
     {
@@ -17,5 +18,6 @@ public class EventWrapper<T> : EventWrapperBase where T : EventBase
         GrainId = grainId;
         CorrelationId = @event.CorrelationId;
         PublisherGrainId = @event.PublisherGrainId;
+        Children = @event.Children;
     }
 }

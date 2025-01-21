@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Aevatar.Core.Tests.TestGAgents;
 
 [GenerateSerializer]
-public class FatalEventHandlerTestGAgentState
+public class FatalEventHandlerTestGAgentState : EventHandlerTestGAgentState
 {
     [Id(0)]  public List<string> Content { get; set; }
 }
@@ -13,7 +13,7 @@ public class FatalEventHandlerTestGAgentState
 public class FatalEventHandlerTestStateLogEvent : StateLogEventBase;
 
 [GAgent("fatalEventHandlerTest", "test")]
-public class FatalEventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, EventHandlerTestStateLogEvent>
+public class FatalEventHandlerTestGAgent : GAgentBase<FatalEventHandlerTestGAgentState, EventHandlerTestStateLogEvent>
 {
     public FatalEventHandlerTestGAgent(ILogger logger) : base(logger)
     {

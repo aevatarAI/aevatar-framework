@@ -56,9 +56,33 @@ public class GAgentBaseTests : AevatarGAgentsTestBase
         investorState.Content.Count.ShouldBe(2);
     }
     
-    private async Task<bool> CheckState(IStateGAgent<InvestorTestGAgentState> investor1)
+    [Fact(DisplayName = "Call unregister immidiately after publishing.")]
+    public async Task RegisterAndUnregisterTest()
     {
-        var state = await investor1.GetStateAsync();
+        var publishingGAgent = _grainFactory.GetGrain<IPublishingGAgent>(Guid.NewGuid());
+        var testGAgent = _grainFactory.GetGrain<IStateGAgent<EventHandlerTestGAgentState>>(Guid.NewGuid());
+        await publishingGAgent.RegisterAsync(testGAgent);
+        await publishingGAgent.PublishEventAsync(new NaiveTestEvent
+        {
+            Greeting = "Test"
+        });
+        await publishingGAgent.UnregisterAsync(testGAgent);
+
+        await TestHelper.WaitUntilAsync(_ => CheckState(testGAgent), TimeSpan.FromSeconds(20));
+
+        var state = await testGAgent.GetStateAsync();
+        state.Content.Count.ShouldBe(3);
+    }
+    
+    private async Task<bool> CheckState(IStateGAgent<InvestorTestGAgentState> investorGAgent)
+    {
+        var state = await investorGAgent.GetStateAsync();
         return !state.Content.IsNullOrEmpty() && state.Content.Count == 2;
+    }
+    
+    private async Task<bool> CheckState(IStateGAgent<EventHandlerTestGAgentState> evnetHandlerGAgent)
+    {
+        var state = await evnetHandlerGAgent.GetStateAsync();
+        return !state.Content.IsNullOrEmpty() && state.Content.Count == 3;
     }
 }

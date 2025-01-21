@@ -29,6 +29,8 @@ public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingState
             throw new ArgumentNullException(nameof(@event));
         }
 
+        // TODO: cache agents organization.
+        
         Logger.LogInformation($"PublishingAgent publish {@event}");
         await PublishAsync(@event);
     }

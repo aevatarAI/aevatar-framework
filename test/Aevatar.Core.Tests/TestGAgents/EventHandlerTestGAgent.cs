@@ -7,7 +7,7 @@ namespace Aevatar.Core.Tests.TestGAgents;
 [GenerateSerializer]
 public class EventHandlerTestGAgentState : StateBase
 {
-    [Id(0)]  public List<string> Content { get; set; }
+    [Id(0)] public List<string> Content { get; set; } = [];
 }
 
 public class EventHandlerTestStateLogEvent : StateLogEventBase<EventHandlerTestStateLogEvent>;
@@ -15,7 +15,7 @@ public class EventHandlerTestStateLogEvent : StateLogEventBase<EventHandlerTestS
 [GAgent("eventHandlerTest", "test")]
 public class EventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, EventHandlerTestStateLogEvent>
 {
-    public EventHandlerTestGAgent(ILogger logger) : base(logger)
+    public EventHandlerTestGAgent(ILogger<EventHandlerTestGAgent> logger) : base(logger)
     {
     }
 
@@ -52,11 +52,28 @@ public class EventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, Ev
 
     private void AddContent(string content)
     {
-        if (State.Content.IsNullOrEmpty())
+        RaiseEvent(new AddContentStateLogEvent
         {
-            State.Content = [];
+            Content = content
+        });
+
+        ConfirmEvents();
+    }
+
+    [GenerateSerializer]
+    public class AddContentStateLogEvent : EventHandlerTestStateLogEvent
+    {
+        [Id(0)] public string Content { get; set; }
+    }
+
+    protected override void GAgentTransitionState(EventHandlerTestGAgentState state,
+        StateLogEventBase<EventHandlerTestStateLogEvent> @event)
+    {
+        if (@event is AddContentStateLogEvent addContentEvent)
+        {
+            state.Content.Add(addContentEvent.Content);
         }
 
-        State.Content.Add(content);
+        base.GAgentTransitionState(state, @event);
     }
 }

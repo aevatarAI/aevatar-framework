@@ -148,8 +148,6 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent> : Journ
     [AllEventHandler]
     internal async Task ForwardEventAsync(EventWrapperBase eventWrapper)
     {
-        Logger.LogInformation(
-            $"{this.GetGrainId().ToString()} is forwarding event downwards: {JsonConvert.SerializeObject((EventWrapper<EventBase>)eventWrapper)}");
         await SendEventDownwardsAsync((EventWrapper<EventBase>)eventWrapper);
     }
 

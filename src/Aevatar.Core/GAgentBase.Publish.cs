@@ -8,7 +8,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
 {
     private Guid? _correlationId;
 
-    protected async Task PublishAsync<T>(EventWrapper<T> eventWrapper) where T : EventBase
+    private async Task PublishAsync<T>(EventWrapper<T> eventWrapper) where T : EventBase
     {
         await SendEventUpwardsAsync(eventWrapper);
         await SendEventDownwardsAsync(eventWrapper);
@@ -19,6 +19,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
         _correlationId ??= Guid.NewGuid();
         @event.CorrelationId = _correlationId;
         @event.PublisherGrainId = this.GetGrainId();
+        @event.Children = State.Children;
         Logger.LogInformation("Published event {@Event}, {CorrelationId}", @event, _correlationId);
 
         var eventId = Guid.NewGuid();
@@ -34,41 +35,29 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
             Logger.LogInformation(
                 "{GrainId} is publishing event upwards: {EventJson}",
                 this.GetGrainId().ToString(), JsonConvert.SerializeObject(@event));
-            await PublishEventUpwardsAsync(@event, eventId);
+            await SendEventUpwardsAsync(new EventWrapper<T>(@event, eventId, this.GetGrainId()));
         }
 
         return eventId;
     }
 
-    private async Task PublishEventUpwardsAsync<T>(T @event, Guid eventId) where T : EventBase
-    {
-        await SendEventUpwardsAsync(new EventWrapper<T>(@event, eventId, this.GetGrainId()));
-    }
-
     private async Task SendEventUpwardsAsync<T>(EventWrapper<T> eventWrapper) where T : EventBase
     {
-        var stream = GetStream(State.Parent.ToString());
+        var parent = State.Parent.ToString();
+        if (parent == null) return;
+        var stream = GetStream(parent);
         await stream.OnNextAsync(eventWrapper);
     }
 
     private async Task SendEventToSelfAsync<T>(EventWrapper<T> eventWrapper) where T : EventBase
     {
-        Logger.LogInformation(
-            $"{this.GetGrainId().ToString()} is sending event to self: {JsonConvert.SerializeObject(eventWrapper)}");
-        var streamOfThisGAgent = GetStream(this.GetGrainId().ToString());
-        await streamOfThisGAgent.OnNextAsync(eventWrapper);
+        await GetStream(this.GetGrainId().ToString()).OnNextAsync(eventWrapper);
     }
 
     private async Task SendEventDownwardsAsync<T>(EventWrapper<T> eventWrapper) where T : EventBase
     {
-        if (State.Children.IsNullOrEmpty())
-        {
-            return;
-        }
-
-        Logger.LogInformation($"{this.GetGrainId().ToString()} has {State.Children.Count} children.");
-
-        foreach (var grainId in State.Children)
+        var children = eventWrapper.Children ?? State.Children;
+        foreach (var grainId in children)
         {
             var gAgent = GrainFactory.GetGrain<IGAgent>(grainId);
             await gAgent.ActivateAsync();
