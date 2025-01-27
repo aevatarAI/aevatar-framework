@@ -3,7 +3,7 @@ using Aevatar.Core.Abstractions;
 namespace Aevatar.Core.Tests.TestInitializeDtos;
 
 [GenerateSerializer]
-public class NaiveGAgentInitialize : InitializationEventBase
+public class NaiveGAgentConfiguration : ConfigurationBase
 {
-    [Id(0)] public string InitialGreeting { get; set; }
+    [Id(0)] public string Greeting { get; set; } = string.Empty;
 }

@@ -12,25 +12,32 @@ namespace Aevatar.Core;
 [GAgent]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public abstract partial class
-    GAgentBase<TState, TStateLogEvent>(ILogger logger) : GAgentBase<TState, TStateLogEvent, EventBase>(logger)
+public abstract class
+    GAgentBase<TState, TStateLogEvent>(ILogger logger)
+    : GAgentBase<TState, TStateLogEvent, EventBase, ConfigurationBase>(logger)
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>;
 
-public class TestEvent : EventBase
-{
-    public string Name { get; set; }
-}
+[GAgent]
+[StorageProvider(ProviderName = "PubSubStore")]
+[LogConsistencyProvider(ProviderName = "LogStorage")]
+public abstract class
+    GAgentBase<TState, TStateLogEvent, TEvent>(ILogger logger)
+    : GAgentBase<TState, TStateLogEvent, TEvent, ConfigurationBase>(logger)
+    where TState : StateBase, new()
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>
+    where TEvent : EventBase;
 
 [GAgent]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public abstract partial class
-    GAgentBase<TState, TStateLogEvent, TEvent> : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>,
-    IStateGAgent<TState>
+    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> 
+    : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
+    where TConfiguration : ConfigurationBase
 {
     protected IStreamProvider StreamProvider => this.GetStreamProvider(AevatarCoreConstants.StreamProvider);
 
@@ -82,11 +89,11 @@ public abstract partial class
         await OnUnregisterAgentAsync(gAgent.GetPrimaryKey());
     }
 
-    public virtual async Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false)
+    public virtual Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false)
     {
         var eventHandlerMethods = GetEventHandlerMethods(GetType());
         eventHandlerMethods = eventHandlerMethods.Where(m =>
-            m.Name != nameof(ForwardEventAsync) && m.Name != AevatarGAgentConstants.InitializeDefaultMethodName);
+            m.Name != nameof(ForwardEventAsync) && m.Name != nameof(PerformConfigAsync));
         var handlingTypes = eventHandlerMethods
             .Select(m => m.GetParameters().First().ParameterType);
         if (!includeBaseHandlers)
@@ -94,22 +101,35 @@ public abstract partial class
             handlingTypes = handlingTypes.Where(t => t != typeof(RequestAllSubscriptionsEvent));
         }
 
-        return handlingTypes.ToList();
+        return Task.FromResult(handlingTypes.ToList())!;
     }
 
-    public async Task<List<GrainId>> GetChildrenAsync()
+    public Task<List<GrainId>> GetChildrenAsync()
     {
-        return State.Children;
+        return Task.FromResult(State.Children);
     }
 
-    public async Task<GrainId> GetParentAsync()
+    public Task<GrainId> GetParentAsync()
     {
-        return State.Parent ?? default;
+        return Task.FromResult(State.Parent ?? default);
     }
 
-    public virtual Task<Type?> GetInitializationTypeAsync()
+    public virtual Task<Type?> GetConfigurationTypeAsync()
     {
-        return Task.FromResult(State.InitializationEventType);
+        return Task.FromResult(typeof(TConfiguration))!;
+    }
+
+    public async Task ConfigAsync(ConfigurationBase configuration)
+    {
+        if (configuration is TConfiguration config)
+        {
+            await PerformConfigAsync(config);
+        }
+    }
+
+    protected virtual Task PerformConfigAsync(TConfiguration configuration)
+    {
+        return Task.CompletedTask;
     }
 
     [EventHandler]
@@ -160,12 +180,14 @@ public abstract partial class
         await SendEventDownwardsAsync((EventWrapper<TEvent>)eventWrapper);
     }
 
-    protected virtual async Task OnRegisterAgentAsync(Guid agentGuid)
+    protected virtual Task OnRegisterAgentAsync(Guid agentGuid)
     {
+        return Task.CompletedTask;
     }
 
-    protected virtual async Task OnUnregisterAgentAsync(Guid agentGuid)
+    protected virtual Task OnUnregisterAgentAsync(Guid agentGuid)
     {
+        return Task.CompletedTask;
     }
 
     public abstract Task<string> GetDescriptionAsync();
@@ -181,16 +203,22 @@ public abstract partial class
         await OnGAgentActivateAsync(cancellationToken);
     }
 
-    protected virtual async Task OnGAgentActivateAsync(CancellationToken cancellationToken)
+    protected virtual Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
+        return Task.CompletedTask;
         // Derived classes can override this method.
     }
+
 
     private async Task BaseOnActivateAsync(CancellationToken cancellationToken)
     {
         // This must be called first to initialize Observers field.
-        await UpdateObserverList(GetType());
-        await UpdateInitializationEventType();
+        await UpdateObserverListAsync(GetType());
+        await InitializeOrResumeStreamAsync();
+    }
+
+    private async Task InitializeOrResumeStreamAsync()
+    {
         var streamOfThisGAgent = GetStream(this.GetGrainId().ToString());
         var handles = await streamOfThisGAgent.GetAllSubscriptionHandles();
         var asyncObserver = new GAgentAsyncObserver(_observers);
@@ -212,8 +240,9 @@ public abstract partial class
         await base.OnDeactivateAsync(reason, cancellationToken);
     }
 
-    protected virtual async Task HandleStateChangedAsync()
+    protected virtual Task HandleStateChangedAsync()
     {
+        return Task.CompletedTask;
     }
 
     protected sealed override void OnStateChanged()

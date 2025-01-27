@@ -32,7 +32,7 @@ public class PluginGAgentManager : IPluginGAgentManager, ILifecycleParticipant<I
         }
 
         var pluginCodeGAgent = await _gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(
-            initializationEvent: new PluginCodeStorageInitializationEvent
+            configuration: new PluginCodeStorageConfiguration
             {
                 Code = addPluginDto.Code
             });
@@ -97,7 +97,7 @@ public class PluginGAgentManager : IPluginGAgentManager, ILifecycleParticipant<I
 
         var tenant = await _gAgentFactory.GetGAgentAsync<ITenantPluginCodeGAgent>(addExistedPluginDto.TenantId);
         var pluginCodeGAgent = await _gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(
-            initializationEvent: new PluginCodeStorageInitializationEvent
+            configuration: new PluginCodeStorageConfiguration
             {
                 Code = code
             });
