@@ -15,10 +15,6 @@ public class EventHandlerTestStateLogEvent : StateLogEventBase<EventHandlerTestS
 [GAgent("eventHandlerTest", "test")]
 public class EventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, EventHandlerTestStateLogEvent>
 {
-    public EventHandlerTestGAgent(ILogger<EventHandlerTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent is used for testing event handlers.");

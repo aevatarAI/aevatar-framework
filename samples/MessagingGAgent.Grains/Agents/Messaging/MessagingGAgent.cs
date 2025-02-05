@@ -12,10 +12,6 @@ public interface IMessagingGAgent : IGAgent
 
 public class MessagingGAgent : GAgentBase<MessagingGState, MessagingStateLogEvent>, IMessagingGAgent
 {
-    public MessagingGAgent(ILogger<MessagingGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("Agent for messaging.");

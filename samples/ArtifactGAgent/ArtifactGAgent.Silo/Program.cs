@@ -1,4 +1,5 @@
 ﻿using Aevatar.Core.Abstractions;
+using Aevatar.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -10,6 +11,7 @@ var builder = Host.CreateDefaultBuilder(args)
             .AddMemoryGrainStorage("PubSubStore")
             .AddLogStorageBasedLogConsistencyProvider("LogStorage")
             .UseLocalhostClustering()
+            .UseAevatar()
             .ConfigureLogging(logging => logging.AddConsole());
     })
     .UseConsoleLifetime();

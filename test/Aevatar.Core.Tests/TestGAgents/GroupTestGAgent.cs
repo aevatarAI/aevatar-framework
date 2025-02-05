@@ -16,10 +16,6 @@ public class GroupTestGAgentState : StateBase
 [GAgent("groupTest", "test")]
 public class GroupTestGAgent: GAgentBase<GroupTestGAgentState, GroupStateLogEvent>
 {
-    public GroupTestGAgent(ILogger<GroupTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("For testing reload group.");

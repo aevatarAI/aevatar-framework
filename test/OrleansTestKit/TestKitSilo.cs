@@ -1,8 +1,11 @@
 ﻿using System.Linq.Expressions;
+using Aevatar;
+using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.EventSourcing.Core;
 using Aevatar.EventSourcing.Core.Hosting;
 using Aevatar.EventSourcing.Core.LogConsistency;
+using Castle.Core.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -78,6 +81,7 @@ public sealed class TestKitSilo
             .AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>()
             .AddSerializer()
             .AddInMemoryBasedLogConsistencyProvider("LogStorage")
+            .AddSingleton<ILoggerFactory>(new NullLogFactory())
             .BuildServiceProvider();
 
         _grainTypeResolver = provider.GetRequiredService<GrainTypeResolver>();
@@ -272,6 +276,9 @@ public sealed class TestKitSilo
                 ReminderRegistry.SetGrainTarget(remindable);
                 break;
         }
+
+        var activator = new AevatarGrainActivator(ServiceProvider, typeof(T));
+        activator.InjectLogger(grain);
 
         // Trigger the lifecycle hook that will get the grain's state from the runtime
         await _grainLifecycle.TriggerStartAsync().ConfigureAwait(false);

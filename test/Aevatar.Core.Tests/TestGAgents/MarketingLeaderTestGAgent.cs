@@ -11,10 +11,6 @@ public class MarketingLeaderTestGAgentState : NaiveTestGAgentState;
 [GAgent("marketingLeader", "test")]
 public class MarketingLeaderTestGAgent : GAgentBase<MarketingLeaderTestGAgentState, NaiveTestStateLogEvent>, IMarketingLeaderTestGAgent
 {
-    public MarketingLeaderTestGAgent(ILogger<MarketingLeaderTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent acts as a marketing leader.");

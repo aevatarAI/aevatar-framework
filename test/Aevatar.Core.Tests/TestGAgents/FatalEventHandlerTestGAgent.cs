@@ -15,10 +15,6 @@ public class FatalEventHandlerTestStateLogEvent : StateLogEventBase;
 [GAgent]
 public class FatalEventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, EventHandlerTestStateLogEvent>
 {
-    public FatalEventHandlerTestGAgent(ILogger<FatalEventHandlerTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent is used for testing invalid event handlers.");

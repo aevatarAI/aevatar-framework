@@ -1,16 +1,17 @@
-using System.Net;
+using System.Reflection;
+using Aevatar.Core.Abstractions;
 using Aevatar.EventSourcing.MongoDB.Hosting;
 using Aevatar.Extensions;
 using Aevatar.Plugins;
 using Aevatar.Plugins.Extensions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
-using Newtonsoft.Json;
 using Orleans.Configuration;
-using Orleans.Providers.MongoDB.Configuration;
 using Orleans.Serialization;
+using Orleans.Serialization.Serializers;
 
 namespace PluginGAgent.Silo.Extensions;
 
@@ -20,73 +21,24 @@ public static class OrleansHostExtension
     {
         return hostBuilder.UseOrleans((context, siloBuilder) =>
             {
-                var configuration = context.Configuration;
-                var configSection = context.Configuration.GetSection("Orleans");
-                var isRunningInKubernetes = configSection.GetValue<bool>("IsRunningInKubernetes");
-                var advertisedIP = isRunningInKubernetes
-                    ? Environment.GetEnvironmentVariable("POD_IP")
-                    : configSection.GetValue<string>("AdvertisedIP");
-                var clusterId = isRunningInKubernetes
-                    ? Environment.GetEnvironmentVariable("ORLEANS_CLUSTER_ID")
-                    : configSection.GetValue<string>("ClusterId");
-                var serviceId = isRunningInKubernetes
-                    ? Environment.GetEnvironmentVariable("ORLEANS_SERVICE_ID")
-                    : configSection.GetValue<string>("ServiceId");
                 siloBuilder
-                    .ConfigureEndpoints(advertisedIP: IPAddress.Parse(advertisedIP),
-                        siloPort: configSection.GetValue<int>("SiloPort"),
-                        gatewayPort: configSection.GetValue<int>("GatewayPort"), listenOnAnyHostAddress: true)
-                    .UseMongoDBClient(configSection.GetValue<string>("MongoDBClient"))
-                    .UseMongoDBClustering(options =>
-                    {
-                        options.DatabaseName = configSection.GetValue<string>("DataBase");
-                        options.Strategy = MongoDBMembershipStrategy.SingleDocument;
-                    })
-                    .Configure<JsonGrainStateSerializerOptions>(options => options.ConfigureJsonSerializerSettings =
-                        settings =>
-                        {
-                            settings.NullValueHandling = NullValueHandling.Include;
-                            settings.DefaultValueHandling = DefaultValueHandling.Populate;
-                            settings.ObjectCreationHandling = ObjectCreationHandling.Replace;
-                        })
-                    .UseMongoDBReminders(options =>
-                    {
-                        options.DatabaseName = configSection.GetValue<string>("DataBase");
-                        options.CreateShardKeyForCosmos = false;
-                    })
-                    .Configure<ClusterOptions>(options =>
-                    {
-                        options.ClusterId = clusterId;
-                        options.ServiceId = serviceId;
-                    })
-                    .Configure<ExceptionSerializationOptions>(options =>
-                    {
-                        options.SupportedNamespacePrefixes.Add("Volo.Abp");
-                        options.SupportedNamespacePrefixes.Add("Newtonsoft.Json");
-                        options.SupportedNamespacePrefixes.Add("Autofac.Core");
-                    })
-                    .AddActivityPropagation()
-                    .Configure<PluginGAgentLoadOptions>(options =>
-                    {
-                        options.TenantId = "test".ToGuid();
-                    })
+                    .UseLocalhostClustering()
+                    .UseMongoDBClient("mongodb://localhost:27017/?maxPoolSize=555")
                     .AddMongoDBGrainStorage("PubSubStore", options =>
                     {
                         options.CollectionPrefix = "StreamStorage";
-                        options.DatabaseName = configSection.GetValue<string>("DataBase");
+                        options.DatabaseName = "AISmartDb";
                     })
                     .ConfigureLogging(logging => { logging.SetMinimumLevel(LogLevel.Debug).AddConsole(); })
                     .AddMongoDbStorageBasedLogConsistencyProvider("LogStorage", options =>
                     {
                         options.ClientSettings =
-                            MongoClientSettings.FromConnectionString(configSection.GetValue<string>("MongoDBClient"));
-                        options.Database = configSection.GetValue<string>("DataBase");
+                            MongoClientSettings.FromConnectionString("mongodb://localhost:27017/?maxPoolSize=555");
+                        options.Database = "AISmartDb";
                     })
                     .AddMemoryStreams("Aevatar")
-                    .AddMemoryStreams("AISmart")
-                    .UseAevatar();
+                    .UseAevatar<PluginGAgentTestModule>();
             })
             .UseConsoleLifetime();
-        
     }
 }

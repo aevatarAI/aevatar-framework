@@ -1,6 +1,7 @@
 ﻿using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.ArtifactGAgents;
+using Aevatar.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
@@ -10,8 +11,7 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
     {
         client.UseLocalhostClustering()
             .AddMemoryStreams(AevatarCoreConstants.StreamProvider);
-        client.Services.AddSingleton<IGAgentFactory, GAgentFactory>();
-        client.Services.AddSingleton<IGAgentManager, GAgentManager>();
+        client.UseAevatar();
     })
     .ConfigureLogging(logging => logging.AddConsole())
     .UseConsoleLifetime();
@@ -51,3 +51,4 @@ Console.WriteLine();
     Console.WriteLine(description);
 }
 
+Console.ReadKey();

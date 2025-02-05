@@ -41,6 +41,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Aevatar.EventSourcing.Core\Aevatar.EventSourcing.Core.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar\Aevatar.csproj" />
     </ItemGroup>
 
 </Project>

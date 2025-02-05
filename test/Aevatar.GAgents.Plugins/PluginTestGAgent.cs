@@ -24,10 +24,6 @@ public class PluginTestEvent : EventBase
 [GAgent("pluginTest")]
 public class PluginTestGAgent : GAgentBase<PluginTestGAgentState, PluginTestStateLogEvent, EventBase>
 {
-    public PluginTestGAgent(ILogger<PluginTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This is a naive test GAgent");

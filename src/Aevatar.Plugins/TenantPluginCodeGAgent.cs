@@ -24,8 +24,8 @@ public interface ITenantPluginCodeGAgent : IStateGAgent<TenantPluginCodeGAgentSt
 }
 
 [GAgent("pluginTenant")]
-public class TenantPluginCodeGAgent(ILogger<TenantPluginCodeGAgent> logger)
-    : GAgentBase<TenantPluginCodeGAgentState, TenantPluginStateLogEvent>(logger), ITenantPluginCodeGAgent
+public class TenantPluginCodeGAgent
+    : GAgentBase<TenantPluginCodeGAgentState, TenantPluginStateLogEvent>, ITenantPluginCodeGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {

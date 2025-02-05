@@ -20,7 +20,7 @@ public class GAgentAsyncObserver : IAsyncObserver<EventWrapperBase>
             observer.ParameterTypeName == eventType.GetType().Name ||
             observer.ParameterTypeName == nameof(EventWrapperBase) ||
             observer.MethodName == AevatarGAgentConstants.ForwardEventMethodName ||
-            observer.MethodName == AevatarGAgentConstants.InitializeDefaultMethodName).ToList();
+            observer.MethodName == AevatarGAgentConstants.ConfigDefaultMethodName).ToList();
         foreach (var observer in matchedObservers)
         {
             await observer.OnNextAsync(item);

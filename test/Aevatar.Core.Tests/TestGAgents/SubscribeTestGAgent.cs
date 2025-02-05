@@ -14,10 +14,6 @@ public class SubscribeTestStateLogEvent : StateLogEventBase<SubscribeTestStateLo
 [GAgent("subscribeTest", "test")]
 public class SubscribeTestGAgent : GAgentBase<SubscribeTestGAgentState, SubscribeTestStateLogEvent>
 {
-    public SubscribeTestGAgent(ILogger<SubscribeTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent is used to test implementation of GetAllSubscribedEventsAsync.");

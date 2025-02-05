@@ -14,10 +14,6 @@ public class PublishingAgentState : StateBase
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingStateLogEvent>, IPublishingGAgent
 {
-    public PublishingGAgent(ILogger<PublishingGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("Agent to be used for publishing new events.");

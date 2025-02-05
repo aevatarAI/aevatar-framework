@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PluginGAgent.Silo.Extensions;
 using Serilog;
 
-namespace AISmart.Silo;
+namespace PluginGAgent.Silo;
 
 public class Program
 {

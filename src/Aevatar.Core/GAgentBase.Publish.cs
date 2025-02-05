@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Aevatar.Core;
 
-public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent>
+public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
 {
     private Guid? _correlationId;
 

@@ -8,10 +8,6 @@ namespace Aevatar.Core.Tests.TestGAgents;
 [GAgent("group", "test")]
 public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>
 {
-    public GroupGAgent(ILogger<GroupGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("An agent to inform other agents when a social event is published.");

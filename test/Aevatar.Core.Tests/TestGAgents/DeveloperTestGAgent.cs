@@ -12,10 +12,6 @@ public class DeveloperTestGAgentState : NaiveTestGAgentState;
 [GAgent("developer", "test")]
 public class DeveloperTestGAgent : GAgentBase<DeveloperTestGAgentState, NaiveTestStateLogEvent>, IDeveloperTestGAgent
 {
-    public DeveloperTestGAgent(ILogger<DeveloperTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent acts as a developer.");
@@ -30,6 +26,7 @@ public class DeveloperTestGAgent : GAgentBase<DeveloperTestGAgentState, NaiveTes
 
         State.Content.Add(eventData.Description);
 
+        Logger.LogInformation("TEST");
         return new NewFeatureCompletedTestEvent
         {
             PullRequestUrl = $"PR for {eventData.Description}"

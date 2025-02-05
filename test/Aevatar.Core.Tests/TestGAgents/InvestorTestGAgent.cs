@@ -18,10 +18,6 @@ public class InvestorTestGAgentState : NaiveTestGAgentState
 [GAgent("investor", "test")]
 public class InvestorTestGAgent : GAgentBase<InvestorTestGAgentState, NaiveTestStateLogEvent>, IInvestorTestGAgent
 {
-    public InvestorTestGAgent(ILogger<InvestorTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent acts as a investor.");

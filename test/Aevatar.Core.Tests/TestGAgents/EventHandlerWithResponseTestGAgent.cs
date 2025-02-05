@@ -17,10 +17,6 @@ public class
     EventHandlerWithResponseTestGAgent : GAgentBase<EventHandlerWithResponseTestGAgentState,
     EventHandlerWithResponseTestStateLogEvent>
 {
-    public EventHandlerWithResponseTestGAgent(ILogger<EventHandlerWithResponseTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent is used for testing event handler with response.");

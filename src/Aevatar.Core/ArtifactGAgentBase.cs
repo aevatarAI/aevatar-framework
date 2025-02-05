@@ -1,27 +1,27 @@
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
 [GAgent]
-public abstract class ArtifactGAgentBase<TArtifact, TState, TStateLogEvent>(ILogger logger)
-    : ArtifactGAgentBase<TArtifact, TState, TStateLogEvent, EventBase>(logger)
+public abstract class ArtifactGAgentBase<TArtifact, TState, TStateLogEvent>
+    : ArtifactGAgentBase<TArtifact, TState, TStateLogEvent, EventBase, ConfigurationBase>
     where TArtifact : IArtifact<TState, TStateLogEvent>
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>;
 
 [GAgent]
-public abstract class ArtifactGAgentBase<TArtifact, TState, TStateLogEvent, TEvent>
-    : GAgentBase<TState, TStateLogEvent, TEvent>
+public abstract class ArtifactGAgentBase<TArtifact, TState, TStateLogEvent, TEvent, TConfiguration>
+    : GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
     where TArtifact : IArtifact<TState, TStateLogEvent>
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
+    where TConfiguration : ConfigurationBase
 {
     private readonly TArtifact _artifact;
 
-    public ArtifactGAgentBase(ILogger logger) : base(logger)
+    public ArtifactGAgentBase()
     {
         _artifact = ActivatorUtilities.CreateInstance<TArtifact>(ServiceProvider);
     }
@@ -34,7 +34,7 @@ public abstract class ArtifactGAgentBase<TArtifact, TState, TStateLogEvent, TEve
     protected override async Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
         await base.OnGAgentActivateAsync(cancellationToken);
-        await UpdateObserverList(_artifact.GetType());
+        await UpdateObserverListAsync(_artifact.GetType());
     }
 
     protected override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)

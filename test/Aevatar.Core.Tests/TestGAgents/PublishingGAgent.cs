@@ -13,10 +13,6 @@ public class PublishingAgentState : StateBase
 [GAgent("publishing")]
 public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingStateLogEvent>, IPublishingGAgent
 {
-    public PublishingGAgent(ILogger<PublishingGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("Agent to be used for publishing new events.");

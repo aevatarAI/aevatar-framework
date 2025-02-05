@@ -12,10 +12,6 @@ public class DevelopingLeaderTestGAgentState : NaiveTestGAgentState;
 [GAgent("developingLeader", "test")]
 public class DevelopingLeaderTestGAgent : GAgentBase<DevelopingLeaderTestGAgentState, NaiveTestStateLogEvent>, IDevelopingLeaderTestGAgent
 {
-    public DevelopingLeaderTestGAgent(ILogger<DevelopingLeaderTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent acts as a developing leader.");

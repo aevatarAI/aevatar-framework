@@ -17,6 +17,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Aevatar.Core\Aevatar.Core.csproj" />
+      <ProjectReference Include="..\Aevatar.EventSourcing.Core\Aevatar.EventSourcing.Core.csproj" />
     </ItemGroup>
 
 </Project>

@@ -17,7 +17,7 @@ public class PluginCodeStorageStateLogEvent : StateLogEventBase<PluginCodeStorag
 }
 
 [GenerateSerializer]
-public class PluginCodeStorageInitializationEvent : InitializationEventBase
+public class PluginCodeStorageConfiguration : ConfigurationBase
 {
     [Id(0)] public byte[] Code { get; set; }
 }
@@ -30,9 +30,9 @@ public interface IPluginCodeStorageGAgent : IStateGAgent<PluginCodeStorageGAgent
 
 
 [GAgent("pluginCodeStorage")]
-public class PluginCodeStorageGAgent(ILogger<PluginCodeStorageGAgent> logger)
+public class PluginCodeStorageGAgent
     : GAgentBase<PluginCodeStorageGAgentState, PluginCodeStorageStateLogEvent, EventBase,
-        PluginCodeStorageInitializationEvent>(logger), IPluginCodeStorageGAgent
+        PluginCodeStorageConfiguration>, IPluginCodeStorageGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {
@@ -65,11 +65,11 @@ public class PluginCodeStorageGAgent(ILogger<PluginCodeStorageGAgent> logger)
         [Id(0)] public required byte[] Code { get; set; }
     }
 
-    public override async Task InitializeAsync(PluginCodeStorageInitializationEvent initializationEvent)
+    protected override async Task PerformConfigAsync(PluginCodeStorageConfiguration configuration)
     {
         RaiseEvent(new SetPluginCodeStateLogEvent
         {
-            Code = initializationEvent.Code
+            Code = configuration.Code
         });
         await ConfirmEvents();
     }

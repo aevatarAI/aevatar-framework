@@ -1,7 +1,9 @@
+using System.Collections.Immutable;
 using System.Reflection;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Plugin;
+using Aevatar.Extensions;
 using Aevatar.Plugins;
 using Aevatar.Plugins.Extensions;
 using AutoMapper;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Orleans.Metadata;
 using Orleans.TestingHost;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.DependencyInjection;
@@ -80,29 +83,32 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     {
                         Mapper = sp.GetRequiredService<IMapper>()
                     });
+
+                    var grainTypeMap = ImmutableDictionary<GrainType, Type>.Empty;
+                    var gAgentType = typeof(IGAgent);
+                    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                    var gAgentTypes = new List<Type>();
+                    foreach (var assembly in assemblies)
+                    {
+                        var types = assembly.GetTypes()
+                            .Where(t => gAgentType.IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false });
+                        gAgentTypes.AddRange(types);
+                    }
+                    var serviceProvider = services.BuildServiceProvider();
+                    var grainTypeResolver = serviceProvider.GetRequiredService<GrainTypeResolver>();
+                    foreach (var type in gAgentTypes)
+                    {
+                        var grainType = grainTypeResolver.GetGrainType(type);
+                        grainTypeMap = grainTypeMap.Add(grainType, type);
+                    }
+                    services.AddSingleton(grainTypeMap);
+                    services.AddSingleton<IEventDispatcher, DefaultEventDispatcher>();
                 })
+                .UseAevatar()
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()
                 .AddLogStorageBasedLogConsistencyProvider("LogStorage");
-            
-            // Load external grain assemblies
-            var pluginDirectory = new DefaultPluginDirectoryProvider().GetDirectory();
-            var pluginAssemblies = Directory.GetFiles(pluginDirectory, "*.dll")
-                .Select(Assembly.LoadFrom)
-                .ToList();
-
-            hostBuilder.ConfigureServices(services =>
-            {
-                var foo = services.FirstOrDefault(service => service.ServiceType == typeof(ApplicationPartManager));
-                if (foo?.ImplementationInstance is ApplicationPartManager partManager)
-                {
-                    foreach (var assembly in pluginAssemblies)
-                    {
-                        partManager.ApplicationParts.Add(new AssemblyPart(assembly));
-                    }
-                }
-            });
         }
     }
 

@@ -20,10 +20,6 @@ public class WorkerStateLogEvent : StateLogEventBase<WorkerStateLogEvent>
 [GAgent("worker", "pluginTest")]
 public class WorkerGAgent : GAgentBase<WorkerGAgentState, WorkerStateLogEvent>
 {
-    public WorkerGAgent(ILogger<WorkerGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This is a GAgent for");

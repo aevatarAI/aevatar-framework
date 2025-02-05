@@ -13,10 +13,6 @@ public interface ILogViewAdaptorTestGAgent
 public class LogViewAdaptorTestGAgent
     : GAgentBase<LogViewAdaptorTestGState, LogViewAdaptorTestStateLogEvent>, ILogViewAdaptorTestGAgent
 {
-    public LogViewAdaptorTestGAgent(ILogger<LogViewAdaptorTestGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         throw new NotImplementedException();

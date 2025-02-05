@@ -13,10 +13,6 @@ public interface IGroupGAgent : IGAgent
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public class GroupGAgent : GAgentBase<GroupAgentState, GroupStateLogEvent>, IGroupGAgent
 {
-    public GroupGAgent(ILogger<GroupGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("An agent to inform other agents when a social event is published.");

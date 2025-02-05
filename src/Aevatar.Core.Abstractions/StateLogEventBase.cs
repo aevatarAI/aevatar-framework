@@ -9,12 +9,4 @@ public abstract class StateLogEventBase
 
 [GenerateSerializer]
 public abstract class StateLogEventBase<T> : StateLogEventBase
-    where T:StateLogEventBase<T>
-{
-    
-}
-
-public class TestStateLogEvent : StateLogEventBase<TestStateLogEvent>
-{
-    
-}
+    where T:StateLogEventBase<T>;

@@ -1,3 +1,4 @@
+using System.Reflection;
 using Aevatar.Core.Abstractions.Plugin;
 
 namespace Aevatar.Core.Abstractions.Plugin;
@@ -11,4 +12,5 @@ public interface IPluginGAgentManager
     Task RemovePluginAsync(RemovePluginDto removePluginDto);
     Task UpdatePluginAsync(UpdatePluginDto updatePluginDto);
     Task<Guid> AddExistedPluginAsync(AddExistedPluginDto addExistedPluginDto);
+    Task<List<Assembly>> GetPluginAssembliesAsync(Guid tenantId);
 }

@@ -12,10 +12,6 @@ public interface IChatAIGAgent : IAIGAgent, IGAgent
 
 public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
 {
-    public ChatAIGAgent(ILogger<ChatAIGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("Agent for chatting with user.");
