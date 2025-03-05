@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class StreamBatchTests : TestKitBase
+public class StreamBatchTests : DefaultTestKitBase
 {
     [Fact]
     public async Task AddNonReferenceTypeStreamProbe()

@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Aevatar.TestKit.Tests;
 
-public class LoggerTests : TestKitBase
+public class LoggerTests : DefaultTestKitBase
 {
     private readonly ITestOutputHelper _output;
 

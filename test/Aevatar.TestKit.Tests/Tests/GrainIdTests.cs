@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class GrainIdTests : TestKitBase
+public class GrainIdTests : DefaultTestKitBase
 {
     [Fact]
     public async Task CreatedGrainShouldHaveCorrectGrainType()

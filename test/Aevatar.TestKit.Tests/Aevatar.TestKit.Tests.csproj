@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Aevatar.TestKit\Aevatar.TestKit.csproj" />
+    <ProjectReference Include="..\..\src\Aevatar.TestKit\Aevatar.TestKit.csproj" />
   </ItemGroup>
 
 </Project>

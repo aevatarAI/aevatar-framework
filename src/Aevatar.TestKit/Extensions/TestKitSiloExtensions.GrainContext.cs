@@ -1,8 +1,9 @@
-﻿namespace Aevatar.TestKit;
+namespace Aevatar.TestKit.Extensions;
+
 /// <summary>
 /// Extension methods for creating grains from strongly typed IDs
 /// </summary>
-public static class TestKitSiloGrainCreationExtensions
+public static partial class TestKitSiloExtensions
 {
     /// <summary>
     /// Create a grain - will be injected with a grain context and participate in grain lifecycle
@@ -11,9 +12,9 @@ public static class TestKitSiloGrainCreationExtensions
     /// <param name="silo">The test kit silo</param>
     /// <param name="id">The grain's long id</param>
     /// <returns>The grain</returns>
-    public static Task<T> CreateGrainAsync<T>(this TestKitSilo silo, long id)
+    public static IGrainContext GetOrAddGrainContext<T>(this TestKitSilo silo, long id)
         where T : Grain, IGrainWithIntegerKey =>
-        silo.CreateGrainAsync<T>(GrainIdKeyExtensions.CreateIntegerKey(id));
+        silo.GetOrAddGrainContext<T>(GrainIdKeyExtensions.CreateIntegerKey(id));
 
     /// <summary>
     /// Create a grain - will be injected with a grain context and participate in grain lifecycle
@@ -22,9 +23,9 @@ public static class TestKitSiloGrainCreationExtensions
     /// <param name="silo">The test kit silo</param>
     /// <param name="id">The grain's id</param>
     /// <returns>The grain</returns>
-    public static Task<T> CreateGrainAsync<T>(this TestKitSilo silo, Guid id)
+    public static IGrainContext GetOrAddGrainContext<T>(this TestKitSilo silo, Guid id)
         where T : Grain, IGrainWithGuidKey =>
-        silo.CreateGrainAsync<T>(GrainIdKeyExtensions.CreateGuidKey(id));
+        silo.GetOrAddGrainContext<T>(GrainIdKeyExtensions.CreateGuidKey(id));
 
     /// <summary>
     /// Create a grain - will be injected with a grain context and participate in grain lifecycle
@@ -33,9 +34,9 @@ public static class TestKitSiloGrainCreationExtensions
     /// <param name="silo">The test kit silo</param>
     /// <param name="id">The grain's id</param>
     /// <returns>The grain</returns>
-    public static Task<T> CreateGrainAsync<T>(this TestKitSilo silo, string id)
+    public static IGrainContext GetOrAddGrainContext<T>(this TestKitSilo silo, string id)
         where T : Grain, IGrainWithStringKey
-        => silo.CreateGrainAsync<T>(IdSpan.Create(id));
+        => silo.GetOrAddGrainContext<T>(IdSpan.Create(id));
 
     /// <summary>
     /// Create a grain - will be injected with a grain context and participate in grain lifecycle
@@ -45,9 +46,9 @@ public static class TestKitSiloGrainCreationExtensions
     /// <param name="id">The grain's id</param>
     /// <param name="keyExtension">The key extension</param>
     /// <returns>The grain</returns>
-    public static Task<T> CreateGrainAsync<T>(this TestKitSilo silo, Guid id, string keyExtension)
+    public static IGrainContext GetOrAddGrainContext<T>(this TestKitSilo silo, Guid id, string keyExtension)
         where T : Grain, IGrainWithGuidCompoundKey
-        => silo.CreateGrainAsync<T>(GrainIdKeyExtensions.CreateGuidKey(id, keyExtension));
+        => silo.GetOrAddGrainContext<T>(GrainIdKeyExtensions.CreateGuidKey(id, keyExtension));
 
     /// <summary>
     /// Create a grain - will be injected with a grain context and participate in grain lifecycle
@@ -57,7 +58,7 @@ public static class TestKitSiloGrainCreationExtensions
     /// <param name="id">The grain's id</param>
     /// <param name="keyExtension">The key extension</param>
     /// <returns>The grain</returns>
-    public static Task<T> CreateGrainAsync<T>(this TestKitSilo silo, long id, string keyExtension)
+    public static IGrainContext GetOrAddGrainContext<T>(this TestKitSilo silo, long id, string keyExtension)
         where T : Grain, IGrainWithIntegerCompoundKey
-        => silo.CreateGrainAsync<T>(GrainIdKeyExtensions.CreateIntegerKey(id, keyExtension));
+        => silo.GetOrAddGrainContext<T>(GrainIdKeyExtensions.CreateIntegerKey(id, keyExtension));
 }

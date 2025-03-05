@@ -28,7 +28,7 @@ namespace Aevatar.TestKit;
 /// <summary>
 /// The central abstraction for the Aevatar.TestKit -- stands up multiple services and provides a centralized abstraction for interacting with test grains
 /// </summary>
-public sealed class TestKitSilo
+public class TestKitSilo
 {
     private readonly List<IGrainBase> _activatedGrains = new();
 
@@ -57,16 +57,7 @@ public sealed class TestKitSilo
         ServiceProvider.AddService<IReminderRegistry>(ReminderRegistry);
 
         // Event Sourcing
-        var mockOptionsManager = new Mock<IOptions<TypeManifestOptions>>();
-        mockOptionsManager.Setup(m => m.Value).Returns(new TypeManifestOptions());
-        var codecProvider = new CodecProvider(ServiceProvider, mockOptionsManager.Object);
-        LogConsistencyProvider = new TestLogConsistencyProvider(TestGrainStorage);
-        ServiceProvider.AddKeyedService<ILogViewAdaptorFactory>("LogStorage", LogConsistencyProvider);
-        ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
-            new DeepCopier(codecProvider, new CopyContextPool(codecProvider)), null!);
-        ServiceProvider.AddService<ILogConsistencyProtocolServices>(ProtocolServices);
-        ServiceProvider.AddService<Factory<IGrainContext, ILogConsistencyProtocolServices>>(sp =>
-            ProtocolServices);
+        UseEventSourcing();
 
         var mockAevatarOptionsManager = new Mock<IOptionsSnapshot<AevatarOptions>>();
         mockAevatarOptionsManager.Setup(m => m.Value).Returns(new AevatarOptions());
@@ -78,15 +69,35 @@ public sealed class TestKitSilo
         _grainCreator = new TestGrainCreator(GrainRuntime, ReminderRegistry, TestGrainStorage, ServiceProvider);
 
         ServiceProvider.AddService<IGrainStorage>(TestGrainStorage);
-        var provider = new ServiceCollection()
+        var services = new ServiceCollection()
             .AddSingleton<GrainTypeResolver>()
             .AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>()
             .AddSerializer()
             .AddInMemoryBasedLogConsistencyProvider("LogStorage")
-            .AddSingleton<ILoggerFactory>(new NullLogFactory())
-            .BuildServiceProvider();
-
+            .AddSingleton<ILoggerFactory>(new NullLogFactory());
+        // ReSharper disable once VirtualMemberCallInConstructor
+        ConfigureServices(services);
+        var provider = services.BuildServiceProvider();
         _grainTypeResolver = provider.GetRequiredService<GrainTypeResolver>();
+    }
+
+    protected virtual void ConfigureServices(IServiceCollection services)
+    {
+        
+    }
+
+    private void UseEventSourcing()
+    {
+        var mockOptionsManager = new Mock<IOptions<TypeManifestOptions>>();
+        mockOptionsManager.Setup(m => m.Value).Returns(new TypeManifestOptions());
+        var codecProvider = new CodecProvider(ServiceProvider, mockOptionsManager.Object);
+        LogConsistencyProvider = new TestLogConsistencyProvider(TestGrainStorage);
+        ServiceProvider.AddKeyedService<ILogViewAdaptorFactory>("LogStorage", LogConsistencyProvider);
+        ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
+            new DeepCopier(codecProvider, new CopyContextPool(codecProvider)), null!);
+        ServiceProvider.AddService<ILogConsistencyProtocolServices>(ProtocolServices);
+        ServiceProvider.AddService<Factory<IGrainContext, ILogConsistencyProtocolServices>>(sp =>
+            ProtocolServices);
     }
 
     /// <summary>

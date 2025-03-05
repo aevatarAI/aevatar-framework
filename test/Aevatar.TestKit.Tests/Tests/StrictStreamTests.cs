@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class StrictStreamTests : TestKitBase
+public class StrictStreamTests : DefaultTestKitBase
 {
     public StrictStreamTests()
     {

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class PersistantStreamNotWithinGrainStateTests : TestKitBase
+public class PersistantStreamNotWithinGrainStateTests : DefaultTestKitBase
 {
     private readonly PersistentListenerStateWithoutHandle _stateWithoutHandle;
 

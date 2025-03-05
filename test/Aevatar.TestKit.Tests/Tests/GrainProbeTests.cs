@@ -1,4 +1,5 @@
-﻿using FakeItEasy;
+﻿using Aevatar.TestKit.Extensions;
+using FakeItEasy;
 using FluentAssertions;
 using Moq;
 using NSubstitute;
@@ -9,7 +10,7 @@ using Times = Moq.Times;
 
 namespace Aevatar.TestKit.Tests;
 
-public class GrainProbeTests : TestKitBase
+public class GrainProbeTests : DefaultTestKitBase
 {
     [Fact]
     public async Task FactoryProbe()

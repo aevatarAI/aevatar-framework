@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class DependencyGrainTests : TestKitBase
+public class DependencyGrainTests : DefaultTestKitBase
 {
     [Fact]
     public async Task GrainWithoutServices()

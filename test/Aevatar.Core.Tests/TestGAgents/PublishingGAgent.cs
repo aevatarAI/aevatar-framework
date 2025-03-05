@@ -10,6 +10,8 @@ public class PublishingAgentState : StateBase
 {
 }
 
+public class PublishingStateLogEvent : StateLogEventBase<PublishingStateLogEvent>;
+
 [GAgent("publishing")]
 public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingStateLogEvent>, IPublishingGAgent
 {

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class ServiceProbeTests : TestKitBase
+public class ServiceProbeTests : DefaultTestKitBase
 {
     [Fact]
     public async Task SayHelloTestShouldPrintDate()

@@ -5,7 +5,7 @@ using Xunit;
 namespace Aevatar.TestKit.Tests;
 
 #pragma warning disable CS0618 // Type or member is obsolete
-public class DeactivationGrainTests : TestKitBase
+public class DeactivationGrainTests : DefaultTestKitBase
 {
     [Fact]
     public async Task ShouldCallDeactivateOnIdle()

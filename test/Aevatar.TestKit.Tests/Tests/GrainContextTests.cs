@@ -1,10 +1,9 @@
-﻿using FluentAssertions;
-using Orleans.Runtime;
+﻿using Aevatar.TestKit.Extensions;
 using Aevatar.TestKit.Tests.Grains;
 using Xunit;
 
 namespace Aevatar.TestKit.Tests.Tests;
-public class GrainContextTests : TestKitBase
+public class GrainContextTests : DefaultTestKitBase
 {
 
     [Fact]

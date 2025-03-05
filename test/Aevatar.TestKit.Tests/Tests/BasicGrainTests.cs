@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class BasicGrainTests : TestKitBase
+public class BasicGrainTests : DefaultTestKitBase
 {
     [Fact]
     public async Task GrainActivation()

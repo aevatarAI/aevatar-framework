@@ -1,6 +1,6 @@
 ﻿using Moq;
 
-namespace Aevatar.TestKit;
+namespace Aevatar.TestKit.Extensions;
 
 public static class GrainProbeExtensions
 {

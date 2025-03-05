@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Aevatar.TestKit.Extensions;
 using Moq;
 using TestGrains;
 using TestInterfaces;
@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class StrictGrainProbeTests : TestKitBase
+public class StrictGrainProbeTests : DefaultTestKitBase
 {
     public StrictGrainProbeTests()
     {

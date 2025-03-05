@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class ReminderTests : TestKitBase
+public class ReminderTests : DefaultTestKitBase
 {
     [Fact]
     public async Task RegisterReminder()

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class ActivationGrainTests : TestKitBase
+public class ActivationGrainTests : DefaultTestKitBase
 {
     [Fact]
     public async Task ShouldActivateWithValidState()

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class StreamProbeStringTests : TestKitBase
+public class StreamProbeStringTests : DefaultTestKitBase
 {
     [Fact]
     public void AddStreamProbe_WithStringStreamId_Populates_Correctly()

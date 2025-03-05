@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class TimerTests : TestKitBase
+public class TimerTests : DefaultTestKitBase
 {
     [Fact]
     public async Task ShouldFirstGrainTimerAsync()

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class StorageFacetTests : TestKitBase
+public class StorageFacetTests : DefaultTestKitBase
 {
     private static readonly Guid GrainId = Guid.Parse("f267aaeb-38dd-4ff4-b7c8-20061077ab10");
 

@@ -56,7 +56,7 @@ public class CustomStorage<TState> : IStorageStats, IStorage<TState>
     }
 }
 
-public class StorageTests : TestKitBase
+public class StorageTests : DefaultTestKitBase
 {
     /// <summary>
     ///     This test demonstrates how to assert changes occurred to the state object using the instance returned by the

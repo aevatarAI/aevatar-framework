@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Aevatar.TestKit.Tests;
 
-public class ContextConstructorGrainTests : TestKitBase
+public class ContextConstructorGrainTests : DefaultTestKitBase
 {
     [Fact]
     public async Task CanAccess_GrainContext_InConstructorAsync()
