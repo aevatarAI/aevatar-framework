@@ -1,5 +1,6 @@
 using System.Reflection;
 using Aevatar.Core.Abstractions;
+using Aevatar.PermissionManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Serialization;
 using Serilog;
@@ -7,13 +8,16 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
+using Volo.Abp.PermissionManagement;
+using Volo.Abp.PermissionManagement.MongoDB;
 
 namespace PluginGAgent.Silo;
 
 [DependsOn(
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpAutofacModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpAutoMapperModule),
+    typeof(AevatarPermissionManagementModule)
 )]
 public class PluginGAgentTestModule : AbpModule
 {

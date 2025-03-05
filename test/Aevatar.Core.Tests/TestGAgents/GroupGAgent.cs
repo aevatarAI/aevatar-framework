@@ -23,18 +23,36 @@ public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>
 
     protected override Task OnRegisterAgentAsync(GrainId agentGuid)
     {
-        ++State.RegisteredGAgents;
+        RaiseEvent(new IncrementStateLogEvent());
         return Task.CompletedTask;
     }
 
     protected override Task OnUnregisterAgentAsync(GrainId agentGuid)
     {
-        --State.RegisteredGAgents;
+        RaiseEvent(new DecrementStateLogEvent());
         return Task.CompletedTask;
     }
-    
+
+    protected override void GAgentTransitionState(GroupGAgentState state, StateLogEventBase<GroupStateLogEvent> @event)
+    {
+        if (@event is IncrementStateLogEvent)
+        {
+            State.RegisteredGAgents++;
+        }
+        else if (@event is DecrementStateLogEvent)
+        {
+            State.RegisteredGAgents--;
+        }
+    }
+
     protected override async Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
         State.RegisteredGAgents = 0;
     }
+
+    [GenerateSerializer]
+    public class IncrementStateLogEvent : StateLogEventBase<GroupStateLogEvent>;
+
+    [GenerateSerializer]
+    public class DecrementStateLogEvent : StateLogEventBase<GroupStateLogEvent>;
 }

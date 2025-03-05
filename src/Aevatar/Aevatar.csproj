@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Aevatar.PermissionManagement\Aevatar.PermissionManagement.csproj" />
       <ProjectReference Include="..\Aevatar.Plugins\Aevatar.Plugins.csproj" />
     </ItemGroup>
 

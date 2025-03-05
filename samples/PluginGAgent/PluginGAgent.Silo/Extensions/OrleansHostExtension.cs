@@ -29,8 +29,9 @@ public static class OrleansHostExtension
                         options.Database = "AevatarDb";
                     })
                     .AddMemoryStreams("Aevatar")
-                    .UseAevatar<PluginGAgentTestModule>()
-                    .UseAevatarPermissionManagement();
+                    .UseAevatarPermissionManagement()
+                    .UseAevatar()
+                    ;
             })
             .UseConsoleLifetime();
     }

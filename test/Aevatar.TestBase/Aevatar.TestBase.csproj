@@ -38,6 +38,7 @@
         <ProjectReference Include="..\..\src\Aevatar.Plugins\Aevatar.Plugins.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.PermissionManagement\Aevatar.PermissionManagement.csproj" />
         <ProjectReference Include="..\..\src\Aevatar\Aevatar.csproj" />
+        <ProjectReference Include="..\Aevatar.Core.Tests\Aevatar.Core.Tests.csproj" />
     </ItemGroup>
 
 </Project>

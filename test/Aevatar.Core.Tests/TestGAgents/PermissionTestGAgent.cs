@@ -1,6 +1,5 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.PermissionManagement;
-using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
@@ -31,7 +30,7 @@ public class PermissionGAgent : GAgentBase<PermissionGAgentState, PermissionStat
         return Task.FromResult("This is a GAgent for testing permissions.");
     }
 
-    [Permission("DoSomething1", displayName: "Only for testing.")]
+    [Permission("AbpIdentity.Roles.Create", displayName: "Only for testing.")]
     public Task DoSomething1Async()
     {
         return Task.CompletedTask;

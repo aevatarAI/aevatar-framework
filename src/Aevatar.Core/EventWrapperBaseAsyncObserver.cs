@@ -5,19 +5,19 @@ namespace Aevatar.Core;
 
 public class EventWrapperBaseAsyncObserver : IAsyncObserver<EventWrapperBase>
 {
-    private readonly Func<EventWrapperBase, Task> _action;
+    private readonly Func<EventWrapperBase, Task> _func;
 
     public string MethodName { get; set; }
     public string ParameterTypeName { get; set; }
 
-    public EventWrapperBaseAsyncObserver(Func<EventWrapperBase, Task> action)
+    public EventWrapperBaseAsyncObserver(Func<EventWrapperBase, Task> func)
     {
-        _action = action;
+        _func = func;
     }
 
     public async Task OnNextAsync(EventWrapperBase item, StreamSequenceToken? token = null)
     {
-        await _action(item);
+        await _func(item);
     }
 
     public Task OnCompletedAsync()

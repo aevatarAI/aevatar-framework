@@ -1,6 +1,7 @@
 ﻿using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Plugin;
+using Aevatar.PermissionManagement;
 using Aevatar.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Autofac;
@@ -32,8 +33,8 @@ public class AevatarModule : AbpModule
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarModule>(); });
         Configure<AevatarOptions>(context.Services.GetConfiguration().GetSection("Aevatar"));
         context.Services.AddSingleton<IGAgentManager, GAgentManager>();
-        context.Services.AddSingleton<IGAgentFactory, GAgentFactory>();
-        context.Services.AddSingleton<IPluginGAgentManager, PluginGAgentManager>();
+        context.Services.AddTransient<IGAgentFactory, GAgentFactory>();
+        context.Services.AddTransient<IPluginGAgentManager, PluginGAgentManager>();
         context.Services.AddSingleton<IConfigureGrainTypeComponents, ConfigureAevatarGrainActivator>();
     }
 }

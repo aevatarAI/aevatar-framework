@@ -1,72 +1,75 @@
 using System.Reflection;
+using System.Security.Authentication;
 using System.Security.Claims;
-using Orleans;
-using Orleans.Runtime;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Authorization.Permissions;
-using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Claims;
 
 namespace Aevatar.PermissionManagement;
 
 public class PermissionCheckFilter : IIncomingGrainCallFilter
 {
-    private readonly IPermissionChecker _permissionChecker;
-    private readonly IPermissionManager _permissionManager;
+    private readonly ILogger<PermissionCheckFilter> _logger;
+    private IPermissionChecker _permissionChecker;
 
-    public PermissionCheckFilter(IPermissionChecker permissionChecker, IPermissionManager permissionManager)
+    public PermissionCheckFilter(IPermissionChecker permissionChecker, ILogger<PermissionCheckFilter> logger)
     {
         _permissionChecker = permissionChecker;
-        _permissionManager = permissionManager;
+        _logger = logger;
     }
 
     public async Task Invoke(IIncomingGrainCallContext context)
     {
         var method = context.ImplementationMethod;
-        var permissionAttribute = method.GetCustomAttribute<PermissionAttribute>();
+        var declaringType = method.DeclaringType!;
+        var classPermissions = declaringType.GetCustomAttributes<PermissionAttribute>(inherit: true);
+        var methodPermissions = method.GetCustomAttributes<PermissionAttribute>(inherit: true);
 
-        if (permissionAttribute != null)
+        var allPermissionNames = classPermissions.Concat(methodPermissions)
+            .Select(attr => attr.Name)
+            .Distinct()
+            .ToList();
+
+        if (allPermissionNames.Count == 0)
         {
-            if (RequestContext.Get("CurrentUser") is not UserContext currentUser) return;
-            //var isGranted = await CheckPermissionViaPermissionCheckerAsync(currentUser, permissionAttribute);
-            var isGranted = await CheckPermissionViaPermissionManagerAsync(currentUser, permissionAttribute);
-            if (!isGranted)
+            await context.Invoke();
+            return;
+        }
+
+        if (RequestContext.Get("CurrentUser") is not UserContext currentUser)
+        {
+            throw new AuthenticationException("Request requires authentication");
+        }
+
+        var principal = BuildClaimsPrincipal(currentUser);
+
+        _logger.LogInformation("Start permission checking for method {MethodName}, permission name is {PermissionName}", method.Name, allPermissionNames.FirstOrDefault());
+
+        foreach (var permissionName in allPermissionNames)
+        {
+            if (!await _permissionChecker.IsGrantedAsync(principal, permissionName))
             {
-                throw new UnauthorizedAccessException(
-                    $"Required permission '{permissionAttribute.Name}' is not granted."
-                );
+                throw new AuthenticationException(
+                    $"Missing required permission: {permissionName}, " +
+                    $"userId: {currentUser.UserId.ToString()}, " +
+                    $"clientId: {currentUser.ClientId}");
             }
         }
+
+        _logger.LogInformation("End permission checking of method {MethodName}", method.Name);
 
         await context.Invoke();
     }
 
-    private async Task<bool> CheckPermissionViaPermissionManagerAsync(UserContext currentUser,
-        PermissionAttribute permissionAttribute)
+    private static ClaimsPrincipal BuildClaimsPrincipal(UserContext user)
     {
-        var permission =
-            await _permissionManager.GetAsync(permissionAttribute.Name, "User", currentUser.UserId.ToString());
-        return permission.IsGranted;
-    }
-
-    private async Task<bool> CheckPermissionViaPermissionCheckerAsync(UserContext currentUser,
-        PermissionAttribute permissionAttribute)
-    {
-        var claimsPrincipal = new ClaimsPrincipal(
-            new ClaimsIdentity([
-                new Claim(AbpClaimTypes.UserId, currentUser.UserId.ToString()),
-                new Claim(AbpClaimTypes.Role, currentUser.Role)
-            ], "Bearer"));
-
-        if (claimsPrincipal.Identity is not { IsAuthenticated: true })
+        var claims = new List<Claim>
         {
-            throw new UnauthorizedAccessException("User is not authenticated.");
-        }
+            new(AbpClaimTypes.UserId, user.UserId.ToString()),
+            new(AbpClaimTypes.ClientId, user.ClientId)
+        };
+        claims.AddRange(user.Roles.Select(role => new Claim(AbpClaimTypes.Role, role)));
 
-        var isGranted = await _permissionChecker.IsGrantedAsync(
-            claimsPrincipal,
-            permissionAttribute.Name
-        );
-
-        return isGranted;
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, "Bearer"));
     }
 }

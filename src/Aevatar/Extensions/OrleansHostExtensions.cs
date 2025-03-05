@@ -1,5 +1,6 @@
 using Aevatar.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Orleans.Serialization;
 using Volo.Abp;
 using Volo.Abp.Modularity;
@@ -18,11 +19,7 @@ public static class OrleansHostExtensions
             .ConfigureServices(services =>
             {
                 AsyncHelper.RunSync(() => LoadPluginsAsync(services, abpApplication));
-
-                foreach (var service in abpApplication.Services)
-                {
-                    services.Add(service);
-                }
+                //services.Add(abpApplication.Services);
             });
     }
 
@@ -35,10 +32,7 @@ public static class OrleansHostExtensions
             .UseAevatar()
             .ConfigureServices(services =>
             {
-                foreach (var service in abpApplication.Services)
-                {
-                    services.Add(service);
-                }
+                services.Add(abpApplication.Services);
             });
     }
 

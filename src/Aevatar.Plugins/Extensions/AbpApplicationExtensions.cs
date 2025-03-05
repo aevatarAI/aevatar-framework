@@ -1,5 +1,6 @@
 using System.Reflection;
 using Aevatar.Plugins.Repositories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
@@ -13,6 +14,13 @@ public static class AbpApplicationExtensions
         this IAbpApplicationWithInternalServiceProvider application)
     {
         var assemblies = new List<Assembly>();
+        var configuration = application.Services.GetRequiredService<IConfiguration>();
+        var connectionString = configuration.GetConnectionString("Default");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            return assemblies;
+        }
+
         var unitOfWorkManager = application.Services.GetRequiredService<IUnitOfWorkManager>();
         using var uow = unitOfWorkManager.Begin(requiresNew: true);
         var pluginOptions = application.Services.GetRequiredService<IOptions<PluginGAgentLoadOptions>>().Value;

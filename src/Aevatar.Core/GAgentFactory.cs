@@ -77,10 +77,7 @@ public class GAgentFactory : IGAgentFactory
         await gAgent.ActivateAsync();
         if (configuration != null)
         {
-            var eventWrapper = new EventWrapper<EventBase>(configuration, Guid.NewGuid(), gAgent.GetGrainId());
-            var streamId = StreamId.Create(_aevatarOptions.StreamNamespace, gAgent.GetGrainId().ToString());
-            var stream = _streamProvider.GetStream<EventWrapperBase>(streamId);
-            await stream.OnNextAsync(eventWrapper);
+            await gAgent.ConfigAsync(configuration);
         }
     }
 }

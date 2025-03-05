@@ -47,13 +47,13 @@ public abstract partial class
 
     private readonly List<EventWrapperBaseAsyncObserver> _observers = [];
 
-    private IEventDispatcher? EventDispatcher { get; set; }
-    private readonly AevatarOptions _aevatarOptions;
+    private IStateDispatcher? StateDispatcher { get; set; }
+    protected readonly AevatarOptions AevatarOptions;
 
     protected GAgentBase()
     {
-        EventDispatcher = ServiceProvider.GetService<IEventDispatcher>();
-        _aevatarOptions = ServiceProvider.GetRequiredService<IOptionsSnapshot<AevatarOptions>>().Value;
+        StateDispatcher = ServiceProvider.GetService<IStateDispatcher>();
+        AevatarOptions = ServiceProvider.GetRequiredService<IOptionsSnapshot<AevatarOptions>>().Value;
     }
 
     public async Task ActivateAsync()
@@ -63,7 +63,6 @@ public abstract partial class
 
     public async Task RegisterAsync(IGAgent gAgent)
     {
-        var guid = gAgent.GetPrimaryKey();
         if (gAgent.GetGrainId() == this.GetGrainId())
         {
             Logger.LogError($"Cannot register GAgent with same GrainId.");
@@ -218,12 +217,13 @@ public abstract partial class
     {
         // This must be called first to initialize Observers field.
         await UpdateObserverListAsync(GetType());
-        await InitializeOrResumeStreamAsync();
+        await InitializeOrResumeEventBaseStreamAsync();
+        await InitializeOrResumeStateProjectionStreamAsync();
     }
 
-    private async Task InitializeOrResumeStreamAsync()
+    private async Task InitializeOrResumeEventBaseStreamAsync()
     {
-        var streamOfThisGAgent = GetStream(this.GetGrainId().ToString());
+        var streamOfThisGAgent = GetEventBaseStream(this.GetGrainId().ToString());
         var handles = await streamOfThisGAgent.GetAllSubscriptionHandles();
         var asyncObserver = new GAgentAsyncObserver(_observers);
         if (handles.Count > 0)
@@ -236,6 +236,25 @@ public abstract partial class
         else
         {
             await streamOfThisGAgent.SubscribeAsync(asyncObserver);
+        }
+    }
+
+    private async Task InitializeOrResumeStateProjectionStreamAsync()
+    {
+        var projectionStream = GetStateProjectionStream();
+        var handles = await projectionStream.GetAllSubscriptionHandles();
+        var projectors = ServiceProvider.GetRequiredService<IEnumerable<IStateProjector>>();
+        var asyncObserver = new StateProjectionAsyncObserver(projectors);
+        if (handles.Count > 0)
+        {
+            foreach (var handle in handles)
+            {
+                await handle.ResumeAsync(asyncObserver);
+            }
+        }
+        else
+        {
+            await projectionStream.SubscribeAsync(asyncObserver);
         }
     }
 
@@ -263,16 +282,16 @@ public abstract partial class
     private async Task InternalOnStateChangedAsync()
     {
         await HandleStateChangedAsync();
-        //TODO:  need optimize use kafka,ensure Es written successfully
-        if (EventDispatcher != null)
+        if (StateDispatcher != null)
         {
-            await EventDispatcher.PublishAsync(State, this.GetGrainId());
+            await StateDispatcher.PublishAsync(this.GetGrainId(),
+                new StateWrapper<TState>(this.GetGrainId(), State, Version));
         }
     }
 
     protected sealed override async void RaiseEvent<T>(T @event)
     {
-        Logger.LogInformation("base raiseEvent info:{info}", JsonConvert.SerializeObject(@event));
+        Logger.LogDebug("base raiseEvent info:{info}", JsonConvert.SerializeObject(@event));
         base.RaiseEvent(@event);
         InternalRaiseEventAsync(@event).ContinueWith(task =>
         {
@@ -283,15 +302,9 @@ public abstract partial class
         }, TaskContinuationOptions.OnlyOnFaulted);
     }
 
-    private async Task InternalRaiseEventAsync<T>(T @event)
+    private async Task InternalRaiseEventAsync<T>(T raisedStateLogEvent)
     {
         await HandleRaiseEventAsync();
-        //TODO:  need optimize use kafka,ensure Es written successfully
-        var gEvent = @event as StateLogEventBase;
-        if (EventDispatcher != null)
-        {
-            await EventDispatcher.PublishAsync(gEvent!.Id, this.GetGrainId(), gEvent);
-        }
     }
 
     protected virtual async Task HandleRaiseEventAsync()
@@ -299,9 +312,15 @@ public abstract partial class
 
     }
 
-    private IAsyncStream<EventWrapperBase> GetStream(string grainIdString)
+    private IAsyncStream<EventWrapperBase> GetEventBaseStream(string grainIdString)
     {
-        var streamId = StreamId.Create(_aevatarOptions.StreamNamespace, grainIdString);
+        var streamId = StreamId.Create(AevatarOptions.StreamNamespace, grainIdString);
         return StreamProvider.GetStream<EventWrapperBase>(streamId);
+    }
+
+    private IAsyncStream<StateWrapper<TState>> GetStateProjectionStream()
+    {
+        var streamId = StreamId.Create(AevatarOptions.StreamNamespace, typeof(StateWrapper<TState>).FullName!);
+        return StreamProvider.GetStream<StateWrapper<TState>>(streamId);
     }
 }
