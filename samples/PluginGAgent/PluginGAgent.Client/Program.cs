@@ -115,7 +115,7 @@ async Task CallPermissionGAgent(IGAgentFactory factory)
     RequestContext.Set("CurrentUser", new UserContext
     {
         UserId = "TestUser".ToGuid(),
-        Roles = ["User", "Admin"]
+        Roles = ["admin"]
     });
     var permissionGAgent = await factory.GetGAgentAsync<IPermissionGAgent>();
     await permissionGAgent.DoSomething1Async();
