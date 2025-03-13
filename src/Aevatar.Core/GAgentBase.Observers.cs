@@ -194,7 +194,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
     {
         try
         {
-            method.Invoke(this, [ev]);
+            await (Task)method.Invoke(this, [ev])!;
         }
         catch (TargetInvocationException ex)
         {
