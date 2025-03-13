@@ -128,7 +128,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
                     {
                         GrainId = this.GetGrainId(),
                         HandleEventType = parameterType,
-                        ExceptionMessage = ex.Message
+                        ExceptionMessage = ex.ToString()
                     });
                 }
                 catch (Exception ex)
@@ -141,7 +141,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
                     await PublishAsync(new GAgentBaseExceptionEvent
                     {
                         GrainId = this.GetGrainId(),
-                        ExceptionMessage = ex.Message
+                        ExceptionMessage = ex.ToString()
                     });
                 }
             }
@@ -194,7 +194,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
     {
         try
         {
-            method.Invoke(this, [ev]);
+            await (Task)method.Invoke(this, [ev])!;
         }
         catch (TargetInvocationException ex)
         {
@@ -203,6 +203,11 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         catch (ArgumentException ex)
         {
             Logger.LogError(ex, "Parameter mismatch in {Method}", method.Name);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unhandled exception in {Method}", method.Name);
             throw;
         }
     }
