@@ -1,11 +1,12 @@
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
+using Aevatar.Core.Interface;
 
 namespace Aevatar.Core;
 
 public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
 {
-    protected sealed override void TransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    protected sealed override void TransitionState(TState state, IGAgentEventBase<TStateLogEvent> @event)
     {
         switch (@event)
         {
@@ -38,7 +39,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         Logger.LogDebug("GrainId {GrainId}: State after transition: {@State}", this.GetGrainId().ToString(), State);
     }
 
-    protected virtual void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    protected virtual void GAgentTransitionState(TState state, IGAgentEventBase<TStateLogEvent> @event)
     {
         // Derived classes can override this method.
     }

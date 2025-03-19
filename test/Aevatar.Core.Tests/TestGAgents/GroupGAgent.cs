@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Interface;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
@@ -33,7 +34,7 @@ public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>
         return Task.CompletedTask;
     }
 
-    protected override void GAgentTransitionState(GroupGAgentState state, StateLogEventBase<GroupStateLogEvent> @event)
+    protected override void GAgentTransitionState(GroupGAgentState state, IGAgentEventBase<GroupStateLogEvent> @event)
     {
         if (@event is IncrementStateLogEvent)
         {

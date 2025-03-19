@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Aevatar.Core.Interface;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Projections;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +37,7 @@ public abstract class
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public abstract partial class
     GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> 
-    : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>
+    : JournaledGrain<TState, IGAgentEventBase<TStateLogEvent>>, IStateGAgent<TState>
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase

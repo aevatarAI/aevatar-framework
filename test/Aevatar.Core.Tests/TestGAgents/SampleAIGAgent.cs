@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Interface;
 using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests;
@@ -40,7 +41,7 @@ public class SampleAIGAgent : GAgentBase<SampleAIGAgentState, SampleAIStateLogEv
     }
 
     protected override void GAgentTransitionState(SampleAIGAgentState state,
-        StateLogEventBase<SampleAIStateLogEvent> @event)
+        IGAgentEventBase<SampleAIStateLogEvent> @event)
     {
         if (@event is TokenUsageStateLogEvent tokenUsageStateLogEvent)
         {

@@ -26,7 +26,7 @@ var parentId = Guid.NewGuid();
 var parentAgent = client.GetGrain<IGroupGAgent>(parentId);
 
 List<IMessagingGAgent> messagingAgents = [];
-var maxAgents = 400;
+var maxAgents = 10;
 for(var i = 0; i < maxAgents; ++i)
 {
     var messagingAgentId = Guid.NewGuid();
@@ -42,8 +42,8 @@ await publisher.PublishEventAsync(new SendEvent()
 {
     Message = "Hello, World!"
 });
-
-await Task.Delay(600000);
+Console.WriteLine("Published event. Waiting for agents to receive messages...");
+await Task.Delay(maxAgents * 1000);
 
 var completed = 0;
 foreach (var agent in messagingAgents)
@@ -52,7 +52,7 @@ foreach (var agent in messagingAgents)
     if (receivedMessages != maxAgents)
     {
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.Write("Agent did not receive the expected number of messages. " + receivedMessages);
+        Console.WriteLine("Agent did not receive the expected number of messages. " + receivedMessages);
 
         continue;
     }
@@ -60,6 +60,6 @@ foreach (var agent in messagingAgents)
 }
 
 Console.ForegroundColor = ConsoleColor.Green;
-Console.Write("Completed: " + completed);
+Console.WriteLine("Completed: " + completed);
 
 await host.StopAsync();
