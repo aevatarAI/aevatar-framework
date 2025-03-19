@@ -22,6 +22,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Aevatar.Core.Abstractions\Aevatar.Core.Abstractions.csproj" />
+      <ProjectReference Include="..\Aevatar.Core.Interface\Aevatar.Core.Interface.csproj" />
+      <ProjectReference Include="..\Aevatar.Core.GAgentState\Aevatar.Core.GAgentState.csproj" />
     </ItemGroup>
 
 </Project>

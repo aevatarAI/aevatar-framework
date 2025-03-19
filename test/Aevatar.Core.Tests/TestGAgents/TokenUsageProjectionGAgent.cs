@@ -1,4 +1,5 @@
 ﻿using Aevatar.Core.Abstractions;
+using Aevatar.Core.Interface;
 
 namespace Aevatar.Core.Tests;
 
@@ -31,7 +32,7 @@ public class TokenUsageProjectionGAgent : StateProjectionGAgentBase<SampleAIGAge
         await ConfirmEvents();
     }
 
-    protected override void GAgentTransitionState(TokenUsageProjectionGAgentState state, StateLogEventBase<TokenUsageProjectionStateLogEvent> @event)
+    protected override void GAgentTransitionState(TokenUsageProjectionGAgentState state, IGAgentEventBase<TokenUsageProjectionStateLogEvent> @event)
     {
         if (@event is TokenUsageStateLogEvent tokenUsageStateLogEvent)
         {

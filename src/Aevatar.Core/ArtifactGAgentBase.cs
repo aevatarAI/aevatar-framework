@@ -1,5 +1,7 @@
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Aevatar.Core.Interface;
+using Aevatar.Core.GAgentState;
 
 namespace Aevatar.Core;
 
@@ -37,7 +39,7 @@ public abstract class ArtifactGAgentBase<TArtifact, TState, TStateLogEvent, TEve
         await UpdateObserverListAsync(_artifact.GetType());
     }
 
-    protected override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    protected override void GAgentTransitionState(TState state, IGAgentEventBase<TStateLogEvent> @event)
     {
         base.GAgentTransitionState(state, @event);
         _artifact.TransitionState(state, @event);

@@ -21,4 +21,8 @@
         <PackageReference Include="Microsoft.Extensions.Logging" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Aevatar.Core.Interface\Aevatar.Core.Interface.csproj" />
+    </ItemGroup>
+
 </Project>
