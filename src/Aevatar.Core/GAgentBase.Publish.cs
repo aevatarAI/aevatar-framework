@@ -1,5 +1,6 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Exceptions;
+using Aevatar.Core.EventDispatch;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -124,10 +125,9 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
 
         try
         {
-            foreach (var stream in State.Children.Select(GetEventBaseStream))
-            {
-                await stream.OnNextAsync(eventWrapper);
-            }
+            var streams = State.Children.Select(GetEventBaseStream).ToArray();
+            var dispatcherWorkerGrain = GrainFactory.GetGrain<IEventDispatcherWorkerGrain>(Guid.Empty);
+            await dispatcherWorkerGrain.ExecuteDispatchAsync(streams, eventWrapper);
         }
         catch (Exception ex)
         {

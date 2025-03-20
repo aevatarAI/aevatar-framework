@@ -336,10 +336,4 @@ public abstract partial class
         var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, grainIdString);
         return StreamProvider.GetStream<EventWrapperBase>(streamId);
     }
-
-    private IAsyncStream<StateWrapper<TState>> GetStateProjectionStream()
-    {
-        var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, typeof(StateWrapper<TState>).FullName!);
-        return StreamProvider.GetStream<StateWrapper<TState>>(streamId);
-    }
 }
