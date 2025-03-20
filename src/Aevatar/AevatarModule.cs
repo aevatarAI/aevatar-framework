@@ -1,8 +1,6 @@
 ﻿using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Plugin;
-using Aevatar.Core.Projections;
-using Aevatar.PermissionManagement;
 using Aevatar.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Autofac;

@@ -252,7 +252,7 @@ public abstract partial class
 
     private async Task ActivateProjectionGrainAsync()
     {
-        var projectionGrain = GrainFactory.GetGrain<IProjectionGrain<TState>>(Guid.Empty);
+        var projectionGrain = GrainFactory.GetGrain<IProjectionGrain>(typeof(TState).FullName);
         await projectionGrain.ActivateAsync();
     }
 

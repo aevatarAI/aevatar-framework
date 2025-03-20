@@ -15,7 +15,7 @@ public static class AbpApplicationExtensions
     {
         var assemblies = new List<Assembly>();
         var configuration = application.Services.GetRequiredService<IConfiguration>();
-        var connectionString = configuration.GetConnectionString("Default");
+        var connectionString = configuration.GetConnectionString("Orleans");
         if (string.IsNullOrEmpty(connectionString))
         {
             return assemblies;

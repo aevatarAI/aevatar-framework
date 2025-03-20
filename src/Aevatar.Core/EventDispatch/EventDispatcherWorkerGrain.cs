@@ -10,7 +10,7 @@ public class EventDispatcherWorkerGrain : Grain, IEventDispatcherWorkerGrain
     {
         if (streams.Count <= AevatarGAgentConstants.EventDispatcherMaxBatchSize)
         {
-            var tasks = streams.Select(s => s.GetAllSubscriptionHandles());
+            var tasks = streams.Select(s => s.OnNextAsync(eventWrapper));
             await Task.WhenAll(tasks);
         }
         else

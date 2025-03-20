@@ -24,17 +24,6 @@ public class PluginGAgentTestHostedService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await _application.InitializeAsync(_serviceProvider);
-        var tenantId = "test".ToGuid();
-        var pluginManager = _serviceProvider.GetRequiredService<IPluginGAgentManager>();
-        var plugins = await pluginManager.GetPluginAssembliesAsync(tenantId);
-        Console.WriteLine("Plugins:");
-        foreach (var plugin in plugins)
-        {
-            Console.WriteLine(plugin.FullName);
-        }
-        var permissionManager = _serviceProvider.GetRequiredService<IPermissionManager>();
-        var userId = "TestUser".ToGuid().ToString();
-        await permissionManager.SetAsync("DoSomething", "User", userId, true);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

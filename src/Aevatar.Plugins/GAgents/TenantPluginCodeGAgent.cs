@@ -22,7 +22,7 @@ public interface ITenantPluginCodeGAgent : IStateGAgent<TenantPluginCodeGAgentSt
     Task AddPluginsAsync(IEnumerable<Guid> pluginCodeIds);
 }
 
-[GAgent("pluginTenant")]
+[GAgent]
 public class TenantPluginCodeGAgent
     : GAgentBase<TenantPluginCodeGAgentState, TenantPluginStateLogEvent>, ITenantPluginCodeGAgent
 {

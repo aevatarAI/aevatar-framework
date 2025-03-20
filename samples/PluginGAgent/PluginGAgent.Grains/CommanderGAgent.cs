@@ -1,6 +1,5 @@
 ﻿using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Microsoft.Extensions.Logging;
 
 namespace PluginGAgent.Grains;
 

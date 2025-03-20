@@ -10,7 +10,7 @@ namespace Aevatar.Extensions;
 
 public static class OrleansHostExtensions
 {
-    public static ISiloBuilder UseAevatar(this ISiloBuilder builder)
+    public static ISiloBuilder UseAevatar(this ISiloBuilder builder, bool includingAbpServices = false)
     {
         var abpApplication = AbpApplicationFactory.Create<AevatarModule>();
         abpApplication.Initialize();
@@ -19,7 +19,10 @@ public static class OrleansHostExtensions
             .ConfigureServices(services =>
             {
                 AsyncHelper.RunSync(() => LoadPluginsAsync(services, abpApplication));
-                //services.Add(abpApplication.Services);
+                if (includingAbpServices)
+                {
+                    services.Add(abpApplication.Services);
+                }
             });
     }
 

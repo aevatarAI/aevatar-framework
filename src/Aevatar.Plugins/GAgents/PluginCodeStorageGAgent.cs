@@ -25,7 +25,7 @@ public interface IPluginCodeStorageGAgent : IStateGAgent<PluginCodeStorageGAgent
 }
 
 
-[GAgent("pluginCodeStorage")]
+[GAgent]
 public class PluginCodeStorageGAgent
     : GAgentBase<PluginCodeStorageGAgentState, PluginCodeStorageStateLogEvent, EventBase,
         PluginCodeStorageConfiguration>, IPluginCodeStorageGAgent

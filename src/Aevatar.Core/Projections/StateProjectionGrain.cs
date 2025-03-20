@@ -7,14 +7,15 @@ using Orleans.Streams;
 
 namespace Aevatar.Core.Projections;
 
-public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
-    where TState : StateBase, new()
+public class StateProjectionGrain : Grain, IProjectionGrain
 {
     private readonly AevatarOptions AevatarOptions;
     private IStreamProvider StreamProvider => this.GetStreamProvider(AevatarCoreConstants.StreamProvider);
-    private ILogger<StateProjectionGrain<TState>> _logger;
+    private ILogger<StateProjectionGrain> _logger;
+
+    private string StateTypeName => this.GetPrimaryKeyString();
     
-    public StateProjectionGrain(ILogger<StateProjectionGrain<TState>> logger, IOptionsSnapshot<AevatarOptions> aevatarOptions)
+    public StateProjectionGrain(ILogger<StateProjectionGrain> logger, IOptionsSnapshot<AevatarOptions> aevatarOptions)
     {
         _logger = logger;
         AevatarOptions = aevatarOptions.Value;
@@ -22,7 +23,7 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
     
     public Task ActivateAsync()
     {
-        _logger.LogInformation("Someone activated StateProjectionGrain<{TState}>", typeof(TState).Name);
+        _logger.LogInformation("Someone activated StateProjectionGrain<{TState}>", StateTypeName);
         return Task.CompletedTask;
     }
 
@@ -34,14 +35,14 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
     
     private async Task InitializeOrResumeStateProjectionStreamAsync()
     {
-        _logger.LogInformation("Initializing or resuming state projection stream for {TState}", typeof(TState).Name);
+        _logger.LogInformation("Initializing or resuming state projection stream for {TState}", StateTypeName);
         var projectionStream = GetStateProjectionStream();
         var handles = await projectionStream.GetAllSubscriptionHandles();
         var projectors = ServiceProvider.GetRequiredService<IEnumerable<IStateProjector>>();
         var asyncObserver = new StateProjectionAsyncObserver(projectors);
         if (handles.Count > 0)
         {
-            _logger.LogInformation("Resuming state projection stream for {TState} with handle count of {Count}", typeof(TState).Name, handles.Count);
+            _logger.LogInformation("Resuming state projection stream for {TState} with handle count of {Count}", StateTypeName, handles.Count);
             foreach (var handle in handles)
             {
                 await handle.ResumeAsync(asyncObserver);
@@ -49,15 +50,15 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
         }
         else
         {
-            _logger.LogInformation("Subscribing for the first time to state projection stream for {TState}", typeof(TState).Name);
+            _logger.LogInformation("Subscribing for the first time to state projection stream for {TState}", StateTypeName);
             await projectionStream.SubscribeAsync(asyncObserver);
         }
-        _logger.LogInformation("State projection stream for {TState} is ready", typeof(TState).Name);
+        _logger.LogInformation("State projection stream for {TState} is ready", StateTypeName);
     }
     
-    private IAsyncStream<StateWrapper<TState>> GetStateProjectionStream()
+    private IAsyncStream<StateWrapper<StateBase>> GetStateProjectionStream()
     {
-        var streamId = StreamId.Create(AevatarOptions.StreamNamespace, typeof(StateWrapper<TState>).FullName!);
-        return StreamProvider.GetStream<StateWrapper<TState>>(streamId);
+        var streamId = StreamId.Create(AevatarOptions.StreamNamespace, StateTypeName);
+        return StreamProvider.GetStream<StateWrapper<StateBase>>(streamId);
     }
 }

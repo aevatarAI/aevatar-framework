@@ -1,5 +1,6 @@
 using Aevatar.Plugins.DbContexts;
 using Aevatar.Plugins.Entities;
+using Aevatar.Plugins.GAgents;
 using MongoDB.Driver;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.MongoDB;
@@ -11,7 +12,7 @@ public class PluginCodeStorageRepository :
     MongoDbRepository<PluginCodeStorageMongoDbContext, PluginCodeStorageSnapshotDocument, string>,
     IPluginCodeStorageRepository, ITransientDependency
 {
-    private const string GAgentTypeName = "Aevatar.Plugins.pluginCodeStorage";
+    private string GAgentTypeName = typeof(PluginCodeStorageGAgent).FullName!;
 
     public PluginCodeStorageRepository(IMongoDbContextProvider<PluginCodeStorageMongoDbContext> dbContextProvider,
         IServiceProvider serviceProvider) : base(dbContextProvider)

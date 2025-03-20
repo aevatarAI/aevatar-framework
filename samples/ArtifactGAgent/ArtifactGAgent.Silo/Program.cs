@@ -17,7 +17,7 @@ var builder = Host.CreateDefaultBuilder(args)
             .AddLogStorageBasedLogConsistencyProvider("LogStorage")
             .UseLocalhostClustering()
             .UseAevatar()
-            .ConfigureLogging(logging => logging.AddConsole());
+            .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Information).AddConsole());
     })
     .UseConsoleLifetime();
 
