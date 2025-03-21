@@ -1,6 +1,5 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Exceptions;
-using Aevatar.Core.EventDispatch;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -86,7 +85,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
 
         try
         {
-            var stream = GetEventBaseStream(State.Parent.Value);
+            var stream = GetEventBaseStreamForOwn(State.Parent.Value);
             await stream.OnNextAsync(eventWrapper);
         }
         catch (Exception ex)
@@ -103,7 +102,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
             $"{GrainId.ToString()} is sending event to self: {JsonConvert.SerializeObject(eventWrapper)}");
         try
         {
-            var streamOfThisGAgent = GetEventBaseStream(GrainId);
+            var streamOfThisGAgent = GetEventBaseStreamForOwn(GrainId);
             await streamOfThisGAgent.OnNextAsync(eventWrapper);
         }
         catch (Exception ex)
@@ -125,9 +124,8 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
 
         try
         {
-            var streams = State.Children.Select(GetEventBaseStream).ToArray();
-            var dispatcherWorkerGrain = GrainFactory.GetGrain<IEventDispatcherWorkerGrain>(Guid.Empty);
-            await dispatcherWorkerGrain.ExecuteDispatchAsync(streams, eventWrapper);
+            var streamForChildren = GetEventBaseStreamForChildren(GrainId);
+            await streamForChildren.OnNextAsync(eventWrapper);
         }
         catch (Exception ex)
         {

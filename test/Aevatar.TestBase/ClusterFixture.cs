@@ -101,6 +101,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSingleton(grainTypeMap);
                     services.AddSingleton<IStateProjector, TestStateProjector>();
                     services.AddSingleton<IStateDispatcher, StateDispatcher>();
+                    services.AddSingleton<IGAgentFactory, GAgentFactory>();
                 })
                 .UseAevatar()
                 .UseAevatarPermissionManagement()
