@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Nito.AsyncEx;
 using Orleans.EventSourcing;
 using Orleans.Providers;
 using Orleans.Streams;
@@ -281,7 +280,7 @@ public abstract partial class
             tasks.Add(child.ResumeSubscriptionAsync(streamForChildren));
         }
 
-        await tasks.WhenAll();
+        await Task.WhenAll(tasks);
     }
 
     private async Task ActivateProjectionGrainAsync()

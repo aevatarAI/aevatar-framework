@@ -10,15 +10,19 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         switch (@event)
         {
             case AddChildStateLogEvent addChildEvent:
+                Logger.LogDebug("GrainId {GrainId}: Adding child {Child}", this.GetGrainId().ToString(), addChildEvent.Child);
                 State.Children.Add(addChildEvent.Child);
                 break;
             case RemoveChildStateLogEvent removeChildEvent:
+                Logger.LogDebug("GrainId {GrainId}: Removing child {Child}", this.GetGrainId().ToString(), removeChildEvent.Child);
                 State.Children.Remove(removeChildEvent.Child);
                 break;
             case SetParentStateLogEvent setParentEvent:
+                Logger.LogDebug("GrainId {GrainId}: Setting parent to {Parent}", this.GetGrainId().ToString(), setParentEvent.Parent);
                 State.Parent = setParentEvent.Parent;
                 break;
             case ClearParentStateLogEvent clearParentEvent:
+                Logger.LogDebug("GrainId {GrainId}: Clearing parent {Parent}", this.GetGrainId().ToString(), clearParentEvent.Parent);
                 if (State.Parent == clearParentEvent.Parent)
                     State.Parent = default;
                 break;
@@ -46,6 +50,8 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
             Logger.LogError($"Cannot add duplicate child {grainId}.");
             return;
         }
+        
+        Logger.LogDebug("GrainId [{GrainId}] Adding child to {Parent}", this.GetGrainId().ToString(), grainId);
 
         base.RaiseEvent(new AddChildStateLogEvent
         {
@@ -62,6 +68,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
 
     private async Task RemoveChildAsync(GrainId grainId)
     {
+        Logger.LogDebug("GrainId [{GrainId}] Removing child to {Parent}", this.GetGrainId().ToString(), grainId);
         if (!State.Children.IsNullOrEmpty())
         {
             base.RaiseEvent(new RemoveChildStateLogEvent
@@ -86,6 +93,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
 
     private async Task SetParentAsync(GrainId grainId)
     {
+        Logger.LogDebug("GrainId [{GrainId}] Setting parent to {Parent}", this.GetGrainId().ToString(), grainId);
         base.RaiseEvent(new SetParentStateLogEvent
         {
             Parent = grainId
@@ -101,6 +109,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
     
     private async Task ClearParentAsync(GrainId grainId)
     {
+        Logger.LogDebug("GrainId [{GrainId}] Removing parent to {Parent}", this.GetGrainId().ToString(), grainId);
         base.RaiseEvent(new ClearParentStateLogEvent
         {
             Parent = grainId

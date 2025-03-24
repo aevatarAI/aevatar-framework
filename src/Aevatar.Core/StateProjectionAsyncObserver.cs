@@ -10,12 +10,6 @@ public class StateProjectionAsyncObserver : IAsyncObserver<StateWrapperBase>
     private readonly IEnumerable<IStateProjector> _stateProjectors;
     private readonly ILogger<StateProjectionAsyncObserver> _logger;
 
-    public StateProjectionAsyncObserver(IEnumerable<IStateProjector> stateProjectors)
-    {
-        _stateProjectors = stateProjectors;
-        _logger = null;
-    }
-
     public StateProjectionAsyncObserver(IEnumerable<IStateProjector> stateProjectors,
         ILogger<StateProjectionAsyncObserver> logger)
     {
