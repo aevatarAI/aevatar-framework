@@ -13,6 +13,10 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
                 Logger.LogDebug("GrainId {GrainId}: Adding child {Child}", this.GetGrainId().ToString(), addChildEvent.Child);
                 State.Children.Add(addChildEvent.Child);
                 break;
+            case AddChildManyStateLogEvent addChildManyEvent:
+                Logger.LogDebug("GrainId {GrainId}: Adding children {Child}", this.GetGrainId().ToString(), addChildManyEvent.Children);
+                State.Children.AddRange(addChildManyEvent.Children);
+                break;
             case RemoveChildStateLogEvent removeChildEvent:
                 Logger.LogDebug("GrainId {GrainId}: Removing child {Child}", this.GetGrainId().ToString(), removeChildEvent.Child);
                 State.Children.Remove(removeChildEvent.Child);
@@ -60,10 +64,25 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         await ConfirmEvents();
     }
 
+    private async Task AddChildManyAsync(List<GrainId> grainIds)
+    {    
+        base.RaiseEvent(new AddChildManyStateLogEvent
+        {
+            Children = grainIds
+        });
+        await ConfirmEvents();
+    }
+
     [GenerateSerializer]
     public class AddChildStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public GrainId Child { get; set; }
+    }
+
+    [GenerateSerializer]
+    public class AddChildManyStateLogEvent : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public required List<GrainId> Children { get; set; }
     }
 
     private async Task RemoveChildAsync(GrainId grainId)

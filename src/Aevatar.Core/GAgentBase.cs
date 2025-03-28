@@ -36,7 +36,7 @@ public abstract class
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public abstract partial class
     GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
-    : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>
+    : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>, IExtGAgent
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
@@ -70,6 +70,31 @@ public abstract partial class
         await AddChildAsync(gAgent.GetGrainId());
         await gAgent.SubscribeToAsync(this);
         await OnRegisterAgentAsync(gAgent.GetGrainId());
+    }
+
+    public async Task RegisterManyAsync(List<IGAgent> gAgents)
+    {
+        if (gAgents.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        gAgents.RemoveAll(g => g.GetGrainId() == this.GetGrainId());
+        if (gAgents.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        var grainIds = gAgents.Select(g => g.GetGrainId()).ToList();
+        var tasks = new List<Task>();
+        foreach (var gAgent in gAgents)
+        {
+            tasks.Add(gAgent.SubscribeToAsync(this));
+        }
+        tasks.Add(AddChildManyAsync(grainIds));
+        tasks.Add(OnRegisterAgentManyAsync(grainIds));
+        await Task.WhenAll(tasks);
+
     }
 
     public async Task SubscribeToAsync(IGAgent gAgent)
@@ -199,6 +224,11 @@ public abstract partial class
     }
 
     protected virtual Task OnRegisterAgentAsync(GrainId agentGuid)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected virtual Task OnRegisterAgentManyAsync(List<GrainId> agentGuids)
     {
         return Task.CompletedTask;
     }

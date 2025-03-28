@@ -17,6 +17,10 @@ public interface IGAgentFactory
     Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(Guid primaryKey,
         ConfigurationBase? configuration = null)
         where TGrainInterface : IGAgent;
+    
+    Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(GrainId grainId,
+        ConfigurationBase? configuration = null)
+        where TGrainInterface : IGAgent;
 
     Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(ConfigurationBase? configuration = null)
         where TGrainInterface : IGAgent;
