@@ -13,7 +13,7 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
     {
         _grainFactory = GetRequiredService<IGrainFactory>();
     }
-    
+
     [Fact(DisplayName = "Can use ConfigAsync method to config GAgent.")]
     public async Task ConfigurationTest()
     {
@@ -47,12 +47,17 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         var developer1 = _grainFactory.GetGrain<IDeveloperTestGAgent>(guid);
         var developer2 = _grainFactory.GetGrain<IDeveloperTestGAgent>(Guid.NewGuid());
         var developer3 = _grainFactory.GetGrain<IDeveloperTestGAgent>(Guid.NewGuid());
+        await developer1.ActivateAsync();
+        await developer2.ActivateAsync();
+        await developer3.ActivateAsync();
         await developingLeader.RegisterAsync(developer1);
         await developingLeader.RegisterAsync(developer2);
         await developingLeader.RegisterAsync(developer3);
 
         var investor1 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(guid);
         var investor2 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(Guid.NewGuid());
+        await investor1.ActivateAsync();
+        await investor2.ActivateAsync();
         await marketingLeader.RegisterAsync(investor1);
         await marketingLeader.RegisterAsync(investor2);
 
@@ -69,14 +74,13 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         });
 
         await TestHelper.WaitUntilAsync(_ => CheckState(investor1), TimeSpan.FromSeconds(20));
-
         var groupState = await groupGAgent.GetStateAsync();
         groupState.RegisteredGAgents.ShouldBe(2);
 
         var investorState = await investor1.GetStateAsync();
         investorState.Content.Count.ShouldBe(2);
     }
-    
+
     private async Task<bool> CheckState(IStateGAgent<InvestorTestGAgentState> investor1)
     {
         var state = await investor1.GetStateAsync();

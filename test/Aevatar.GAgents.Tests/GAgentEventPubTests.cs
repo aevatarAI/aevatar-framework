@@ -1,0 +1,55 @@
+using Aevatar.Core.Abstractions;
+using Aevatar.Core.EventPublish;
+using Aevatar.Core.Tests.TestEvents;
+using Aevatar.Core.Tests.TestGAgents;
+using Shouldly;
+using Xunit.Abstractions;
+
+namespace Aevatar.GAgents.Tests;
+
+public sealed class GAgentEventPubTests : AevatarGAgentsTestBase
+{
+    private readonly ITestOutputHelper _outputHelper;
+    private readonly IGAgentFactory _gAgentFactory;
+
+    public GAgentEventPubTests(ITestOutputHelper outputHelper)
+    {
+        _outputHelper = outputHelper;
+        _gAgentFactory = GetRequiredService<IGAgentFactory>();
+    }
+
+    [Fact]
+    public async Task MultipleLevelTest()
+    {
+        // Arrange.
+        var marketingLeader = await _gAgentFactory.GetGAgentAsync<IMarketingLeaderTestGAgent>();
+
+        var investor1 = await _gAgentFactory.GetGAgentAsync<IInvestorTestGAgent>();
+        var investor2 = await _gAgentFactory.GetGAgentAsync<IInvestorTestGAgent>();
+        await marketingLeader.RegisterAsync(investor1);
+        //await marketingLeader.RegisterAsync(investor2);
+
+        var groupGAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<GroupGAgentState>>();
+        await groupGAgent.RegisterAsync(marketingLeader);
+        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
+        await publishingGAgent.RegisterAsync(groupGAgent);
+
+        // Act.
+        await publishingGAgent.PublishEventAsync(new NewDemandTestEvent
+        {
+            Description = "New demand from customer."
+        });
+
+        await TestHelper.WaitUntilAsync(_ => CheckState(investor1), TimeSpan.FromSeconds(20));
+
+        EventPubGrain.Called.Count.ShouldBePositive();
+        var investorState = await investor1.GetStateAsync();
+        investorState.Content.Count.ShouldBe(1);
+    }
+
+    private async Task<bool> CheckState(IStateGAgent<InvestorTestGAgentState> investor1)
+    {
+        var state = await investor1.GetStateAsync();
+        return !state.Content.IsNullOrEmpty() && state.Content.Count == 1;
+    }
+}

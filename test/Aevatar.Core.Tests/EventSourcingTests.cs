@@ -19,7 +19,7 @@ public class EventSourcingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(logViewGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(publishingGAgent, groupGAgent, logViewGAgent);
+        AddProbesByGrainIdAsync(publishingGAgent, groupGAgent, logViewGAgent);
 
         // Act: First event.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent

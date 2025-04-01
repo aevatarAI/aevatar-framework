@@ -6,5 +6,5 @@ public static class AevatarGAgentConstants
     public const string StateHandlerDefaultMethodName = "HandleStateAsync";
     public const string ConfigDefaultMethodName = "PerformConfigAsync";
     public const string ForwardEventMethodName = "ForwardEventAsync";
-    public const int EventDispatcherMaxBatchSize = 20;
+    public const int MaxChildrenPerGroup = 1000;
 }

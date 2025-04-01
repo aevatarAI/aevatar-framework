@@ -1,3 +1,4 @@
+using Aevatar.Core.Abstractions;
 using Aevatar.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -23,6 +24,9 @@ public static class OrleansHostExtensions
                 {
                     services.Add(abpApplication.Services);
                 }
+
+                var prefix = services.GetConfiguration().GetSection("Aevatar").GetSection("StreamNamespace").Value;
+                AevatarCoreStreamConfig.Initialize(prefix);
             });
     }
 

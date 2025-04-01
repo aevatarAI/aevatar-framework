@@ -19,14 +19,7 @@ public class DeveloperTestGAgent : GAgentBase<DeveloperTestGAgentState, NaiveTes
 
     public async Task<NewFeatureCompletedTestEvent> HandleEventAsync(DevelopTaskTestEvent eventData)
     {
-        if (State.Content.IsNullOrEmpty())
-        {
-            State.Content = [];
-        }
-
         State.Content.Add(eventData.Description);
-
-        Logger.LogInformation("TEST");
         return new NewFeatureCompletedTestEvent
         {
             PullRequestUrl = $"PR for {eventData.Description}"
