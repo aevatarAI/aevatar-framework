@@ -1,4 +1,4 @@
-﻿using Aevatar.Core.GAgentState;
+﻿using Aevatar.Core.Artifact;
 using Aevatar.Agent.Abstractions;
 using Aevatar.Core.Abstractions;
 

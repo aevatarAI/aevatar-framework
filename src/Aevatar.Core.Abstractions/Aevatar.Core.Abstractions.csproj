@@ -24,7 +24,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Aevatar.Agent.Abstractions\Aevatar.Agent.Abstractions.csproj" />
-      <ProjectReference Include="..\Aevatar.Core.GAgentState\Aevatar.Core.GAgentState.csproj" />
+      <ProjectReference Include="..\Aevatar.Core.Artifact\Aevatar.Core.Artifact.csproj" />
     </ItemGroup>
 
 </Project>

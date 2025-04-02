@@ -1,10 +1,10 @@
-using Aevatar.Core.GAgentState;
+using Aevatar.Core.Artifact;
 using Aevatar.Agent.Abstractions;
 using Moq;
 using Xunit;
 using Aevatar.Core.Abstractions;
 
-namespace Aevatar.Core.GAgentState.Tests;
+namespace Aevatar.Core.Artifact.Tests;
 
 public class MockState : IGAgentState
 {

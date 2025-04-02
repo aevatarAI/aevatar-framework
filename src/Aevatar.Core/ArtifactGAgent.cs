@@ -1,7 +1,7 @@
 using System.Reflection;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Exceptions;
-using Aevatar.Core.GAgentState;
+using Aevatar.Core.Artifact;
 using Aevatar.Agent.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

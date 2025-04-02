@@ -1,6 +1,6 @@
 ﻿using Aevatar.Agent.Abstractions;
 
-namespace Aevatar.Core.GAgentState;
+namespace Aevatar.Core.Artifact;
 
 public interface IArtifact<in TState, TStateLogEvent>
     where TState : IGAgentState
