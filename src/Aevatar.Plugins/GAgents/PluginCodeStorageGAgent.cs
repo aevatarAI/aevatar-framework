@@ -1,5 +1,6 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.Agent.Abstractions;
 
 namespace Aevatar.Plugins.GAgents;
 
@@ -36,7 +37,7 @@ public class PluginCodeStorageGAgent
     }
 
     protected override void GAgentTransitionState(PluginCodeStorageGAgentState state,
-        StateLogEventBase<PluginCodeStorageStateLogEvent> @event)
+        IGAgentEventBase<PluginCodeStorageStateLogEvent> @event)
     {
         switch (@event)
         {

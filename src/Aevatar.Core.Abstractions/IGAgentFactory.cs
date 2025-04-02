@@ -1,3 +1,5 @@
+using Aevatar.Core.GAgentState;
+
 namespace Aevatar.Core.Abstractions;
 
 public interface IGAgentFactory

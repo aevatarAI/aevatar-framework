@@ -1,5 +1,6 @@
 using System.Reflection;
 using Aevatar.Core.Abstractions;
+using Aevatar.Agent.Abstractions;
 using Orleans.Streams;
 
 namespace Aevatar.Core;

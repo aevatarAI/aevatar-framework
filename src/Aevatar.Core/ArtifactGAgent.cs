@@ -1,6 +1,8 @@
 using System.Reflection;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Exceptions;
+using Aevatar.Core.GAgentState;
+using Aevatar.Agent.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -81,7 +83,7 @@ public class ArtifactGAgent<TArtifact, TState, TStateLogEvent, TEvent, TConfigur
 
     protected override void GAgentTransitionState(
         TState state,
-        StateLogEventBase<TStateLogEvent> @event)
+        IGAgentEventBase<TStateLogEvent> @event)
     {
         ValidateParameters(state, @event);
         try
@@ -134,7 +136,7 @@ public class ArtifactGAgent<TArtifact, TState, TStateLogEvent, TEvent, TConfigur
 
     private static void ValidateParameters(
         TState state,
-        StateLogEventBase<TStateLogEvent> @event)
+        IGAgentEventBase<TStateLogEvent> @event)
     {
         if (state == null)
             throw new ArgumentNullException(nameof(state),
