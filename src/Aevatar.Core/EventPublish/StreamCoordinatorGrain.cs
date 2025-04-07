@@ -34,13 +34,11 @@ public class StreamCoordinatorGrain :
 {
     private readonly ILogger<StreamCoordinatorGrain> _logger;
     private readonly IStreamProvider _streamProvider;
-    private readonly AevatarOptions _aevatarOptions;
 
     public StreamCoordinatorGrain(ILogger<StreamCoordinatorGrain> logger)
     {
         _logger = logger;
         _streamProvider = this.GetStreamProvider(AevatarCoreConstants.StreamProvider);
-        _aevatarOptions = ServiceProvider.GetRequiredService<IOptions<AevatarOptions>>().Value;
     }
 
     public async Task<bool> SetParentAsync(GrainId parentGrainId)
@@ -56,7 +54,7 @@ public class StreamCoordinatorGrain :
 
     public async Task ClearParentAsync(GrainId parentGrainId)
     {
-        base.RaiseEvent(new ClearParentStateLogEvent
+        RaiseEvent(new ClearParentStateLogEvent
         {
             Parent = parentGrainId
         });
@@ -65,7 +63,7 @@ public class StreamCoordinatorGrain :
 
     public async Task SetGroupIndexAsync(int groupIndex)
     {
-        base.RaiseEvent(new SetGroupIndexStateLogEvent
+        RaiseEvent(new SetGroupIndexStateLogEvent
         {
             GroupIndex = groupIndex
         });
@@ -94,7 +92,7 @@ public class StreamCoordinatorGrain :
         return groupIndex;
     }
 
-    public async Task RegisterManyChildAsync(List<GrainId> childrenGrainIds)
+    public async Task<int> RegisterManyChildAsync(List<GrainId> childrenGrainIds)
     {
         var count = childrenGrainIds.Count;
         var groupIndex = State.GroupChildrenCount
@@ -104,11 +102,13 @@ public class StreamCoordinatorGrain :
         await childGroupGrain.AddManyChildAsync(childrenGrainIds);
         RaiseEvent(new UpdateGroupChildrenCountStateLogEvent { GroupIndex = groupIndex, ChildrenCount = childrenCount + count });
         await ConfirmEvents();
+        return groupIndex;
     }
 
     public async Task UnregisterChildAsync(GrainId childGrainId)
     {
         var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(childGrainId.ToString());
+        await childStreamCoordinator.ClearParentAsync(this.GetGrainId());
         var groupIndex = await childStreamCoordinator.GetGroupIndexAsync();
         var childGroupGrain =
             GrainFactory.GetGrain<IEventPubChildrenGroupGrain>(groupIndex, this.GetPrimaryKeyString());
@@ -199,7 +199,7 @@ public class StreamCoordinatorGrain :
                 State.ParentGrainId = setParentEvent.ParentGrainId;
                 break;
             case ClearParentStateLogEvent clearParentStateLogEvent:
-                if (State.ParentGrainId == clearParentStateLogEvent.Parent)
+                if (clearParentStateLogEvent.Parent.ToString().Contains(State.ParentGrainId.ToString()))
                     State.ParentGrainId = default;
                 break;
             case SetGroupIndexStateLogEvent setGroupIndexStateLogEvent:

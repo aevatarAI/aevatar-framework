@@ -18,8 +18,5 @@ public class EventPubGrain : Grain, IEventPubGrain
     {
         var stream = _streamProvider.GetEventWrapperBaseStream(this.GetPrimaryKeyString());
         await stream.OnNextAsync(eventWrapper);
-        Called.Add(Called.Count + this.GetPrimaryKeyString(), eventWrapper);
     }
-
-    public static Dictionary<string, EventWrapperBase> Called = [];
 }

@@ -68,18 +68,21 @@ public abstract partial class
 
     public async Task RegisterAsync(IGAgent gAgent)
     {
-        if (gAgent.GetGrainId() == this.GetGrainId())
+        var grainId = gAgent.GetGrainId();
+        if (grainId == this.GetGrainId())
         {
             Logger.LogError($"Cannot register GAgent with same GrainId.");
             return;
         }
 
-        var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(gAgent.GetGrainId().ToString());
+        Logger.LogDebug("GrainId [{GrainId}] register child {Parent}", GrainId.ToString(), grainId.ToString());
+
+        var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(grainId.ToString());
         if (await childStreamCoordinator.SetParentAsync(GrainId))
         {
-            var groupIndex = await _coordinator!.RegisterChildAsync(gAgent.GetGrainId());
+            var groupIndex = await _coordinator!.RegisterChildAsync(grainId);
             await childStreamCoordinator.SetGroupIndexAsync(groupIndex);
-            await OnRegisterAgentAsync(gAgent.GetGrainId());
+            await OnRegisterAgentAsync(grainId);
         }
     }
 
@@ -98,36 +101,45 @@ public abstract partial class
 
         var grainIds = gAgents.Select(g => g.GetGrainId()).ToList();
         var successGrainIds = new List<GrainId>();
-        var tasks = new List<Task>();
+        var streamCoordinators = new List<IStreamCoordinatorGrain>();
         foreach (var gAgent in gAgents)
         {
-            var childGrainId = gAgent.GetGrainId();
-            var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(childGrainId.ToString());
+            var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(gAgent.GetGrainId().ToString());
+            streamCoordinators.Add(childStreamCoordinator);
             if (await childStreamCoordinator.SetParentAsync(GrainId))
             {
-                successGrainIds.Add(childGrainId);
+                successGrainIds.Add(gAgent.GetGrainId());
             }
         }
 
-        tasks.Add(_coordinator!.RegisterManyChildAsync(successGrainIds));
-        tasks.Add(OnRegisterAgentManyAsync(grainIds));
-        await Task.WhenAll(tasks);
+        // TODO: Optimize.
+        var groupIndex = await _coordinator!.RegisterManyChildAsync(successGrainIds);
+        foreach (var coordinator in streamCoordinators)
+        {
+            await coordinator.SetGroupIndexAsync(groupIndex);
+        }
+
+        await OnRegisterAgentManyAsync(grainIds);
     }
 
     public async Task SubscribeToAsync(IGAgent gAgent)
     {
-        await _coordinator!.SetParentAsync(gAgent.GetGrainId());
+        var grainId = gAgent.GetGrainId();
+        Logger.LogDebug("GrainId [{GrainId}] subscribe to {Parent}", GrainId.ToString(), grainId.ToString());
+        await _coordinator!.SetParentAsync(grainId);
     }
 
     public async Task UnsubscribeFromAsync(IGAgent gAgent)
     {
         var grainId = gAgent.GetGrainId();
-        Logger.LogDebug("GrainId [{GrainId}] Removing parent {Parent}", this.GetGrainId().ToString(), grainId);
+        Logger.LogDebug("GrainId [{GrainId}] unsubscribe from {Parent}", GrainId.ToString(), grainId.ToString());
         await _coordinator!.ClearParentAsync(grainId);
     }
 
     public async Task UnregisterAsync(IGAgent gAgent)
     {
+        var grainId = gAgent.GetGrainId();
+        Logger.LogDebug("GrainId [{GrainId}] unregister child {Child}", GrainId.ToString(), grainId.ToString());
         await _coordinator!.UnregisterChildAsync(gAgent.GetGrainId());
         await OnUnregisterAgentAsync(gAgent.GetGrainId());
     }
@@ -201,6 +213,8 @@ public abstract partial class
         var gAgentList = children
             .Distinct()
             .Select(grainId => GrainFactory.GetGrain<IGAgent>(grainId))
+            .GroupBy(g => g.GetType())
+            .Select(g => g.First())
             .ToList();
 
         if (gAgentList.IsNullOrEmpty())
