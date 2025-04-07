@@ -59,6 +59,15 @@ public class GAgentFactory : IGAgentFactory
         return gAgent;
     }
 
+    public async Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(GrainId grainId,
+        ConfigurationBase? configuration = null)
+        where TGrainInterface : IGAgent
+    {
+        var gAgent = _clusterClient.GetGrain<TGrainInterface>(grainId);
+        await ConfigGAgentAsync(gAgent, configuration);
+        return gAgent;
+    }
+
     public Task<TGrainInterface> GetGAgentAsync<TGrainInterface>(ConfigurationBase? configuration = null)
         where TGrainInterface : IGAgent
     {

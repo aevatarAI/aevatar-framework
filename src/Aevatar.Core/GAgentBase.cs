@@ -37,7 +37,7 @@ public abstract class
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public abstract partial class
     GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
-    : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>
+    : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>, IExtGAgent
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
@@ -75,22 +75,55 @@ public abstract partial class
         }
 
         var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(gAgent.GetGrainId().ToString());
-        if (await childStreamCoordinator.SetParentAsync(this.GetGrainId()))
+        if (await childStreamCoordinator.SetParentAsync(GrainId))
         {
-            await _coordinator!.RegisterChildAsync(gAgent.GetGrainId());
+            var groupIndex = await _coordinator!.RegisterChildAsync(gAgent.GetGrainId());
+            await childStreamCoordinator.SetGroupIndexAsync(groupIndex);
             await OnRegisterAgentAsync(gAgent.GetGrainId());
         }
     }
 
+    public async Task RegisterManyAsync(List<IGAgent> gAgents)
+    {
+        if (gAgents.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        gAgents.RemoveAll(g => g.GetGrainId() == this.GetGrainId());
+        if (gAgents.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        var grainIds = gAgents.Select(g => g.GetGrainId()).ToList();
+        var successGrainIds = new List<GrainId>();
+        var tasks = new List<Task>();
+        foreach (var gAgent in gAgents)
+        {
+            var childGrainId = gAgent.GetGrainId();
+            var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(childGrainId.ToString());
+            if (await childStreamCoordinator.SetParentAsync(GrainId))
+            {
+                successGrainIds.Add(childGrainId);
+            }
+        }
+
+        tasks.Add(_coordinator!.RegisterManyChildAsync(successGrainIds));
+        tasks.Add(OnRegisterAgentManyAsync(grainIds));
+        await Task.WhenAll(tasks);
+    }
+
     public async Task SubscribeToAsync(IGAgent gAgent)
     {
-        await SetParentAsync(gAgent.GetGrainId());
         await _coordinator!.SetParentAsync(gAgent.GetGrainId());
     }
 
     public async Task UnsubscribeFromAsync(IGAgent gAgent)
     {
-        await ClearParentAsync(gAgent.GetGrainId());
+        var grainId = gAgent.GetGrainId();
+        Logger.LogDebug("GrainId [{GrainId}] Removing parent {Parent}", this.GetGrainId().ToString(), grainId);
+        await _coordinator!.ClearParentAsync(grainId);
     }
 
     public async Task UnregisterAsync(IGAgent gAgent)
@@ -119,9 +152,9 @@ public abstract partial class
         return await _coordinator!.GetChildrenAsync();
     }
 
-    public Task<GrainId> GetParentAsync()
+    public async Task<GrainId> GetParentAsync()
     {
-        return Task.FromResult(State.Parent ?? default);
+        return await _coordinator!.GetParentAsync();
     }
 
     public virtual Task<Type?> GetConfigurationTypeAsync()
@@ -164,7 +197,6 @@ public abstract partial class
 
     private async Task<SubscribedEventListEvent> GetGroupSubscribedEventListEvent()
     {
-        // TODO: Refactor this cause Children now stored on EventPubChildrenGroupGrain.
         var children = await _coordinator!.GetChildrenAsync();
         var gAgentList = children
             .Distinct()
@@ -223,6 +255,11 @@ public abstract partial class
     }
 
     protected virtual Task OnRegisterAgentAsync(GrainId agentGuid)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected virtual Task OnRegisterAgentManyAsync(List<GrainId> agentGuids)
     {
         return Task.CompletedTask;
     }

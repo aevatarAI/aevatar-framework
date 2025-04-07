@@ -17,7 +17,7 @@ public class EventPubChildrenGroupStateLogEvent : StateLogEventBase<EventPubChil
 
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public class EventPubChildrenGroupGrain : 
+public class EventPubChildrenGroupGrain :
     JournaledGrain<EventPubChildrenGroupState, StateLogEventBase<EventPubChildrenGroupStateLogEvent>>,
     IEventPubChildrenGroupGrain
 {
@@ -43,9 +43,18 @@ public class EventPubChildrenGroupGrain :
         await stream.OnNextAsync(eventWrapper);
     }
 
-    public async Task AddChildAsync(GrainId childId)
+    public async Task AddChildAsync(GrainId childGrainId)
     {
-        RaiseEvent(new AddChildStateLogEvent { ChildId = childId });
+        RaiseEvent(new AddChildStateLogEvent { ChildId = childGrainId });
+        await ConfirmEvents();
+    }
+
+    public async Task AddManyChildAsync(List<GrainId> childrenGrainIds)
+    {
+        base.RaiseEvent(new AddChildManyStateLogEvent
+        {
+            ChildrenIds = childrenGrainIds
+        });
         await ConfirmEvents();
     }
 
@@ -65,13 +74,18 @@ public class EventPubChildrenGroupGrain :
         return Task.FromResult(State.ChildrenCount);
     }
 
-    protected override void TransitionState(EventPubChildrenGroupState state, StateLogEventBase<EventPubChildrenGroupStateLogEvent> @event)
+    protected override void TransitionState(EventPubChildrenGroupState state,
+        StateLogEventBase<EventPubChildrenGroupStateLogEvent> @event)
     {
         switch (@event)
         {
             case AddChildStateLogEvent addChildEvent:
                 state.Children.Add(addChildEvent.ChildId);
                 state.ChildrenCount++;
+                break;
+            case AddChildManyStateLogEvent addChildManyEvent:
+                state.Children.AddRange(addChildManyEvent.ChildrenIds);
+                state.ChildrenCount += addChildManyEvent.ChildrenIds.Count;
                 break;
             case RemoveChildStateLogEvent removeChildEvent:
                 state.Children.Remove(removeChildEvent.ChildId);
@@ -85,12 +99,18 @@ public class EventPubChildrenGroupGrain :
     [GenerateSerializer]
     public class AddChildStateLogEvent : StateLogEventBase<EventPubChildrenGroupStateLogEvent>
     {
-        [Id(0)] public GrainId ChildId { get; set; }
+        [Id(0)] public required GrainId ChildId { get; set; }
+    }
+
+    [GenerateSerializer]
+    public class AddChildManyStateLogEvent : StateLogEventBase<EventPubChildrenGroupStateLogEvent>
+    {
+        [Id(0)] public required List<GrainId> ChildrenIds { get; set; }
     }
 
     [GenerateSerializer]
     public class RemoveChildStateLogEvent : StateLogEventBase<EventPubChildrenGroupStateLogEvent>
     {
-        [Id(0)] public GrainId ChildId { get; set; }
+        [Id(0)] public required GrainId ChildId { get; set; }
     }
 }

@@ -1,5 +1,8 @@
+using System.Reflection;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
@@ -20,40 +23,125 @@ public class ArtifactGAgent<TArtifact, TState, TStateLogEvent, TEvent, TConfigur
     where TConfiguration : ConfigurationBase
 {
     private readonly TArtifact _artifact;
+    private bool _isInitialized;
 
     public ArtifactGAgent()
     {
-        _artifact = ActivatorUtilities.CreateInstance<TArtifact>(ServiceProvider);
+        try
+        {
+            if (ServiceProvider == null)
+                throw new InvalidOperationException("ServiceProvider must be initialized");
+
+            _artifact = ActivatorUtilities.CreateInstance<TArtifact>(ServiceProvider);
+            _isInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            _isInitialized = false;
+            throw new ArtifactGAgentException(
+                $"Failed to initialize {typeof(TArtifact).Name}", ex);
+        }
     }
 
     public Task<TArtifact> GetArtifactAsync()
     {
-        return Task.FromResult(_artifact);
+        return _isInitialized
+            ? Task.FromResult(_artifact)
+            : throw new ObjectDisposedException("Artifact not initialized");
     }
 
     public override Task<string> GetDescriptionAsync()
     {
+        ValidateOperationStatus();
         return Task.FromResult(_artifact.GetDescription());
     }
 
     protected override async Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
-        await base.OnGAgentActivateAsync(cancellationToken);
-        await UpdateObserverListAsync(_artifact.GetType());
+        ValidateOperationStatus();
+        try
+        {
+            await base.OnGAgentActivateAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            await UpdateObserverListAsync(_artifact.GetType());
+        }
+        catch (OperationCanceledException ocEx)
+        {
+            throw new ArtifactGAgentException(
+                $"Activation cancelled for {typeof(TArtifact).Name}", ocEx);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Activation failed: {ex}");
+            throw new ArtifactGAgentException(
+                $"Critical failure during activation", ex);
+        }
     }
 
-    protected override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    protected override void GAgentTransitionState(
+        TState state,
+        StateLogEventBase<TStateLogEvent> @event)
     {
-        base.GAgentTransitionState(state, @event);
-        _artifact.TransitionState(state, @event);
+        ValidateParameters(state, @event);
+        try
+        {
+            base.GAgentTransitionState(state, @event);
+            _artifact.TransitionState(state, @event);
+        }
+        catch (Exception ex)
+        {
+            throw new StateTransitionException(
+                $"Invalid state transition: {state} with event {@event}",
+                ex);
+        }
     }
 
-    public override async Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false)
+    public override async Task<List<Type>?> GetAllSubscribedEventsAsync(
+        bool includeBaseHandlers = false)
     {
-        var gAgentEvents = await base.GetAllSubscribedEventsAsync(includeBaseHandlers);
-        var artifactEventHandlerMethods = GetEventHandlerMethods(_artifact.GetType());
-        var handlingTypes = artifactEventHandlerMethods
-            .Select(m => m.GetParameters().First().ParameterType);
-        return handlingTypes.Concat(gAgentEvents!).ToList();
+        ValidateOperationStatus();
+        try
+        {
+            var gAgentEvents = await base.GetAllSubscribedEventsAsync(includeBaseHandlers)
+                .ConfigureAwait(false);
+
+            var artifactMethods = GetEventHandlerMethods(typeof(TArtifact))?
+                .Where(m => m != null) ?? [];
+
+            var handlingTypes = artifactMethods
+                .Select(m => m.GetParameters().FirstOrDefault()?.ParameterType)
+                .Where(t => t != null && t.IsSubclassOf(typeof(TEvent)));
+
+            return handlingTypes
+                .Concat(gAgentEvents ?? new List<Type>())
+                .Distinct()
+                .ToList();
+        }
+        catch (ReflectionTypeLoadException rtle)
+        {
+            throw new ArtifactGAgentException(
+                $"Type load error: {rtle.LoaderExceptions.First()?.Message}",
+                rtle);
+        }
+    }
+
+    private void ValidateOperationStatus()
+    {
+        if (!_isInitialized)
+            throw new ObjectDisposedException("GAgent instance is not functional");
+    }
+
+    private static void ValidateParameters(
+        TState state,
+        StateLogEventBase<TStateLogEvent> @event)
+    {
+        if (state == null)
+            throw new ArgumentNullException(nameof(state),
+                "State cannot be null in transition");
+
+        if (@event == null)
+            throw new ArgumentNullException(nameof(@event),
+                "Transition event cannot be null");
     }
 }

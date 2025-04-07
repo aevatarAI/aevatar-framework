@@ -48,7 +48,10 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             var database = GetDatabase();
             var collection = database.GetCollection<BsonDocument>(collectionName);
 
-            var filter = Builders<BsonDocument>.Filter.Gte("Version", fromVersion);
+            var filter = Builders<BsonDocument>.Filter.And(
+                Builders<BsonDocument>.Filter.Eq("GrainId", grainId.ToString()),
+                Builders<BsonDocument>.Filter.Gte("Version", fromVersion)
+            );
             var sort = Builders<BsonDocument>.Sort.Ascending("Version");
             var options = new FindOptions<BsonDocument>
             {
@@ -95,7 +98,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             var database = GetDatabase();
             var collection = database.GetCollection<BsonDocument>(collectionName);
 
-            var filter = Builders<BsonDocument>.Filter.Empty;
+            var filter = Builders<BsonDocument>.Filter.Eq("GrainId", grainId.ToString());
             var sort = Builders<BsonDocument>.Sort.Descending("Version");
             var options = new FindOptions<BsonDocument>
             {
@@ -151,6 +154,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             var documents = entries.Select(entry =>
             {
                 var document = entry.ToBsonDocument();
+                document["GrainId"] = grainId.ToString();
                 document["Version"] = ++currentVersion;
                 return document;
             }).ToList();
@@ -226,6 +230,6 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
 
     private string GetStreamName(GrainId grainId)
     {
-        return $"{_serviceId}/{_name}/log/{grainId}";
+        return $"{_serviceId}/{_name}/log/{grainId.Type}";
     }
 }

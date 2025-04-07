@@ -7,31 +7,6 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
 {
     protected sealed override void TransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
-        switch (@event)
-        {
-            case AddChildStateLogEvent addChildEvent:
-                Logger.LogDebug("GrainId {GrainId}: Adding child {Child}", this.GetGrainId().ToString(),
-                    addChildEvent.Child);
-                State.Children.Add(addChildEvent.Child);
-                break;
-            case RemoveChildStateLogEvent removeChildEvent:
-                Logger.LogDebug("GrainId {GrainId}: Removing child {Child}", this.GetGrainId().ToString(),
-                    removeChildEvent.Child);
-                State.Children.Remove(removeChildEvent.Child);
-                break;
-            case SetParentStateLogEvent setParentEvent:
-                Logger.LogDebug("GrainId {GrainId}: Setting parent to {Parent}", this.GetGrainId().ToString(),
-                    setParentEvent.Parent);
-                State.Parent = setParentEvent.Parent;
-                break;
-            case ClearParentStateLogEvent clearParentEvent:
-                Logger.LogDebug("GrainId {GrainId}: Clearing parent {Parent}", this.GetGrainId().ToString(),
-                    clearParentEvent.Parent);
-                if (State.Parent == clearParentEvent.Parent)
-                    State.Parent = default;
-                break;
-        }
-
         GAgentTransitionState(state, @event);
 
         Logger.LogInformation("GrainId {GrainId}: State before transition: {@State}", this.GetGrainId().ToString(),
@@ -71,54 +46,10 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         [Id(0)] public GrainId Child { get; set; }
     }
 
-    private async Task RemoveChildAsync(GrainId grainId)
-    {
-        Logger.LogDebug("GrainId [{GrainId}] Removing child to {Parent}", this.GetGrainId().ToString(), grainId);
-        if (!State.Children.IsNullOrEmpty())
-        {
-            base.RaiseEvent(new RemoveChildStateLogEvent
-            {
-                Child = grainId
-            });
-            await ConfirmEvents();
-        }
-    }
 
     [GenerateSerializer]
     public class RemoveChildStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public GrainId Child { get; set; }
-    }
-
-    [GenerateSerializer]
-    public class SetParentStateLogEvent : StateLogEventBase<TStateLogEvent>
-    {
-        [Id(0)] public GrainId Parent { get; set; }
-    }
-
-    private async Task SetParentAsync(GrainId grainId)
-    {
-        Logger.LogDebug("GrainId [{GrainId}] Setting parent to {Parent}", this.GetGrainId().ToString(), grainId);
-        base.RaiseEvent(new SetParentStateLogEvent
-        {
-            Parent = grainId
-        });
-        await ConfirmEvents();
-    }
-
-    [GenerateSerializer]
-    public class ClearParentStateLogEvent : StateLogEventBase<TStateLogEvent>
-    {
-        [Id(0)] public GrainId Parent { get; set; }
-    }
-
-    private async Task ClearParentAsync(GrainId grainId)
-    {
-        Logger.LogDebug("GrainId [{GrainId}] Removing parent to {Parent}", this.GetGrainId().ToString(), grainId);
-        base.RaiseEvent(new ClearParentStateLogEvent
-        {
-            Parent = grainId
-        });
-        await ConfirmEvents();
     }
 }
