@@ -165,7 +165,8 @@ public abstract partial class
     private async Task<SubscribedEventListEvent> GetGroupSubscribedEventListEvent()
     {
         // TODO: Refactor this cause Children now stored on EventPubChildrenGroupGrain.
-        var gAgentList = State.Children
+        var children = await _coordinator!.GetChildrenAsync();
+        var gAgentList = children
             .Distinct()
             .Select(grainId => GrainFactory.GetGrain<IGAgent>(grainId))
             .ToList();

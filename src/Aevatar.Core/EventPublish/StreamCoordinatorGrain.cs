@@ -132,8 +132,11 @@ public class StreamCoordinatorGrain :
     public async Task UpwardsEventAsync(EventWrapperBase eventWrapper)
     {
         // Try self handling
-        var selfEventPubGrain = GrainFactory.GetGrain<IEventPubGrain>($"{this.GetPrimaryKeyString()}");
-        await selfEventPubGrain.PublishEventAsync(eventWrapper);
+        if (eventWrapper.GetPublisherGrainId().ToString() != this.GetPrimaryKeyString())
+        {
+            var selfEventPubGrain = GrainFactory.GetGrain<IEventPubGrain>($"{this.GetPrimaryKeyString()}");
+            await selfEventPubGrain.PublishEventAsync(eventWrapper);
+        }
 
         // Parent handling
         if (State.Parent != default)
