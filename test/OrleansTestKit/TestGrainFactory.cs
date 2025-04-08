@@ -105,7 +105,9 @@ public sealed class TestGrainFactory : IGrainFactory
 
     private static string GetKey(IdSpan identity, Type stateType, string? classPrefix = null)
     {
-        var prefix = stateType.Name!.ToLower()[1..^5];
+        var typeName = stateType.Name!.ToLower();
+        // 确保typeName长度足够使用[1..^5]索引操作
+        var prefix = typeName.Length > 6 ? typeName[1..^5] : typeName;
         return classPrefix == null
             ? $"{prefix}/{identity}"
             : $"{prefix}/{classPrefix}/{identity}";
