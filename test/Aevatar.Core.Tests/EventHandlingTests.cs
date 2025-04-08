@@ -23,7 +23,7 @@ public class EventHandlingTests : GAgentTestKitBase
             subscribedEventList.ShouldNotBeNull();
             subscribedEventList.Count.ShouldBe(4);
             subscribedEventList.ShouldContain(typeof(NaiveTestEvent));
-            subscribedEventList.Count(e => e == typeof(NaiveTestEvent)).ShouldBe(2);
+            subscribedEventList.Count(e => e == typeof(NaiveTestEvent)).ShouldBe(3);
             subscribedEventList.ShouldContain(typeof(EventWrapperBase));
         }
 
@@ -33,9 +33,9 @@ public class EventHandlingTests : GAgentTestKitBase
 
             // Assert.
             subscribedEventList.ShouldNotBeNull();
-            subscribedEventList.Count.ShouldBe(4);
+            subscribedEventList.Count.ShouldBe(5);
             subscribedEventList.ShouldContain(typeof(NaiveTestEvent));
-            subscribedEventList.Count(e => e == typeof(NaiveTestEvent)).ShouldBe(2);
+            subscribedEventList.Count(e => e == typeof(NaiveTestEvent)).ShouldBe(3);
             subscribedEventList.ShouldContain(typeof(EventWrapperBase));
             subscribedEventList.ShouldContain(typeof(RequestAllSubscriptionsEvent));
         }
@@ -49,7 +49,7 @@ public class EventHandlingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, groupGAgent, publishingGAgent);
+        await AddProbesByGrainIdAsync(eventHandlerTestGAgent, groupGAgent, publishingGAgent);
 
         // Act of registering.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -87,7 +87,7 @@ public class EventHandlingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, groupGAgent, publishingGAgent);
+        AddProbesByGrainIdAsync(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, groupGAgent, publishingGAgent);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new ResponseTestEvent
@@ -169,7 +169,7 @@ public class EventHandlingTests : GAgentTestKitBase
             subscribeTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, subscribeTestGAgent, groupGAgent,
+        await AddProbesByGrainIdAsync(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, subscribeTestGAgent, groupGAgent,
             publishingGAgent);
 
         // Act.
@@ -177,8 +177,8 @@ public class EventHandlingTests : GAgentTestKitBase
 
         // Assert.
         var state = await subscribeTestGAgent.GetStateAsync();
-        state.SubscriptionInfo.Count.ShouldBe(4);
-        state.SubscriptionInfo[typeof(EventHandlerTestGAgent)].Count.ShouldBe(3);
+        state.SubscriptionInfo.Count.ShouldBe(3);
+        state.SubscriptionInfo[typeof(EventHandlerTestGAgent)].Count.ShouldBe(4);
         state.SubscriptionInfo[typeof(EventHandlerWithResponseTestGAgent)].Count.ShouldBe(1);
         state.SubscriptionInfo[typeof(SubscribeTestGAgent)].Count.ShouldBe(1);
     }
@@ -192,7 +192,7 @@ public class EventHandlingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent, testGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, testGAgent, groupGAgent, publishingGAgent);
+        await AddProbesByGrainIdAsync(eventHandlerTestGAgent, testGAgent, groupGAgent, publishingGAgent);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent

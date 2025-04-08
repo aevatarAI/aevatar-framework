@@ -7,13 +7,15 @@ namespace Aevatar.Core.Tests.TestGAgents;
 [GenerateSerializer]
 public class EventHandlerTestGAgentState : StateBase
 {
-    [Id(0)]  public List<string> Content { get; set; }
+    [Id(0)] public List<string> Content { get; set; } = [];
 }
 
 public class EventHandlerTestStateLogEvent : StateLogEventBase<EventHandlerTestStateLogEvent>;
 
+public interface IEventHandlerTestGAgent : IStateGAgent<EventHandlerTestGAgentState>;
+
 [GAgent("eventHandlerTest", "test")]
-public class EventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, EventHandlerTestStateLogEvent>
+public class EventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, EventHandlerTestStateLogEvent>, IEventHandlerTestGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {
@@ -55,11 +57,6 @@ public class EventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, Ev
 
     private void AddContent(string content)
     {
-        if (State.Content.IsNullOrEmpty())
-        {
-            State.Content = [];
-        }
-
         State.Content.Add(content);
     }
 }

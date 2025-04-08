@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
-public interface IInvestorTestGAgent: IGAgent
+public interface IInvestorTestGAgent: IStateGAgent<InvestorTestGAgentState>
 {
     
 }
@@ -25,11 +25,6 @@ public class InvestorTestGAgent : GAgentBase<InvestorTestGAgentState, NaiveTestS
 
     public async Task HandleEventAsync(WorkingOnTestEvent eventData)
     {
-        if (State.Content.IsNullOrEmpty())
-        {
-            State.Content = [];
-        }
-
         State.Content.Add(eventData.Description);
 
         await PublishAsync(new InvestorFeedbackTestEvent

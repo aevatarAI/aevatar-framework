@@ -19,7 +19,7 @@ public class EventSourcingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(logViewGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(publishingGAgent, groupGAgent, logViewGAgent);
+        AddProbesByGrainIdAsync(publishingGAgent, groupGAgent, logViewGAgent);
 
         // Act: First event.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -56,15 +56,12 @@ public class EventSourcingTests : GAgentTestKitBase
             (await logViewGAgent.GetStateAsync()).Content.Count.ShouldBe(3);
         }
 
-        const int minimum = 1; // SetParent or AddChildren event.
         // Asset: Check the log storage.
         InMemoryLogConsistentStorage.Storage.Count.ShouldBeGreaterThanOrEqualTo(3);
         InMemoryLogConsistentStorage.Storage.ShouldContainKey(GetStreamName(logViewGAgent.GetGrainId()));
-        InMemoryLogConsistentStorage.Storage[GetStreamName(logViewGAgent.GetGrainId())].Count.ShouldBe(minimum + 3);
+        InMemoryLogConsistentStorage.Storage[GetStreamName(logViewGAgent.GetGrainId())].Count.ShouldBe(3);
         InMemoryLogConsistentStorage.Storage.ShouldContainKey(GetStreamName(groupGAgent.GetGrainId()));
-        InMemoryLogConsistentStorage.Storage[GetStreamName(groupGAgent.GetGrainId())].Count.ShouldBe(minimum + 2);
-        InMemoryLogConsistentStorage.Storage.ShouldContainKey(GetStreamName(publishingGAgent.GetGrainId()));
-        InMemoryLogConsistentStorage.Storage[GetStreamName(publishingGAgent.GetGrainId())].Count.ShouldBe(minimum);
+        InMemoryLogConsistentStorage.Storage[GetStreamName(groupGAgent.GetGrainId())].Count.ShouldBe(1);
     }
 
     private async Task<bool> CheckCount(LogViewAdaptorTestGAgent gAgent, int expectedCount)

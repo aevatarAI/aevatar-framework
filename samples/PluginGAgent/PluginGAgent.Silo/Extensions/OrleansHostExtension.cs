@@ -4,6 +4,7 @@ using Aevatar.PermissionManagement.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
+using Orleans.Configuration;
 
 namespace PluginGAgent.Silo.Extensions;
 
@@ -30,6 +31,11 @@ public static class OrleansHostExtension
                     })
                     .AddMemoryStreams("Aevatar")
                     .UseAevatarPermissionManagement()
+                    .Configure<ClusterOptions>(options =>
+                    {
+                        options.ClusterId = "default";
+                        options.ServiceId = "testServiceId";
+                    })
                     .UseAevatar()
                     ;
             })

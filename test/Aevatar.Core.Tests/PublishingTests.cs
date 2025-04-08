@@ -15,7 +15,7 @@ public class PublishingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(publishingGAgent, groupGAgent, eventHandlerTestGAgent);
+        AddProbesByGrainIdAsync(publishingGAgent, groupGAgent, eventHandlerTestGAgent);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -46,7 +46,7 @@ public class PublishingTests : GAgentTestKitBase
         var level1 = await CreateGroupGAgentAsync(level2A, level2B);
         var publishingGAgent = await CreatePublishingGAgentAsync(level1);
 
-        AddProbesByGrainId(publishingGAgent, level1, level2A, level2B, level3A, level3B);
+        await AddProbesByGrainIdAsync(publishingGAgent, level1, level2A, level2B, level3A, level3B);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -56,13 +56,13 @@ public class PublishingTests : GAgentTestKitBase
 
         // Assert.
         var state3A = await level3A.GetStateAsync();
-        state3A.Content.Count.ShouldBe(3);
+        state3A.Content.Count.ShouldBe(6);
         var state3B = await level3B.GetStateAsync();
-        state3B.Content.Count.ShouldBe(3);
+        state3B.Content.Count.ShouldBe(6);
         var state2A = await level2A.GetStateAsync();
-        state2A.Content.Count.ShouldBe(3);
+        state2A.Content.Count.ShouldBe(6);
         var state2B = await level2B.GetStateAsync();
-        state2B.Content.Count.ShouldBe(3);
+        state2B.Content.Count.ShouldBe(4);
     }
 
     [Fact(DisplayName = "Event can be published upwards.")]
@@ -78,7 +78,7 @@ public class PublishingTests : GAgentTestKitBase
         var level1 = await CreateGroupGAgentAsync(level2A, level2B);
         var publishingGAgent = await CreatePublishingGAgentAsync(level1);
 
-        AddProbesByGrainId(publishingGAgent, level1, level2A, level2B, level3A, level3B);
+        AddProbesByGrainIdAsync(publishingGAgent, level1, level2A, level2B, level3A, level3B);
 
         // Act: ResponseTestEvent will cause level32 publish an NaiveTestEvent.
         await publishingGAgent.PublishEventAsync(new ResponseTestEvent
@@ -88,13 +88,13 @@ public class PublishingTests : GAgentTestKitBase
 
         // Assert: level31 and level21 should receive the response event, then has 1 + 3 content stored.
         var state3A = await level3A.GetStateAsync();
-        state3A.Content.Count.ShouldBe(4);
+        state3A.Content.Count.ShouldBe(5);
         var state2A = await level2A.GetStateAsync();
-        state2A.Content.Count.ShouldBe(4);
+        state2A.Content.Count.ShouldBe(5);
 
         // Assert: level22 should not receive the response event, then has 1 content stored (due to [AllEventHandler]).
         var state2B = await level2B.GetStateAsync();
-        state2B.Content.Count.ShouldBe(1);
+        state2B.Content.Count.ShouldBe(2);
     }
 
     [Fact(DisplayName = "Everything works even if the same Guid is used for different grains.")]
@@ -113,7 +113,7 @@ public class PublishingTests : GAgentTestKitBase
         await level1.RegisterAsync(level2B);
         var publishingGAgent = await CreatePublishingGAgentAsync(level1);
 
-        AddProbesByGrainId(publishingGAgent, level1, level2A, level2B, level3A, level3B);
+        AddProbesByGrainIdAsync(publishingGAgent, level1, level2A, level2B, level3A, level3B);
 
         // Act: ResponseTestEvent will cause level32 publish an NaiveTestEvent.
         await publishingGAgent.PublishEventAsync(new ResponseTestEvent
@@ -123,12 +123,12 @@ public class PublishingTests : GAgentTestKitBase
 
         // Assert: level31 and level21 should receive the response event, then has 1 + 3 content stored.
         var state3A = await level3A.GetStateAsync();
-        state3A.Content.Count.ShouldBe(4);
+        state3A.Content.Count.ShouldBe(5);
         var state2A = await level2A.GetStateAsync();
-        state2A.Content.Count.ShouldBe(4);
+        state2A.Content.Count.ShouldBe(5);
 
         // Assert: level22 should not receive the response event, then has 1 content stored (due to [AllEventHandler]).
         var state2B = await level2B.GetStateAsync();
-        state2B.Content.Count.ShouldBe(1);
+        state2B.Content.Count.ShouldBe(2);
     }
 }

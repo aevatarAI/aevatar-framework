@@ -30,7 +30,7 @@ public abstract class GAgentTestKitBase : TestKitBase
         return groupGAgent;
     }
 
-    protected void AddProbesByGrainId(params IGAgent?[] gAgents)
+    protected async Task AddProbesByGrainIdAsync(params IGAgent?[] gAgents)
     {
         foreach (var gAgent in gAgents)
         {
