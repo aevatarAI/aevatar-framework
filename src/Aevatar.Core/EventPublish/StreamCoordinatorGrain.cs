@@ -9,6 +9,9 @@ using Newtonsoft.Json;
 using Orleans.EventSourcing;
 using Orleans.Providers;
 using Orleans.Streams;
+using Orleans.Concurrency;
+
+namespace Aevatar.Core.EventPublish;
 
 [GenerateSerializer]
 public class StreamCoordinatorState : StateBase
@@ -28,6 +31,7 @@ public class StreamCoordinatorStateLogEvent : StateLogEventBase<StreamCoordinato
 
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
+[Reentrant]
 public class StreamCoordinatorGrain :
     JournaledGrain<StreamCoordinatorState, StateLogEventBase<StreamCoordinatorStateLogEvent>>,
     IStreamCoordinatorGrain
@@ -170,16 +174,13 @@ public class StreamCoordinatorGrain :
         // Try self handling
         if (eventWrapper.GetPublisherGrainId().ToString() != this.GetPrimaryKeyString())
         {
-            var selfEventPubGrain = GrainFactory.GetGrain<IEventPubGrain>($"{this.GetPrimaryKeyString()}");
-            await selfEventPubGrain.PublishEventAsync(eventWrapper);
+            var selfStream = _streamProvider.GetEventWrapperBaseStream(this.GetPrimaryKeyString());
+            await selfStream.OnNextAsync(eventWrapper);
         }
 
         // Parent handling
         if (State.ParentGrainId != default)
         {
-            // var parentEventPubGrain = GrainFactory.GetGrain<IEventPubGrain>(State.Parent.ToString());
-            // await parentEventPubGrain.PublishEventAsync(eventWrapper);
-            // To avoid too many producers on parent's corresponding PubSubRendezvousGrain state.
             var parentStream = _streamProvider.GetEventWrapperBaseStream(State.ParentGrainId);
             await parentStream.OnNextAsync(eventWrapper);
         }

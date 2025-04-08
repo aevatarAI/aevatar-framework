@@ -4,6 +4,9 @@ using Aevatar.Core.Extensions;
 using Orleans.EventSourcing;
 using Orleans.Providers;
 using Orleans.Streams;
+using Orleans.Concurrency;
+
+namespace Aevatar.Core.EventPublish;
 
 [GenerateSerializer]
 public class EventPubChildrenGroupState : StateBase
@@ -17,6 +20,7 @@ public class EventPubChildrenGroupStateLogEvent : StateLogEventBase<EventPubChil
 
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
+[Reentrant]
 public class EventPubChildrenGroupGrain :
     JournaledGrain<EventPubChildrenGroupState, StateLogEventBase<EventPubChildrenGroupStateLogEvent>>,
     IEventPubChildrenGroupGrain
@@ -30,10 +34,10 @@ public class EventPubChildrenGroupGrain :
 
     public async Task DownwardsEventAsync(EventWrapperBase eventWrapper)
     {
-        foreach (var eventPubGrain in State.Children.Select(grainId =>
-                     GrainFactory.GetGrain<IEventPubGrain>(grainId.ToString())))
+        foreach (var childGrainId in State.Children)
         {
-            await eventPubGrain.PublishEventAsync(eventWrapper);
+            var stream = _streamProvider.GetEventWrapperBaseStream(childGrainId.ToString());
+            await stream.OnNextAsync(eventWrapper);
         }
     }
 

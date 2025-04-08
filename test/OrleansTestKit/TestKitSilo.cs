@@ -3,7 +3,8 @@ using Aevatar;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.EventPublish;
-using Aevatar.Core.EventPublish;
+using StreamCoordinatorGrain = Aevatar.Core.EventPublish.StreamCoordinatorGrain;
+using EventPubChildrenGroupGrain = Aevatar.Core.EventPublish.EventPubChildrenGroupGrain;
 using Aevatar.EventSourcing.Core;
 using Aevatar.EventSourcing.Core.Hosting;
 using Aevatar.EventSourcing.Core.LogConsistency;
@@ -308,8 +309,6 @@ public sealed class TestKitSilo
             GrainFactory.AddProbe<IStreamCoordinatorGrain>(streamCoordinatorGrain.GetGrainId(), streamCoordinatorGrain);
             var childrenGroupGrain = await CreateGrainAsync<EventPubChildrenGroupGrain>(0, grainId.ToString());
             GrainFactory.AddProbe<IEventPubChildrenGroupGrain>(childrenGroupGrain.GetGrainId(), childrenGroupGrain);
-            var eventPubGrain = await CreateGrainAsync<EventPubGrain>(grainId.ToString());
-            GrainFactory.AddProbe<IEventPubGrain>(eventPubGrain.GetGrainId(), eventPubGrain);
         }
 
         await grain.OnActivateAsync(cancellation).ConfigureAwait(false);
