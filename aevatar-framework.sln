@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{94D0A422-54BA-48E4-9AAA-4C59BFF72F06}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{96D7B45D-F041-44DD-BFCC-E17048911357}"
@@ -54,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar", "src\Aevatar\Aeva
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.PermissionManagement", "src\Aevatar.PermissionManagement\Aevatar.PermissionManagement.csproj", "{CFECE7AD-4344-475D-8322-DFBEC2972B6E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.EventSourcing.MongoDB.Tests", "test\Aevatar.EventSourcing.MongoDB.Tests\Aevatar.EventSourcing.MongoDB.Tests.csproj", "{A1B2C3D4-E5F6-4747-8899-AABBCCDDEEFF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,6 +85,7 @@ Global
 		{13E448B2-8748-440D-9AB4-254FAC81F7D2} = {78519A39-0189-4978-9529-F9C6F361D8F2}
 		{16CBB0B8-F21E-425E-991C-8E2E6871A87C} = {94D0A422-54BA-48E4-9AAA-4C59BFF72F06}
 		{CFECE7AD-4344-475D-8322-DFBEC2972B6E} = {94D0A422-54BA-48E4-9AAA-4C59BFF72F06}
+		{A1B2C3D4-E5F6-4747-8899-AABBCCDDEEFF} = {96D7B45D-F041-44DD-BFCC-E17048911357}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{70485291-29F6-4FBA-BFE3-3F400184B3C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -170,5 +172,9 @@ Global
 		{CFECE7AD-4344-475D-8322-DFBEC2972B6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFECE7AD-4344-475D-8322-DFBEC2972B6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFECE7AD-4344-475D-8322-DFBEC2972B6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-4747-8899-AABBCCDDEEFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-4747-8899-AABBCCDDEEFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-4747-8899-AABBCCDDEEFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-4747-8899-AABBCCDDEEFF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

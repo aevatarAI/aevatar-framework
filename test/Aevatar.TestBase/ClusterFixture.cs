@@ -4,6 +4,9 @@ using Aevatar.Core.Abstractions;
 using Aevatar.Core.Tests;
 using Aevatar.Extensions;
 using Aevatar.PermissionManagement.Extensions;
+using Aevatar.Plugins;
+using Aevatar.Plugins.DbContexts;
+using Aevatar.Plugins.Repositories;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -102,6 +105,12 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSingleton<IStateProjector, TestStateProjector>();
                     services.AddSingleton<IStateDispatcher, StateDispatcher>();
                     services.AddSingleton<IGAgentFactory, GAgentFactory>();
+
+                    services.Configure<PluginGAgentLoadOptions>(services.GetConfiguration().GetSection("Plugins"));
+                    services.AddTransient<ITenantPluginCodeRepository, TenantPluginCodeRepository>();
+                    services.AddTransient<IPluginCodeStorageRepository, PluginCodeStorageRepository>();
+                    services.AddTransient<TenantPluginCodeMongoDbContext>();
+                    services.AddTransient<PluginCodeStorageMongoDbContext>();
                 })
                 .UseAevatar()
                 .UseAevatarPermissionManagement()

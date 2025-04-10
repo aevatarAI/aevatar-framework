@@ -51,6 +51,7 @@ public interface IGAgent : IGrainWithGuidKey
     /// </summary>
     /// <param name="includeBaseHandlers"></param>
     /// <returns></returns>
+    [ReadOnly]
     Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false);
 
     /// <summary>
@@ -96,5 +97,6 @@ public interface IGAgent : IGrainWithGuidKey
 
 public interface IStateGAgent<TState> : IGAgent
 {
+    [ReadOnly]
     Task<TState> GetStateAsync();
 }

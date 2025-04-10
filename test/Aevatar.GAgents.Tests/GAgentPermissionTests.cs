@@ -36,4 +36,21 @@ public sealed class GAgentPermissionTests : AevatarGAgentsTestBase
             && i.GroupName == "AnotherGroup"
         );
     }
+    
+    [Fact]
+    public async Task PermissionCheckTest()
+    {
+        var permissionGAgent = await _gAgentFactory.GetGAgentAsync<IPermissionGAgent>();
+
+        var userContext = new UserContext()
+        {
+            UserId = "testUser".ToGuid(),
+            Roles = new []{"admin"},
+            UserName = "testUser",
+            Email = "testUser@abp.io",
+            ClientId = ""
+        };
+        RequestContext.Set("CurrentUser", userContext);
+        var exception = await Assert.ThrowsAsync<NullReferenceException>(() => permissionGAgent.DoSomething1Async());
+    }
 }

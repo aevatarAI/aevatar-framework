@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Orleans.Configuration;
 using Orleans.Storage;
@@ -29,9 +30,18 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         _mongoDbOptions = options;
         _serviceId = clusterOptions.Value.ServiceId;
         _logger = logger;
-
-        BsonSerializer.RegisterSerializer(new GrainTypeBsonSerializer());
-        BsonSerializer.RegisterSerializer(new IdSpanBsonSerializer());
+        
+        var grainTypeSerializer = BsonSerializer.LookupSerializer<GrainTypeBsonSerializer>();
+        if (grainTypeSerializer.ValueType != typeof(GrainTypeBsonSerializer))
+        {
+            BsonSerializer.RegisterSerializer(new GrainTypeBsonSerializer());
+        }
+        
+        var idSpanSerializer = BsonSerializer.LookupSerializer<IdSpanBsonSerializer>();
+        if (idSpanSerializer.ValueType != typeof(IdSpanBsonSerializer))
+        {
+            BsonSerializer.RegisterSerializer(new IdSpanBsonSerializer());
+        }
     }
 
     public async Task<IReadOnlyList<TLogEntry>> ReadAsync<TLogEntry>(string grainTypeName, GrainId grainId,

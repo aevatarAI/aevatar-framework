@@ -19,6 +19,7 @@ public interface IMyArtifact : IArtifact<MyArtifactGAgentState, MyArtifactStateL
     string TestMethod();
 }
 
+[GenerateSerializer]
 public class MyArtifact : IMyArtifact
 {
     public string GetDescription() => "MyArtifact Description, this is for testing.";

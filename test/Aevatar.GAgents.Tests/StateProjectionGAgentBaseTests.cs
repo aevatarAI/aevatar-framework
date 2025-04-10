@@ -19,6 +19,7 @@ public class StateProjectionGAgentBaseTests : AevatarGAgentsTestBase
     {
         var groupGAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<GroupGAgentState>>();
         var testGAgent = await _gAgentFactory.GetGAgentAsync<ITestStateProjectionGAgent>();
+        await Task.Delay(2000);
         await groupGAgent.RegisterAsync(testGAgent);
         await TestHelper.WaitUntilAsync(_ => CheckState(groupGAgent), TimeSpan.FromSeconds(20));
         var state = await testGAgent.GetStateAsync();

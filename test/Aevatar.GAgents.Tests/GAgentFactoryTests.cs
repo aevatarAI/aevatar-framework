@@ -173,6 +173,17 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
             }
         }
     }
+    
+    [Fact(DisplayName = "The implementation of GetAvailableEventTypes works.")]
+    public async Task GetAvailableEventTypesTest()
+    {
+        var availableEventTypes = _gAgentManager.GetAvailableEventTypes();
+        availableEventTypes.Count.ShouldBeGreaterThan(20);
+        foreach (var eventType in availableEventTypes.Select(eventType => eventType.Name))
+        {
+            _outputHelper.WriteLine(eventType);
+        }
+    }
 
     [Fact(DisplayName = "Can create ArtifactGAgent.")]
     public async Task GetArtifactGAgentTest()
@@ -182,6 +193,12 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
                 .GetGAgentAsync<IArtifactGAgent<MyArtifact, MyArtifactGAgentState, MyArtifactStateLogEvent>>();
             var events = await artifactGAgent.GetAllSubscribedEventsAsync();
             events.ShouldNotBeEmpty();
+
+            var desc = await artifactGAgent.GetDescriptionAsync();
+            desc.ShouldBe("MyArtifact Description, this is for testing.");
+
+            var artifact = await artifactGAgent.GetArtifactAsync();
+            artifact.ShouldNotBeNull();
         }
 
         {

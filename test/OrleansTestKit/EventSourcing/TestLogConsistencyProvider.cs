@@ -24,7 +24,7 @@ public class TestLogConsistencyProvider : ILogViewAdaptorFactory
         where TLogView : class, new() where TLogEntry : class
     {
         return new LogViewAdaptor<TLogView, TLogEntry>(hostGrain, initialState, _grainStorage, grainTypeName,
-            new TestLogConsistencyProtocolServices(), new InMemoryLogConsistentStorage(), null);
+            new TestLogConsistencyProtocolServices(), _logConsistentStorage, null);
     }
 
     public bool UsesStorageProvider => true;

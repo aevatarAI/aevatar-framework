@@ -8,6 +8,7 @@ using EventPubChildrenGroupGrain = Aevatar.Core.EventPublish.EventPubChildrenGro
 using Aevatar.EventSourcing.Core;
 using Aevatar.EventSourcing.Core.Hosting;
 using Aevatar.EventSourcing.Core.LogConsistency;
+using Aevatar.EventSourcing.Core.Storage;
 using Castle.Core.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -64,9 +65,12 @@ public sealed class TestKitSilo
         var mockOptionsManager = new Mock<IOptions<TypeManifestOptions>>();
         mockOptionsManager.Setup(m => m.Value).Returns(new TypeManifestOptions());
         var codecProvider = new CodecProvider(ServiceProvider, mockOptionsManager.Object);
-        LogConsistencyProvider =
-            new TestLogConsistencyProvider(ServiceProvider, new InMemoryLogConsistentStorage(), TestGrainStorage);
-        ServiceProvider.AddKeyedService<ILogViewAdaptorFactory>("LogStorage", LogConsistencyProvider);
+        TestLogConsistentStorage = new InMemoryLogConsistentStorage();
+        TestLogConsistencyProvider =
+            new TestLogConsistencyProvider(ServiceProvider, TestLogConsistentStorage, TestGrainStorage);
+        LogConsistencyProvider = new LogConsistencyProvider(TestLogConsistentStorage, null, ServiceProvider);
+        
+        ServiceProvider.AddKeyedService<ILogViewAdaptorFactory>("LogStorage", TestLogConsistencyProvider);
         ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
             new DeepCopier(codecProvider, new CopyContextPool(codecProvider)), null!);
         ServiceProvider.AddService<ILogConsistencyProtocolServices>(ProtocolServices);
@@ -129,7 +133,8 @@ public sealed class TestKitSilo
     /// <summary>Gets the manager of all test silo timers.</summary>
     public TestTimerRegistry TimerRegistry { get; }
 
-    public TestLogConsistencyProvider LogConsistencyProvider { get; set; }
+    public TestLogConsistencyProvider TestLogConsistencyProvider { get; set; }
+    public LogConsistencyProvider LogConsistencyProvider { get; set; }
     public DefaultProtocolServices ProtocolServices { get; set; }
     public InMemoryLogConsistentStorage TestLogConsistentStorage { get; set; } = new();
 

@@ -29,12 +29,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
+        <Using Include="Xunit" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Aevatar.Core\Aevatar.Core.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.EventSourcing.Core\Aevatar.EventSourcing.Core.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.EventSourcing.MongoDB\Aevatar.EventSourcing.MongoDB.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.Plugins\Aevatar.Plugins.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.PermissionManagement\Aevatar.PermissionManagement.csproj" />
         <ProjectReference Include="..\..\src\Aevatar\Aevatar.csproj" />

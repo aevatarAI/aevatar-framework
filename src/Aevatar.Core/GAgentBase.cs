@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Orleans.EventSourcing;
 using Orleans.Providers;
+using Orleans.Serialization;
 using Orleans.Streams;
 
 namespace Aevatar.Core;
@@ -294,9 +295,35 @@ public abstract partial class
     {
         StateDispatcher = ServiceProvider.GetService<IStateDispatcher>();
         AevatarOptions = ServiceProvider.GetRequiredService<IOptions<AevatarOptions>>().Value;
-        await base.OnActivateAsync(cancellationToken);
-        await BaseOnActivateAsync(cancellationToken);
-        await OnGAgentActivateAsync(cancellationToken);
+        try
+        {
+            await base.OnActivateAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Error in OnActivateAsync.base.OnActivateAsync: {ExceptionMessage}", e.Message);
+            throw;
+        }
+
+        try
+        {
+            await BaseOnActivateAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Error in OnActivateAsync.BaseOnActivateAsync: {ExceptionMessage}", e.Message);
+            throw;
+        }
+
+        try
+        {
+            await OnGAgentActivateAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Error in OnActivateAsync.OnGAgentActivateAsync: {ExceptionMessage}", e.Message);
+            throw;
+        }
     }
 
     protected virtual Task OnGAgentActivateAsync(CancellationToken cancellationToken)
@@ -307,14 +334,20 @@ public abstract partial class
 
     private async Task BaseOnActivateAsync(CancellationToken cancellationToken)
     {
-        // This must be called first to initialize Observers field.
-        await UpdateObserverListAsync(GetType());
+        try
+        {
+            // This must be called first to initialize Observers field.
+            await UpdateObserverListAsync(GetType());
+            _coordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(
+                this.GetGrainId().ToString());
 
-        _coordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(
-            this.GetGrainId().ToString());
-
-        await InitializeOrResumeEventBaseStreamAsync();
-        await ActivateProjectionGrainAsync();
+            await InitializeOrResumeEventBaseStreamAsync();
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error in BaseOnActivateAsync: {ExceptionMessage}", e.Message);
+            throw;
+        }
     }
 
     private async Task InitializeOrResumeEventBaseStreamAsync()
@@ -324,15 +357,17 @@ public abstract partial class
             return;
         }
 
-        var streamOfThisGAgent = StreamProvider.GetEventWrapperBaseStream(GrainId);
-        var asyncObserver = new GAgentAsyncObserver(_observers);
-        await ResumeOrSubscribeAsync(streamOfThisGAgent, asyncObserver);
-    }
-
-    private async Task ActivateProjectionGrainAsync()
-    {
-        var projectionGrain = GrainFactory.GetGrain<IProjectionGrain>(typeof(TState).FullName);
-        await projectionGrain.ActivateAsync();
+        try
+        {
+            var streamOfThisGAgent = StreamProvider.GetEventWrapperBaseStream(GrainId);
+            var asyncObserver = new GAgentAsyncObserver(_observers);
+            await ResumeOrSubscribeAsync(streamOfThisGAgent, asyncObserver);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError($"Error in InitializeOrResumeEventBaseStreamAsync: {e}");
+            throw;
+        }
     }
 
     private async Task ResumeOrSubscribeAsync<T>(IAsyncStream<T> stream, IAsyncObserver<T> observer)

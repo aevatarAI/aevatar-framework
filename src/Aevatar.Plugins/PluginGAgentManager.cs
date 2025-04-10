@@ -98,7 +98,7 @@ public class PluginGAgentManager : IPluginGAgentManager
         var existedPluginCode =
             await _gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(addExistedPluginDto.PluginCodeId);
         var code = await existedPluginCode.GetPluginCodeAsync();
-        if (code.Length == 0)
+        if (code == null || code.Length == 0)
         {
             return Guid.Empty;
         }
