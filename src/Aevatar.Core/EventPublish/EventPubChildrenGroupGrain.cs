@@ -1,6 +1,8 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.EventPublish;
 using Aevatar.Core.Extensions;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Orleans.EventSourcing;
 using Orleans.Providers;
 using Orleans.Streams;
@@ -25,15 +27,21 @@ public class EventPubChildrenGroupGrain :
     JournaledGrain<EventPubChildrenGroupState, StateLogEventBase<EventPubChildrenGroupStateLogEvent>>,
     IEventPubChildrenGroupGrain
 {
+    private readonly ILogger<EventPubChildrenGroupGrain> _logger;
     private readonly IStreamProvider _streamProvider;
 
-    public EventPubChildrenGroupGrain()
+    public EventPubChildrenGroupGrain(ILogger<EventPubChildrenGroupGrain> logger)
     {
+        _logger = logger;
         _streamProvider = this.GetStreamProvider(AevatarCoreConstants.StreamProvider);
     }
 
     public async Task DownwardsEventAsync(EventWrapperBase eventWrapper)
     {
+        _logger.LogInformation("[{grainId}] Starting DownwardsEventAsync for Event: {eventWrapper}",
+            this.GetGrainId().ToString(),
+            JsonConvert.SerializeObject(eventWrapper));
+
         foreach (var childGrainId in State.Children)
         {
             var stream = _streamProvider.GetEventWrapperBaseStream(childGrainId.ToString());
@@ -43,18 +51,28 @@ public class EventPubChildrenGroupGrain :
 
     public async Task UpwardsEventAsync(EventWrapperBase eventWrapper)
     {
+        _logger.LogInformation("[{grainId}] Starting UpwardsEventAsync for Event: {eventWrapper}",
+            this.GetGrainId().ToString(),
+            JsonConvert.SerializeObject(eventWrapper));
+
         var stream = _streamProvider.GetEventWrapperBaseStream(this.GetPrimaryKeyString());
         await stream.OnNextAsync(eventWrapper);
     }
 
     public async Task AddChildAsync(GrainId childGrainId)
     {
+        _logger.LogInformation("[{grainId}] Adding child GrainId: {GrainId}", this.GetGrainId().ToString(),
+            childGrainId);
+
         RaiseEvent(new AddChildStateLogEvent { ChildId = childGrainId });
         await ConfirmEvents();
     }
 
     public async Task AddManyChildAsync(List<GrainId> childrenGrainIds)
     {
+        _logger.LogInformation("[{grainId}] Adding multiple children GrainIds: {childrenGrainIds}",
+            this.GetGrainId().ToString(), string.Join(", ", childrenGrainIds.ToString()));
+
         base.RaiseEvent(new AddChildManyStateLogEvent
         {
             ChildrenIds = childrenGrainIds
@@ -64,6 +82,9 @@ public class EventPubChildrenGroupGrain :
 
     public async Task RemoveChildAsync(GrainId childId)
     {
+        _logger.LogInformation("[{grainId}] Removing child GrainId: {GrainId}", this.GetGrainId().ToString(),
+            childId);
+
         RaiseEvent(new RemoveChildStateLogEvent { ChildId = childId });
         await ConfirmEvents();
     }

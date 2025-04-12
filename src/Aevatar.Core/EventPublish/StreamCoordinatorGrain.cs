@@ -47,6 +47,10 @@ public class StreamCoordinatorGrain :
 
     public async Task<bool> SetParentAsync(GrainId parentGrainId)
     {
+        _logger.LogDebug("[{grainId}] Setting Parent: {parentGrainId}",
+            this.GetGrainId().ToString(),
+            parentGrainId.ToString());
+
         if (State.ParentGrainId == parentGrainId)
         {
             return false;
@@ -58,6 +62,10 @@ public class StreamCoordinatorGrain :
 
     public async Task ClearParentAsync(GrainId parentGrainId)
     {
+        _logger.LogDebug("[{grainId}] Clearing Parent: {parentGrainId}",
+            this.GetGrainId().ToString(),
+            parentGrainId.ToString());
+
         RaiseEvent(new ClearParentStateLogEvent
         {
             Parent = parentGrainId
@@ -67,6 +75,10 @@ public class StreamCoordinatorGrain :
 
     public async Task SetGroupIndexAsync(int groupIndex)
     {
+        _logger.LogDebug("[{grainId}] Setting Group Index: {groupIndex}",
+            this.GetGrainId().ToString(),
+            groupIndex);
+
         RaiseEvent(new SetGroupIndexStateLogEvent
         {
             GroupIndex = groupIndex
@@ -86,6 +98,10 @@ public class StreamCoordinatorGrain :
 
     public async Task<int> RegisterChildAsync(GrainId childGrainId)
     {
+        _logger.LogDebug("[{grainId}] Registering Child: {childGrainId}",
+            this.GetGrainId().ToString(),
+            childGrainId.ToString());
+
         var groupIndex = State.GroupChildrenCount
             .FirstOrDefault(kvp => kvp.Value <= AevatarGAgentConstants.MaxChildrenPerGroup).Key;
         var childGroupGrain = GetChildGroupGrain(groupIndex);
@@ -98,6 +114,10 @@ public class StreamCoordinatorGrain :
 
     public async Task<int> RegisterManyChildAsync(List<GrainId> childrenGrainIds)
     {
+        _logger.LogDebug("[{grainId}] Registering Children: {childrenGrainIds}",
+            this.GetGrainId().ToString(),
+            string.Join(", ", childrenGrainIds.ToString()));
+
         var count = childrenGrainIds.Count;
         var groupIndex = State.GroupChildrenCount
             .FirstOrDefault(kvp => kvp.Value <= AevatarGAgentConstants.MaxChildrenPerGroup - count).Key;
@@ -111,6 +131,10 @@ public class StreamCoordinatorGrain :
 
     public async Task UnregisterChildAsync(GrainId childGrainId)
     {
+        _logger.LogDebug("[{grainId}] Unregistering Child: {childGrainId}",
+            this.GetGrainId().ToString(),
+            childGrainId.ToString());
+
         var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(childGrainId.ToString());
         await childStreamCoordinator.ClearParentAsync(this.GetGrainId());
         var groupIndex = await childStreamCoordinator.GetGroupIndexAsync();
@@ -147,13 +171,14 @@ public class StreamCoordinatorGrain :
     {
         if (State.ParentGrainId == default)
         {
-            _logger.LogInformation(
-                "Event is the first time appeared to silo: {@Event}", eventWrapper);
+            _logger.LogDebug(
+                "[{grainId}] Event is the first time appeared to silo: {@Event}", this.GetGrainId().ToString(),
+                eventWrapper);
             await DownwardsEventAsync(eventWrapper);
         }
         else
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "{GrainId} is publishing event upwards: {EventJson}", this.GetPrimaryKeyString(),
                 JsonConvert.SerializeObject(eventWrapper));
             await UpwardsEventAsync(eventWrapper);
@@ -162,6 +187,10 @@ public class StreamCoordinatorGrain :
 
     public async Task DownwardsEventAsync(EventWrapperBase eventWrapper)
     {
+        _logger.LogDebug(
+            "[{grainId}] Start downwards event: {@Event}", this.GetGrainId().ToString(),
+            JsonConvert.SerializeObject(eventWrapper));
+
         foreach (var (groupIndex, _) in State.GroupChildrenCount)
         {
             var childrenGroupGrain = GetChildGroupGrain(groupIndex);
@@ -171,9 +200,17 @@ public class StreamCoordinatorGrain :
 
     public async Task UpwardsEventAsync(EventWrapperBase eventWrapper)
     {
+        _logger.LogDebug(
+            "[{grainId}] Start upwards event: {@Event}", this.GetGrainId().ToString(),
+            JsonConvert.SerializeObject(eventWrapper));
+
         // Try self handling
         if (eventWrapper.GetPublisherGrainId().ToString() != this.GetPrimaryKeyString())
         {
+            _logger.LogDebug(
+                "[{grainId}] Self handling event: {@Event}", this.GetGrainId().ToString(),
+                JsonConvert.SerializeObject(eventWrapper));
+
             var selfStream = _streamProvider.GetEventWrapperBaseStream(this.GetPrimaryKeyString());
             await selfStream.OnNextAsync(eventWrapper);
         }
