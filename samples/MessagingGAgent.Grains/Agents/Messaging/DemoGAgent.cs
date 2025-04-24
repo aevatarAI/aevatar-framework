@@ -38,12 +38,23 @@ public interface IDemoGAgent : IBroadCastGAgent
     Task UnSub<T>() where T : EventBase;
 
     Task UnSubWithOutHandle<T>() where T : EventBase;
+
+    Task PublishAsync<T>(GrainId grainId,T @event) where T : EventBase;
 }
 
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public class DemoGAgent : BroadCastGAgentBase<DemoGState, DemoStateLogEvent>, IDemoGAgent
 {
+    public async Task PublishAsync<T>(GrainId grainId,T @event) where T : EventBase
+    {
+        var grainIdString = grainId.ToString();
+        var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, grainIdString);
+        var stream = StreamProvider.GetStream<EventWrapperBase>(streamId);
+        var eventWrapper = new EventWrapper<T>(@event, Guid.NewGuid(), this.GetGrainId());
+        await stream.OnNextAsync(eventWrapper);
+    }
+    
     private StreamSubscriptionHandle<EventWrapperBase>? _handle;
     protected override async Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
