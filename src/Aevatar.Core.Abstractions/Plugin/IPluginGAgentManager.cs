@@ -13,4 +13,5 @@ public interface IPluginGAgentManager
     Task UpdatePluginAsync(UpdatePluginDto updatePluginDto);
     Task<Guid> AddExistedPluginAsync(AddExistedPluginDto addExistedPluginDto);
     Task<IReadOnlyList<Assembly>> GetPluginAssembliesAsync(Guid tenantId);
+    Task<IReadOnlyList<Assembly>> GetCurrentTenantPluginAssembliesAsync();
 }

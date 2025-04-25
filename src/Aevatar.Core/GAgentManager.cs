@@ -1,15 +1,20 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Plugin;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Orleans.Metadata;
+using Volo.Abp.Threading;
 
 namespace Aevatar.Core;
 
 public class GAgentManager : IGAgentManager
 {
+    private readonly IPluginGAgentManager _pluginGAgentManager;
     private readonly GrainTypeResolver _grainTypeResolver;
 
-    public GAgentManager(IClusterClient clusterClient)
+    public GAgentManager(IClusterClient clusterClient, IPluginGAgentManager pluginGAgentManager)
     {
+        _pluginGAgentManager = pluginGAgentManager;
         _grainTypeResolver = clusterClient.ServiceProvider.GetRequiredService<GrainTypeResolver>();
     }
 
@@ -17,6 +22,8 @@ public class GAgentManager : IGAgentManager
     {
         var gAgentType = typeof(IGAgent);
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        var pluginsAssemblies = AsyncHelper.RunSync(() => _pluginGAgentManager.GetCurrentTenantPluginAssembliesAsync());
+        assemblies.AddIfNotContains(pluginsAssemblies);
         var gAgentTypes = new List<Type>();
 
         foreach (var assembly in assemblies)
@@ -32,6 +39,8 @@ public class GAgentManager : IGAgentManager
     public List<Type> GetAvailableEventTypes()
     {
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        var pluginsAssemblies = AsyncHelper.RunSync(() => _pluginGAgentManager.GetCurrentTenantPluginAssembliesAsync());
+        assemblies.AddIfNotContains(pluginsAssemblies);
         var eventTypes = new List<Type>();
 
         foreach (var assembly in assemblies)
