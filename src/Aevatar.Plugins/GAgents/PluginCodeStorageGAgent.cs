@@ -7,6 +7,7 @@ namespace Aevatar.Plugins.GAgents;
 public class PluginCodeStorageGAgentState : StateBase
 {
     [Id(0)] public byte[] Code { get; set; }
+    //[Id(1)] public string Description { get; set; }
 }
 
 [GenerateSerializer]

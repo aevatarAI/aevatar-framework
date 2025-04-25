@@ -24,9 +24,8 @@ public class TenantPluginCodeMongoDbContext(IServiceProvider serviceProvider)
         base.CreateModel(modelBuilder);
         modelBuilder.Entity<TenantPluginCodeSnapshotDocument>(b =>
         {
-            // TODO: Get StreamStorage from configuration
-            var streamStorage = "StreamStorage";
-            b.CollectionName = $"{streamStorage}{typeof(TenantPluginCodeGAgent).FullName!}";
+            var prefix = GetCollectionPrefix();
+            b.CollectionName = $"{prefix}{typeof(TenantPluginCodeGAgent).FullName!}";
         });
     }
 }
