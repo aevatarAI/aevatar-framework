@@ -47,8 +47,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase
             _tenantPluginCodeRepositoryMock.Object,
             _pluginCodeStorageRepositoryMock.Object,
             options,
-            _loggerMock.Object,
-            GetRequiredService<IServiceProvider>()
+            _loggerMock.Object
         );
         _pluginCodeStorageMongoDbContext = GetRequiredService<PluginCodeStorageMongoDbContext>();
         _tenantPluginCodeMongoDbContext = GetRequiredService<TenantPluginCodeMongoDbContext>();

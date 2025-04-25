@@ -21,7 +21,7 @@ public class GAgentManager : IGAgentManager
     public List<Type> GetAvailableGAgentTypes()
     {
         var gAgentType = typeof(IGAgent);
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
         var pluginsAssemblies = AsyncHelper.RunSync(() => _pluginGAgentManager.GetCurrentTenantPluginAssembliesAsync());
         assemblies.AddIfNotContains(pluginsAssemblies);
         var gAgentTypes = new List<Type>();
@@ -38,7 +38,7 @@ public class GAgentManager : IGAgentManager
 
     public List<Type> GetAvailableEventTypes()
     {
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
         var pluginsAssemblies = AsyncHelper.RunSync(() => _pluginGAgentManager.GetCurrentTenantPluginAssembliesAsync());
         assemblies.AddIfNotContains(pluginsAssemblies);
         var eventTypes = new List<Type>();
