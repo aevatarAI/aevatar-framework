@@ -12,6 +12,8 @@ public interface IBroadCastGAgent : IGAgent
 
     Task UnSubscribeBroadCastAsync<T>(string grType, StreamSubscriptionHandle<EventWrapperBase> handle) where T : EventBase;
 
+    // Task UnSubscribeBroadCastAsync<T>(string grType) where T : EventBase;
+
     Task BroadCastEventAsync<T>(string streamIdString, T @event) where T : EventBase;
 }
 
@@ -23,14 +25,14 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     [GenerateSerializer]
     public class SubscribeStateLogEvent : StateLogEventBase<TBroadCastStateLogEvent>
     {
-        public required string Key { get; set; } = string.Empty;
-        public required StreamSubscriptionHandle<EventWrapperBase> Value { get; set; } = null!;
+        [Id(0)]public required string Key { get; set; } = string.Empty;
+        [Id(1)]public required Guid Value { get; set; } = Guid.Empty;
     }
 
     [GenerateSerializer]
     public class UnSubscribeStateLogEvent : StateLogEventBase<TBroadCastStateLogEvent>
     {
-        public required string Key { get; set; } = string.Empty;
+        [Id(0)]public required string Key { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -87,22 +89,42 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
                 }
 
                 await eventHandler.Invoke(eventWrapper.Event);
-            }, ServiceProvider, typeof(EventHandler).Name, typeof(T).Name);
+            }, ServiceProvider, eventHandler.Method.Name, typeof(T).Name);
 
         var key = GetStreamIdString<T>(grType);
 
-        if (State.Subscription.TryGetValue(key, out StreamSubscriptionHandle<EventWrapperBase>? value))
+        if (State.Subscription.TryGetValue(key, out Guid handleId))
         {
             Logger.LogWarning("[{0}.{1}]SubscribeBroadCastEventAsync {2} already exists", this.GetType().Name, nameof(SubscribeBroadCastEventAsync), key);
-            var resumeHandle = await value.ResumeAsync(observer);
-            return resumeHandle;
+            var handles = await stream.GetAllSubscriptionHandles();
+            var resumeHandles = handles.Where(h => h.HandleId == handleId).ToList();
+            if (resumeHandles.IsNullOrEmpty())
+            {
+                Logger.LogWarning("[{0}.{1}]Unable to locate handle {3} to be resumed, continue to subscribe", this.GetType().Name, nameof(SubscribeBroadCastEventAsync), handleId);
+                var unsubscribeEvent = new UnSubscribeStateLogEvent
+                {
+                    Key = key
+                };
+                RaiseEvent(unsubscribeEvent);
+                await ConfirmEvents();
+            }
+            else if (resumeHandles.Count > 1)
+            {
+                Logger.LogError("[{0}.{1}]Multiple handles found for {2} to be resumed", this.GetType().Name, nameof(SubscribeBroadCastEventAsync), handleId);
+                throw new InvalidOperationException($"Multiple handles found for {handleId} to be resumed");
+            }
+            else {
+                return await resumeHandles.First().ResumeAsync(observer);
+            }
         }
 
         var handle = await stream.SubscribeAsync(observer);
+        Logger.LogInformation("[{0}.{1}]SubscribeBroadCastEventAsync {2} created", this.GetType().Name, nameof(SubscribeBroadCastEventAsync), key);
+
         var subscribeEvent = new SubscribeStateLogEvent
         {
             Key = key,
-            Value = handle
+            Value = handle.HandleId
         };
         RaiseEvent(subscribeEvent);
         await ConfirmEvents();
@@ -159,20 +181,20 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     {
         var key = GetStreamIdString<T>(grType);
 
-        if (State.Subscription.TryGetValue(key, out StreamSubscriptionHandle<EventWrapperBase>? handle))
+        if (State.Subscription.TryGetValue(key, out Guid handleId))
         {
             var stream = GenStream<T>(grType);
             var handles = await stream.GetAllSubscriptionHandles();
-            var unsub = handles.Where(x => x.HandleId == handle.HandleId).ToList();
+            var unsub = handles.Where(x => x.HandleId == handleId).ToList();
 
             if (unsub.IsNullOrEmpty())
             {
-                Logger.LogWarning("[{0}.{1}]Unable to locate handle {3} to be unsubscribed", this.GetType().Name, nameof(UnSubscribeBroadCastAsync), handle.HandleId);
+                Logger.LogWarning("[{0}.{1}]Unable to locate handle {3} to be unsubscribed", this.GetType().Name, nameof(UnSubscribeBroadCastAsync), handleId);
             }
 
             if (unsub.Count > 1)
             {
-                Logger.LogWarning("[{0}.{1}]Multiple handles found for {2} to be unsubscribed", this.GetType().Name, nameof(UnSubscribeBroadCastAsync), handle.HandleId);
+                Logger.LogWarning("[{0}.{1}]Multiple handles found for {2} to be unsubscribed", this.GetType().Name, nameof(UnSubscribeBroadCastAsync), handleId);
             }
 
             foreach (var subscription in unsub)
