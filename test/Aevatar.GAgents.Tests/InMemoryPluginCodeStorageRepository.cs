@@ -61,9 +61,9 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         var id = $"{grainTypeName}/{primaryKey:N}";
         if (_store.TryGetValue(id, out var doc))
         {
-            var entries = doc.Doc.Snapshot.Descriptions?.Entries;
+            var entries = doc.Doc.Snapshot.Descriptions;
             if (entries != null)
-                return Task.FromResult(entries.ToDictionary(e => e.Key, e => e.Value));
+                return Task.FromResult(entries.Skip(2).ToDictionary(e => Type.GetType(e.Key), e => e.Value));
         }
         return Task.FromResult(new Dictionary<Type, string>());
     }

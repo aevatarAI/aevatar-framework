@@ -5,6 +5,7 @@ using MongoDB.Driver;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.MongoDB;
 using Volo.Abp.MongoDB;
+using Volo.Abp.Uow;
 
 namespace Aevatar.Plugins.Repositories;
 
@@ -31,12 +32,15 @@ public class PluginCodeStorageRepository :
 
     public async Task<Dictionary<Type, string>> GetPluginDescriptionsByGAgentPrimaryKey(Guid primaryKey)
     {
+        using var uow = UnitOfWorkManager.Begin();
         var dbContext = await GetDbContextAsync();
         var document = await dbContext.PluginCodeStorage
             .Find(pc => pc.Id == $"{GAgentTypeName}/{primaryKey:N}")
             .ToListAsync();
-        return document.FirstOrDefault()?.Doc.Snapshot.Descriptions.Entries.ToDictionary(e => e.Key, e => e.Value) ??
-               new Dictionary<Type, string>();
+        await uow.CompleteAsync();
+        var dict = document.FirstOrDefault()?.Doc.Snapshot.Descriptions.ToDictionary(e => e.Key, e => e.Value) ??
+                   new Dictionary<string, string>();
+        return dict.Skip(2).ToDictionary(d => Type.GetType(d.Key), d => d.Value);
     }
 
     public async Task<IReadOnlyList<byte[]>> GetPluginCodesByGAgentPrimaryKeys(IReadOnlyList<Guid> primaryKeys)

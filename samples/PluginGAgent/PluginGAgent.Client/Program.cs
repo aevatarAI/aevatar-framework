@@ -6,13 +6,17 @@ using Aevatar.Core.Tests.TestGAgents;
 using Aevatar.Extensions;
 using Aevatar.PermissionManagement;
 using Aevatar.Plugins;
-using Aevatar.Plugins.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PluginGAgent.Grains;
 
 var builder = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+    })
     .UseOrleansClient(client =>
     {
         client.UseLocalhostClustering()
@@ -36,6 +40,7 @@ Console.WriteLine("1. Try Execute Plugin GAgents");
 Console.WriteLine("2. Try Get Artifact GAgent");
 Console.WriteLine("3. Show all candidate GAgents");
 Console.WriteLine("4. Call PermissionGAgent");
+Console.WriteLine("5. Get descriptions");
 var choice = Console.ReadLine();
 
 switch (choice)
@@ -54,6 +59,9 @@ switch (choice)
         break;
     case "4":
         await CallPermissionGAgent(gAgentFactory);
+        break;
+    case "5":
+        await GetDescriptions(pluginManager);
         break;
     default:
         Console.WriteLine("Invalid choice.");
@@ -119,4 +127,14 @@ async Task CallPermissionGAgent(IGAgentFactory factory)
     });
     var permissionGAgent = await factory.GetGAgentAsync<IPermissionGAgent>();
     await permissionGAgent.DoSomething1Async();
+}
+
+async Task GetDescriptions(IPluginGAgentManager pluginGAgentManager)
+{
+    var tenantId = "test".ToGuid();
+    var pluginsInformation = await pluginGAgentManager.GetPluginsWithDescriptionAsync(tenantId);
+    foreach (var description in pluginsInformation.Value.Values.SelectMany(descriptions => descriptions))
+    {
+        Console.WriteLine($"Plugin: {description.Key}, Description: {description.Value}");
+    }
 }

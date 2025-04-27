@@ -41,7 +41,7 @@ public class PluginCodeStorageSnapshot
     public ByteArrayContainer Code { get; set; }
     
     [BsonElement("Descriptions")]
-    public DescriptionsContainer Descriptions { get; set; }
+    public Dictionary<string, string> Descriptions { get; set; }
 }
 
 [BsonIgnoreExtraElements]
@@ -63,7 +63,6 @@ public class DescriptionsContainer
     [BsonElement("__type")]
     public string Type { get; set; }
 
-    [BsonElement("Entries")]
     public List<DescriptionEntry> Entries { get; set; } = new();
 }
 
