@@ -6,6 +6,8 @@ using Aevatar.EventSourcing.MongoDB.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using Moq;
@@ -57,11 +59,6 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
         };
 
         _storage = new MongoDbLogConsistentStorage(_name, _mongoDbOptions, _clusterOptionsMock.Object, _loggerMock.Object);
-    }
-
-    [Fact]
-    public async Task Test()
-    {
     }
 
     public async ValueTask DisposeAsync()
@@ -283,6 +280,25 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
         };
         readFromPrimaryFailed.ToString().ShouldContain("test exception");
         
+    }
+
+    [Fact]
+    public void TypeBsonSerializer_Should_Serialize_And_Deserialize_Type()
+    {
+        var serializer = new TypeBsonSerializer();
+        var type = typeof(Dictionary<int, string>);
+        var bson = new BsonDocument();
+        using (var writer = new BsonDocumentWriter(bson))
+        {
+            var context = BsonSerializationContext.CreateRoot(writer);
+            serializer.Serialize(context, type);
+        }
+        using (var reader = new BsonDocumentReader(bson))
+        {
+            var context = BsonDeserializationContext.CreateRoot(reader);
+            var deserialized = serializer.Deserialize(context);
+            Assert.Equal(type, deserialized);
+        }
     }
 
     private class TestLogEntry

@@ -33,6 +33,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
 
         BsonSerializer.TryRegisterSerializer(new GrainTypeBsonSerializer());
         BsonSerializer.TryRegisterSerializer(new IdSpanBsonSerializer());
+        BsonSerializer.TryRegisterSerializer(new TypeBsonSerializer());
     }
 
     public async Task<IReadOnlyList<TLogEntry>> ReadAsync<TLogEntry>(string grainTypeName, GrainId grainId,

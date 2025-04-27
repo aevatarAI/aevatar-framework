@@ -1,3 +1,4 @@
+using Aevatar.EventSourcing.MongoDB;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Volo.Abp.Domain.Entities;
@@ -38,6 +39,9 @@ public class PluginCodeStorageSnapshot
 
     [BsonElement("Code")]
     public ByteArrayContainer Code { get; set; }
+    
+    [BsonElement("Descriptions")]
+    public DescriptionsContainer Descriptions { get; set; }
 }
 
 [BsonIgnoreExtraElements]
@@ -49,4 +53,25 @@ public class ByteArrayContainer
     [BsonElement("__value")]
     [BsonRepresentation(BsonType.Binary)]
     public byte[] Value { get; set; }
+}
+
+public class DescriptionsContainer
+{
+    [BsonElement("__id")]
+    public string InternalId { get; set; }
+
+    [BsonElement("__type")]
+    public string Type { get; set; }
+
+    [BsonElement("Entries")]
+    public List<DescriptionEntry> Entries { get; set; } = new();
+}
+
+public class DescriptionEntry
+{
+    [BsonElement("Key")]
+    [BsonSerializer(typeof(TypeBsonSerializer))]
+    public Type Key { get; set; }
+
+    [BsonElement("Value")] public string Value { get; set; }
 }

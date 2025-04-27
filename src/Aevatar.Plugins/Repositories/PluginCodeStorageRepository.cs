@@ -29,6 +29,16 @@ public class PluginCodeStorageRepository :
         return document.FirstOrDefault()?.Doc.Snapshot.Code.Value;
     }
 
+    public async Task<Dictionary<Type, string>> GetPluginDescriptionsByGAgentPrimaryKey(Guid primaryKey)
+    {
+        var dbContext = await GetDbContextAsync();
+        var document = await dbContext.PluginCodeStorage
+            .Find(pc => pc.Id == $"{GAgentTypeName}/{primaryKey:N}")
+            .ToListAsync();
+        return document.FirstOrDefault()?.Doc.Snapshot.Descriptions.Entries.ToDictionary(e => e.Key, e => e.Value) ??
+               new Dictionary<Type, string>();
+    }
+
     public async Task<IReadOnlyList<byte[]>> GetPluginCodesByGAgentPrimaryKeys(IReadOnlyList<Guid> primaryKeys)
     {
         var codeList = new List<byte[]>();

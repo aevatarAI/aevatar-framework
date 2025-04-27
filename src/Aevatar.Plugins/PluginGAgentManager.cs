@@ -63,18 +63,17 @@ public class PluginGAgentManager : IPluginGAgentManager
         var pluginsInformation = new PluginsInformation();
         foreach (var pluginCodeId in pluginCodeIds)
         {
-            var description = await GetPluginDescription(pluginCodeId);
-            pluginsInformation.Value[pluginCodeId] = description;
+            var descriptions = await GetPluginDescriptions(pluginCodeId);
+            pluginsInformation.Value[pluginCodeId] = descriptions;
         }
 
         return pluginsInformation;
     }
 
-    public async Task<string> GetPluginDescription(Guid pluginCodeId)
+    public async Task<Dictionary<Type, string>> GetPluginDescriptions(Guid pluginCodeId)
     {
-        var pluginCodeStorage =
-            await _gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(pluginCodeId);
-        return await pluginCodeStorage.GetDescriptionAsync();
+        var descriptions = await _pluginCodeStorageRepository.GetPluginDescriptionsByGAgentPrimaryKey(pluginCodeId);
+        return descriptions;
     }
 
     public async Task RemovePluginAsync(RemovePluginDto removePluginDto)

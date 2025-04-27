@@ -12,7 +12,6 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Shouldly;
 using Volo.Abp.Uow;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Aevatar.GAgents.Tests;
@@ -22,8 +21,8 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase
     private readonly ITestOutputHelper _outputHelper;
     private readonly IPluginGAgentManager _pluginGAgentManager;
     private readonly IGAgentFactory _gAgentFactory;
-    private readonly Mock<ITenantPluginCodeRepository> _tenantPluginCodeRepositoryMock;
-    private readonly Mock<IPluginCodeStorageRepository> _pluginCodeStorageRepositoryMock;
+    private readonly ITenantPluginCodeRepository _tenantPluginCodeRepositoryMock;
+    private readonly IPluginCodeStorageRepository _pluginCodeStorageRepositoryMock;
     private readonly Mock<ILogger<PluginGAgentManager>> _loggerMock;
 
     private readonly PluginCodeStorageMongoDbContext _pluginCodeStorageMongoDbContext;
@@ -37,15 +36,15 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase
     {
         _outputHelper = outputHelper;
         _gAgentFactory = GetRequiredService<IGAgentFactory>();
-        _tenantPluginCodeRepositoryMock = new Mock<ITenantPluginCodeRepository>();
-        _pluginCodeStorageRepositoryMock = new Mock<IPluginCodeStorageRepository>();
+        _tenantPluginCodeRepositoryMock = new InMemoryTenantPluginCodeRepository();
+        _pluginCodeStorageRepositoryMock = new InMemoryPluginCodeStorageRepository();
         _loggerMock = new Mock<ILogger<PluginGAgentManager>>();
 
         var options = Options.Create(new PluginGAgentLoadOptions());
         _pluginGAgentManager = new PluginGAgentManager(
             _gAgentFactory,
-            _tenantPluginCodeRepositoryMock.Object,
-            _pluginCodeStorageRepositoryMock.Object,
+            _tenantPluginCodeRepositoryMock,
+            _pluginCodeStorageRepositoryMock,
             options,
             _loggerMock.Object
         );
@@ -303,20 +302,20 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase
     {
         // Arrange
         var tenantId = Guid.NewGuid();
-        var code = "test plugin code";
+        var code = await File.ReadAllBytesAsync("Plugins/Aevatar.GAgents.Plugins.dll");
         
         // Add a plugin
         var pluginId = await _pluginGAgentManager.AddPluginAsync(new AddPluginDto 
         { 
             TenantId = tenantId, 
-            Code = Encoding.UTF8.GetBytes(code) 
+            Code = code
         });
 
         // Act
-        var description = await _pluginGAgentManager.GetPluginDescription(pluginId);
+        var description = await _pluginGAgentManager.GetPluginDescriptions(pluginId);
 
         // Assert
-        description.ShouldNotBeNullOrEmpty();
+        description.ShouldNotBeEmpty();
     }
 
     [Fact(DisplayName = "Can add an existing plugin to a tenant")]
@@ -363,10 +362,6 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase
         // Arrange
         var tenantId = Guid.NewGuid();
         var originalPluginId = Guid.NewGuid();
-        
-        // Mock the repository to return empty code
-        _pluginCodeStorageRepositoryMock.Setup(x => x.GetPluginCodesByGAgentPrimaryKeys(It.IsAny<List<Guid>>()))
-            .ReturnsAsync(new List<byte[]> { Array.Empty<byte>() });
 
         var addExistedPluginDto = new AddExistedPluginDto 
         { 
@@ -395,12 +390,6 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase
             Code = Encoding.UTF8.GetBytes(code) 
         });
 
-        // Mock the repository to return the plugin code
-        _tenantPluginCodeRepositoryMock.Setup(x => x.GetGAgentPrimaryKeysByTenantIdAsync(tenantId))
-            .ReturnsAsync(new List<Guid> { pluginId });
-        _pluginCodeStorageRepositoryMock.Setup(x => x.GetPluginCodesByGAgentPrimaryKeys(It.IsAny<List<Guid>>()))
-            .ReturnsAsync(new List<byte[]> { Encoding.UTF8.GetBytes(code) });
-
         await Assert.ThrowsAsync<BadImageFormatException>(() => _pluginGAgentManager.GetPluginAssembliesAsync(tenantId));
     }
 
@@ -409,10 +398,6 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase
     {
         // Arrange
         var tenantId = Guid.NewGuid();
-
-        // Mock the repository to return null
-        _tenantPluginCodeRepositoryMock.Setup(x => x.GetGAgentPrimaryKeysByTenantIdAsync(tenantId))
-            .ReturnsAsync((List<Guid>)null);
 
         // Act
         var assemblies = await _pluginGAgentManager.GetPluginAssembliesAsync(tenantId);
