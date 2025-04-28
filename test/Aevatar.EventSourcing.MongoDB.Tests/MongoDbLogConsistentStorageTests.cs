@@ -282,25 +282,6 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
         
     }
 
-    [Fact]
-    public void TypeBsonSerializer_Should_Serialize_And_Deserialize_Type()
-    {
-        var serializer = new TypeBsonSerializer();
-        var type = typeof(Dictionary<int, string>);
-        var bson = new BsonDocument();
-        using (var writer = new BsonDocumentWriter(bson))
-        {
-            var context = BsonSerializationContext.CreateRoot(writer);
-            serializer.Serialize(context, type);
-        }
-        using (var reader = new BsonDocumentReader(bson))
-        {
-            var context = BsonDeserializationContext.CreateRoot(reader);
-            var deserialized = serializer.Deserialize(context);
-            Assert.Equal(type, deserialized);
-        }
-    }
-
     private class TestLogEntry
     {
         public required string Data { get; set; }

@@ -54,23 +54,3 @@ public class ByteArrayContainer
     [BsonRepresentation(BsonType.Binary)]
     public byte[] Value { get; set; }
 }
-
-public class DescriptionsContainer
-{
-    [BsonElement("__id")]
-    public string InternalId { get; set; }
-
-    [BsonElement("__type")]
-    public string Type { get; set; }
-
-    public List<DescriptionEntry> Entries { get; set; } = new();
-}
-
-public class DescriptionEntry
-{
-    [BsonElement("Key")]
-    [BsonSerializer(typeof(TypeBsonSerializer))]
-    public Type Key { get; set; }
-
-    [BsonElement("Value")] public string Value { get; set; }
-}

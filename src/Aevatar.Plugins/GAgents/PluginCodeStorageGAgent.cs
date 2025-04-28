@@ -1,6 +1,7 @@
 using System.Reflection;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Plugins.GAgents;
 
@@ -8,7 +9,7 @@ namespace Aevatar.Plugins.GAgents;
 public class PluginCodeStorageGAgentState : StateBase
 {
     [Id(0)] public byte[] Code { get; set; }
-    [Id(1)] public Dictionary<Type, string> Descriptions { get; set; } = new();
+    [Id(1)] public Dictionary<string, string> Descriptions { get; set; } = new();
 }
 
 [GenerateSerializer]
@@ -52,29 +53,69 @@ public class PluginCodeStorageGAgent
         }
     }
 
-    private void UpdateDescriptions(byte[] code)
+    private void UpdateDescriptions(byte[]? code)
     {
-        // Load the assembly from the binary code
-        var assembly = Assembly.Load(code);
+        // Clear previous descriptions
+        State.Descriptions.Clear();
 
-        // Find all types implementing IGAgent
-        var gAgentTypes = assembly.GetTypes()
-            .Where(type => typeof(IGAgent).IsAssignableFrom(type) && type is { IsInterface: false, IsAbstract: false });
+        // Basic validation: check for empty or suspicious code
+        if (code == null || code.Length < 1024) // Arbitrary small size threshold
+        {
+            Logger.LogWarning($"[WARN] Plugin code is null or suspiciously small (length: {code?.Length ?? 0}).");
+            return;
+        }
+
+        Assembly? assembly;
+        try
+        {
+            assembly = Assembly.Load(code);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"[ERROR] Failed to load plugin assembly: {ex.Message}");
+            return;
+        }
+
+        Type[] gAgentTypes;
+        try
+        {
+            gAgentTypes = assembly.GetTypes()
+                .Where(type => typeof(IGAgent).IsAssignableFrom(type) && type is { IsInterface: false, IsAbstract: false })
+                .ToArray();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"[ERROR] Failed to enumerate types in plugin assembly: {ex.Message}");
+            return;
+        }
 
         foreach (var gAgentType in gAgentTypes)
         {
-            // Create an instance of the type
-            var instance = Activator.CreateInstance(gAgentType);
-
-            // Invoke GetDescriptionAsync using reflection
-            var getDescriptionMethod = gAgentType.GetMethod(nameof(IGAgent.GetDescriptionAsync));
-            if (getDescriptionMethod != null)
+            object? instance = null;
+            try
             {
-                var task = (Task<string>)getDescriptionMethod.Invoke(instance, null)!;
-                var description = task.GetAwaiter().GetResult();
+                instance = Activator.CreateInstance(gAgentType);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"[WARN] Could not instantiate {gAgentType.FullName}: {ex.Message}");
+                continue;
+            }
 
-                // Update the State.Descriptions dictionary
-                State.Descriptions[gAgentType] = description;
+            try
+            {
+                var getDescriptionMethod = gAgentType.GetMethod(nameof(IGAgent.GetDescriptionAsync));
+                if (getDescriptionMethod != null)
+                {
+                    var task = (Task<string>?)getDescriptionMethod.Invoke(instance, null);
+                    var description = task?.GetAwaiter().GetResult() ?? "(No description)";
+                    // Use AssemblyQualifiedName as key for serialization safety
+                    State.Descriptions[gAgentType.AssemblyQualifiedName ?? gAgentType.FullName ?? "UnknownType"] = description;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"[WARN] Failed to get description for {gAgentType.FullName}: {ex.Message}");
             }
         }
     }
