@@ -49,10 +49,37 @@ public abstract partial class
 
     public ILogger Logger { get; set; } = NullLogger.Instance;
 
-    private readonly List<EventWrapperBaseAsyncObserver> _observers = [];
+    private List<EventWrapperBaseAsyncObserver> _observers = [];
+    private List<StateHandler> _stateHandlers = [];
+    private GAgentAsyncObserver? _streamObserver;
+
+    public GAgentAsyncObserver? StreamObserver => _streamObserver;
 
     private IStateDispatcher? StateDispatcher { get; set; }
     protected AevatarOptions? AevatarOptions;
+
+    protected IServiceScope? ServiceScope;
+    protected TConfiguration? Configuration;
+
+    protected GAgentBase()
+    {
+        if (ServiceProvider != null)
+        {
+            ServiceScope = ServiceProvider.CreateScope();
+            
+            var loggerFactory = ServiceScope.ServiceProvider.GetService<ILoggerFactory>();
+            if (loggerFactory != null)
+            {
+                Logger = loggerFactory.CreateLogger(GetType().FullName ?? "GAgentBase");
+            }
+
+            var options = ServiceScope.ServiceProvider.GetService<IOptions<TConfiguration>>();
+            if (options != null)
+            {
+                Configuration = options.Value;
+            }
+        }
+    }
 
     public async Task ActivateAsync()
     {
@@ -306,7 +333,7 @@ public abstract partial class
         {
             var streamOfThisGAgent = GetEventBaseStream(this.GetGrainId());
             var handles = await streamOfThisGAgent.GetAllSubscriptionHandles();
-            var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString());
+            var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString(), this.StreamProvider);
             if (handles.Count > 0)
             {
                 foreach (var handle in handles)
@@ -392,5 +419,109 @@ public abstract partial class
         var grainIdString = grainId.ToString();
         var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, grainIdString);
         return StreamProvider.GetStream<EventWrapperBase>(streamId);
+    }
+
+    protected async Task InitializeInternalAsync()
+    {
+        if (_streamObserver == null)
+        {
+            _streamObserver = new GAgentAsyncObserver(_observers, GetPrimaryKeyString(), this.StreamProvider);
+        }
+    }
+
+    /// <summary>
+    /// Gets the stream for publishing exceptions from this GAgent
+    /// </summary>
+    protected IAsyncStream<EventWrapperBase> GetExceptionStream()
+    {
+        var streamId = StreamId.Create(
+            AevatarGAgentConstants.DefaultExceptionStreamNamespace,
+            this.GetGrainId().ToString()
+        );
+        return StreamProvider.GetStream<EventWrapperBase>(streamId);
+    }
+    
+    /// <summary>
+    /// Executes an action and publishes any exceptions that occur to the exception stream
+    /// </summary>
+    protected async Task<T> InvokeWithExceptionPublishingAsync<T>(Func<Task<T>> action, string methodName)
+    {
+        try
+        {
+            return await action();
+        }
+        catch (Exception ex)
+        {
+            // Create exception event with details
+            var exceptionEvent = GAgentExceptionEvent.FromException(
+                ex, 
+                this.GetGrainId(),
+                methodName
+            );
+            
+            // Create a wrapper for the exception
+            var exceptionEventWrapper = new EventWrapper<GAgentExceptionEvent>(
+                exceptionEvent,
+                Guid.NewGuid(),
+                this.GetGrainId()
+            );
+            
+            try
+            {
+                // Get the exception stream and publish
+                var exceptionStream = GetExceptionStream();
+                await exceptionStream.OnNextAsync(exceptionEventWrapper);
+            }
+            catch (Exception publishEx)
+            {
+                // Just log if we fail to publish the exception
+                Logger.LogError(publishEx, "Failed to publish exception event to stream");
+            }
+            
+            // Re-throw the original exception
+            throw;
+        }
+    }
+    
+    /// <summary>
+    /// Executes an action and publishes any exceptions that occur to the exception stream
+    /// </summary>
+    protected async Task InvokeWithExceptionPublishingAsync(Func<Task> action, string methodName)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            // Create exception event with details
+            var exceptionEvent = GAgentExceptionEvent.FromException(
+                ex, 
+                this.GetGrainId(),
+                methodName
+            );
+            
+            // Create a wrapper for the exception
+            var exceptionEventWrapper = new EventWrapper<GAgentExceptionEvent>(
+                exceptionEvent,
+                Guid.NewGuid(),
+                this.GetGrainId()
+            );
+            
+            try
+            {
+                // Get the exception stream and publish
+                var exceptionStream = GetExceptionStream();
+                await exceptionStream.OnNextAsync(exceptionEventWrapper);
+            }
+            catch (Exception publishEx)
+            {
+                // Just log if we fail to publish the exception
+                Logger.LogError(publishEx, "Failed to publish exception event to stream");
+            }
+            
+            // Re-throw the original exception
+            throw;
+        }
     }
 }

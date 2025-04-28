@@ -9,11 +9,13 @@ public class GAgentAsyncObserver : IAsyncObserver<EventWrapperBase>
 {
     private readonly List<EventWrapperBaseAsyncObserver> _observers;
     private readonly string _grainId;
+    private readonly IStreamProvider _streamProvider;
 
-    public GAgentAsyncObserver(List<EventWrapperBaseAsyncObserver> observers, string grainId)
+    public GAgentAsyncObserver(List<EventWrapperBaseAsyncObserver> observers, string grainId, IStreamProvider streamProvider)
     {
         _observers = observers;
         _grainId = grainId;
+        _streamProvider = streamProvider;
     }
     
     /// <summary>
@@ -63,6 +65,58 @@ public class GAgentAsyncObserver : IAsyncObserver<EventWrapperBase>
         }
     }
 
+    /// <summary>
+    /// Publishes an exception to the exception stream
+    /// </summary>
+    private async Task PublishExceptionAsync(Exception exception, EventWrapperBase item, string sourceMethod)
+    {
+        try
+        {
+            // Extract event information if available
+            var (eventType, eventId) = EventWrapperHelper.ExtractProperties(item);
+            
+            // Create exception event with contextual information
+            var exceptionEvent = GAgentExceptionEvent.FromException(
+                exception,
+                GrainId.Parse(_grainId),
+                sourceMethod,
+                eventId,
+                eventType?.GetType().Name
+            );
+            
+            // Copy context metadata from the original event
+            foreach (var kvp in item.ContextMetadata)
+            {
+                exceptionEvent.ContextData[kvp.Key] = kvp.Value;
+            }
+            
+            // Add additional context about where the exception occurred
+            exceptionEvent.ContextData[AevatarGAgentConstants.ExceptionSourceContextKey] = "GAgentAsyncObserver.OnNextAsync";
+            
+            // Create a wrapper for the exception event
+            var exceptionEventWrapper = new EventWrapper<GAgentExceptionEvent>(
+                exceptionEvent,
+                Guid.NewGuid(),
+                GrainId.Parse(_grainId)
+            );
+            
+            // Get or create the exception stream
+            var streamId = StreamId.Create(
+                AevatarGAgentConstants.DefaultExceptionStreamNamespace,
+                Guid.Parse(_grainId)
+            );
+            var exceptionStream = _streamProvider.GetStream<EventWrapperBase>(streamId);
+            
+            // Publish the exception to the stream
+            await exceptionStream.OnNextAsync(exceptionEventWrapper);
+        }
+        catch (Exception ex)
+        {
+            // If we fail to publish the exception, just log it - don't throw another exception
+            Activity.Current?.AddTag("exception.publish.error", ex.Message);
+        }
+    }
+
     public async Task OnNextAsync(EventWrapperBase item, StreamSequenceToken? token = null)
     {
         // Extract event and ID from wrapper
@@ -82,7 +136,13 @@ public class GAgentAsyncObserver : IAsyncObserver<EventWrapperBase>
         }
         catch (Exception ex)
         {
+            // Record the exception in tracing
             RecordExceptionInTracing(ex, scope, activity);
+            
+            // Publish the exception to the exception stream
+            await PublishExceptionAsync(ex, item, "ProcessEventThroughObservers");
+            
+            // Re-throw the exception after publishing
             throw;
         }
         finally

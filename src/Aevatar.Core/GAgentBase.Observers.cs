@@ -157,7 +157,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
                     throw;
                 }
             }
-        }, ServiceProvider, method.Name, parameterType.Name);
+        }, ServiceProvider, method.Name, parameterType.Name, this);
     }
 
     private bool ShouldSkipEvent(EventWrapper<TEvent> eventWrapper, MethodInfo method)
@@ -293,5 +293,17 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         bool IsDefaultHandler(MethodInfo m) =>
             m.Name == AevatarGAgentConstants.EventHandlerDefaultMethodName &&
             !paramType.IsAbstract;
+    }
+
+    private void AddObserver(Func<EventWrapperBase, Task> func, string methodName, string parameterTypeName)
+    {
+        var observer = EventWrapperBaseAsyncObserver.Create(
+            func,
+            ServiceProvider!,
+            methodName,
+            parameterTypeName,
+            this
+        );
+        _observers.Add(observer);
     }
 }
