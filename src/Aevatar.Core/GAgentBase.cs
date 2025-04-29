@@ -61,16 +61,16 @@ public abstract partial class
     /// </summary>
     /// <param name="exception">Exception to publish</param>
     /// <param name="contextData">Context data, can be any serializable object</param>
-    /// <param name="callerMemberName">Caller method name, auto-populated</param>
-    /// <param name="callerClassName">Caller class name, auto-populated</param>
+    /// <param name="methodName">Caller method name, auto-populated</param>
+    /// <param name="agentType">Caller class name, auto-populated</param>
     /// <returns>Exception event ID</returns>
     protected Task<Guid> PublishExceptionAsync(
         Exception exception,
         object? contextData = null,
-        [CallerMemberName] string? callerMemberName = null,
-        [CallerFilePath] string? callerClassName = null)
+        string? methodName = null,
+        string? agentType = null)
     {
-        return ((Grain)this).PublishExceptionAsync(exception, contextData, callerMemberName, callerClassName);
+        return ((Grain)this).PublishExceptionAsync(exception, contextData, methodName, agentType);
     }
 
     /// <summary>
@@ -79,17 +79,17 @@ public abstract partial class
     /// <param name="action">Operation to execute</param>
     /// <param name="contextData">Context data, can be any serializable object</param>
     /// <param name="rethrowException">Whether to rethrow the exception, defaults to true</param>
-    /// <param name="callerMemberName">Caller method name, auto-populated</param>
-    /// <param name="callerClassName">Caller class name, auto-populated</param>
+    /// <param name="methodName">Caller method name, auto-populated</param>
+    /// <param name="agentType">Caller class name, auto-populated</param>
     /// <returns>If an exception occurs, returns the exception event ID; otherwise returns Guid.Empty</returns>
     protected Task<Guid> CatchAndPublishExceptionAsync(
         Func<Task> action,
         object? contextData = null,
         bool rethrowException = true,
-        [CallerMemberName] string? callerMemberName = null,
-        [CallerFilePath] string? callerClassName = null)
+        string? methodName = null,
+        string? agentType = null)
     {
-        return ((Grain)this).CatchAndPublishExceptionAsync(action, contextData, rethrowException, callerMemberName, callerClassName);
+        return ((Grain)this).CatchAndPublishExceptionAsync(action, contextData, rethrowException, methodName, agentType);
     }
 
     /// <summary>
@@ -100,18 +100,18 @@ public abstract partial class
     /// <param name="defaultValue">Default value to return if an exception occurs and is not rethrown</param>
     /// <param name="contextData">Context data, can be any serializable object</param>
     /// <param name="rethrowException">Whether to rethrow the exception, defaults to true</param>
-    /// <param name="callerMemberName">Caller method name, auto-populated</param>
-    /// <param name="callerClassName">Caller class name, auto-populated</param>
+    /// <param name="methodName">Caller method name, auto-populated</param>
+    /// <param name="agentType">Caller class name, auto-populated</param>
     /// <returns>If the operation succeeds, returns the operation result; if an exception occurs and is not rethrown, returns the default value</returns>
     protected Task<(TResult Result, Guid ExceptionId)> CatchAndPublishExceptionAsync<TResult>(
         Func<Task<TResult>> func,
         TResult defaultValue = default!,
         object? contextData = null,
         bool rethrowException = true,
-        [CallerMemberName] string? callerMemberName = null,
-        [CallerFilePath] string? callerClassName = null)
+        string? methodName = null,
+        string? agentType = null)
     {
-        return ((Grain)this).CatchAndPublishExceptionAsync(func, defaultValue, contextData, rethrowException, callerMemberName, callerClassName);
+        return ((Grain)this).CatchAndPublishExceptionAsync(func, defaultValue, contextData, rethrowException, methodName, agentType);
     }
 
     public async Task ActivateAsync()
