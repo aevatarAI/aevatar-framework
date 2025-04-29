@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Background
+  (1) The project is developed using C# and uses the Orleans technology stack. GAgent is a wrapper for Orleans Grain.
+
+# Reference Files
+  • README.md([README.md](mdc:README.md)):
+     The aevatar Framework is a distributed actor-based framework built on Microsoft Orleans for creating scalable event-sourced   applications. Its core component, GAgentBase, provides event sourcing, pub/sub messaging, state management, and hierarchical agent relationship capabilities. Key features include automatic event forwarding, type-safe state containers, dynamic agent registration, and built-in stream processing. The README demonstrates usage examples for creating agents, handling events, and managing registrations, along with best practices.
+
+  • DIRECTORY_STRUCTURE.md([DIRECTORY_STRUCTURE.md](mdc:docs/DIRECTORY_STRUCTURE.md)):
+     The DIRECTORY_STRUCTURE.md document provides a comprehensive overview of the Aevatar Framework's organization, highlighting its modular architecture. The framework is structured with clear separation between source code, samples, and tests. The source code (src/) is organized into several key components including Aevatar.Core (containing the GAgentBase implementation), Core.Abstractions (defining interfaces), EventSourcing modules, and plugin systems. The samples directory showcases various implementation examples like ArtifactGAgent, MessagingGAgent, and SimpleAIGAgent. The test directory provides extensive test coverage for all framework components. Built on .NET, the framework leverages event sourcing with MongoDB integration, Orleans for distributed computing, a plugin-based extensibility system, and Generative Agents (GAgents) for AI integration. Key components include GAgents, event sourcing, plugin systems, Orleans integration, and state projections through event streams.
+     
+  • Aevatar.Core.md([Aevatar.Core.md](mdc:docs/Aevatar.Core.md))
+     The Aevatar.Core.md document illustrates the foundation of the Aevatar Framework through sequence and relationship diagrams. This core module implements the Generative Agent (GAgent) concept - intelligent, stateful, event-driven entities that can communicate through events. Key components include GAgentBase (providing event publishing, subscription, and handling capabilities), GAgentFactory (creating agent instances), GAgentManager (managing agent lifecycle), StateProjection (handling state updates based on events), and EventDispatcher (routing events between agents). The module implements a lightweight event-sourcing pattern where agent state changes are driven by events, creating a network of communicating agents. It supports specialized agent types such as ArtifactGAgent and StateProjectionGAgentBase for different operational needs and advanced state management. The diagrams effectively illustrate the data flow from client interactions through event processing and the relationships between the various components.
