@@ -8,7 +8,7 @@ namespace MessagingGAgent.Grains.Agents.Group;
 public interface IGroupGAgent : IGAgent
 {
 }
-
+[GrainType("MessagingGroupGAgent")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public class GroupGAgent : GAgentBase<GroupAgentState, GroupStateLogEvent>, IGroupGAgent

@@ -3,7 +3,7 @@ using Orleans.SyncWork;
 
 namespace Aevatar.Core.Abstractions.SyncWorker;
 
-public interface IAevatarSyncWorker<TRequest, TResponse> : ISyncWorker<TRequest, TResponse>, IGrainWithGuidKey
+public interface IAevatarSyncWorker<in TRequest, TResponse> : ISyncWorker<TRequest, TResponse>, IGrainWithStringKey
     where TRequest : EventBase
     where TResponse : EventBase
 {

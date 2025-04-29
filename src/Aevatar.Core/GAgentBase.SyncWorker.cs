@@ -14,9 +14,10 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
     {
         try
         {
-            var syncWorker = GrainFactory.GetGrain<IAevatarSyncWorker<TRequest, TResponse>>(Guid.NewGuid());
+            var grainId = $"{typeof(TRequest).Name}_to_{typeof(TResponse).Name}/{Guid.NewGuid()}";
+            var syncWorker = GrainFactory.GetGrain<IAevatarSyncWorker<TRequest, TResponse>>(grainId);
             await syncWorker.SetLongRunTaskAsync(StreamProvider.GetEventWrapperBaseStream(GrainId));
-            await syncWorker.StartWorkAndPollUntilResult(request);
+            await syncWorker.Start(request);
         }
         catch (Exception ex)
         {

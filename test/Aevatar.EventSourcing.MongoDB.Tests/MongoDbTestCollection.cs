@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Aevatar.EventSourcing.MongoDB.Tests;
 
-[CollectionDefinition("MongoDb")]
+[CollectionDefinition(nameof(MongoDbTestCollection))]
 public class MongoDbTestCollection : ICollectionFixture<MongoDbTestCollection>
 {
     public MongoDbTestCollection()

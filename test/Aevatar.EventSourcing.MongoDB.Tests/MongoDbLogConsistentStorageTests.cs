@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Aevatar.EventSourcing.MongoDB.Tests;
 
-[Collection("MongoDb")]
+[Collection(nameof(MongoDbTestCollection))]
 public class MongoDbLogConsistentStorageTests : IAsyncDisposable
 {
     private readonly Mock<IMongoCollection<BsonDocument>> _mongoCollectionMock;
@@ -28,6 +28,7 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
     private readonly Mock<IMongoClient> _mongoClientMock;
     private readonly Mock<IMongoDatabase> _mongoDatabaseMock;
     private readonly Mock<ICluster> _clusterMock;
+    private readonly string _mongoDbConnectionString;
 
     public MongoDbLogConsistentStorageTests()
     {
@@ -47,7 +48,8 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
         _clusterOptionsMock.Setup(x => x.Value).Returns(new ClusterOptions { ServiceId = "TestService" });
         _loggerMock = new Mock<ILogger<MongoDbLogConsistentStorage>>();
 
-        var settings = MongoClientSettings.FromConnectionString("mongodb://localhost:27017");
+        _mongoDbConnectionString = AevatarMongoDbFixture.GetRandomConnectionString();
+        var settings = MongoClientSettings.FromConnectionString(_mongoDbConnectionString);
         _mongoDbOptions = new MongoDbStorageOptions
         {
             ClientSettings = settings,
@@ -65,7 +67,7 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         // Clean up any test data using real MongoDB connection
-        var client = new MongoClient("mongodb://localhost:27017");
+        var client = new MongoClient(_mongoDbConnectionString);
         var database = client.GetDatabase("TestDb");
         var collectionsCursor = await database.ListCollectionNamesAsync();
         var collectionNames = new List<string>();

@@ -8,10 +8,12 @@ namespace Aevatar.GAgents.Tests;
 public sealed class GAgentBaseTests : AevatarGAgentsTestBase
 {
     private readonly IGrainFactory _grainFactory;
+    private readonly IGAgentFactory _gAgentFactory;
 
     public GAgentBaseTests()
     {
         _grainFactory = GetRequiredService<IGrainFactory>();
+        _gAgentFactory = GetRequiredService<IGAgentFactory>();
     }
 
     [Fact(DisplayName = "Can use ConfigAsync method to config GAgent.")]
@@ -82,7 +84,7 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
     }
 
 
-    [Fact]
+    [Fact(DisplayName = "SyncWorker should be worked and not block current GAgent.")]
     public async Task SyncWorkerTest()
     {
         var guid = Guid.NewGuid();
@@ -97,10 +99,17 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         {
             Greeting = "testing with long run task."
         });
+        
+        // Assert: Not blocked.
+        var state = await testGAgent.GetStateAsync();
+        state.ShouldNotBeNull();
+        var timeDiff = (state.EndTime - state.StartTime).TotalMilliseconds;
+        timeDiff.ShouldBeLessThan(100);
 
         await Task.Delay(3000);
-        // Assert.
-        var state = await testGAgent.GetStateAsync();
+
+        // Assert: Executed.
+        state = await testGAgent.GetStateAsync();
         state.Called.ShouldBe(true);
     }
 

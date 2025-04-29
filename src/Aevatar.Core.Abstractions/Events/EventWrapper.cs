@@ -1,6 +1,8 @@
 // ReSharper disable once CheckNamespace
 namespace Aevatar.Core.Abstractions;
 
+using System.Diagnostics;
+
 [GenerateSerializer]
 public class EventWrapper<T> : EventWrapperBase where T : EventBase
 {

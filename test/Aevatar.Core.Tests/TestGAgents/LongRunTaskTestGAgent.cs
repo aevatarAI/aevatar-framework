@@ -9,12 +9,13 @@ namespace Aevatar.Core.Tests.TestGAgents;
 public class LongRunTaskTestGAgentState : StateBase
 {
     [Id(0)] public bool Called { get; set; }
+    [Id(1)] public DateTime StartTime { get; set; }
+    [Id(2)] public DateTime EndTime { get; set; }
 }
 
 [GenerateSerializer]
 public class LongRunTaskTestStateLogEvent : StateLogEventBase<LongRunTaskTestStateLogEvent>
 {
-
 }
 
 [GAgent]
@@ -28,7 +29,9 @@ public class LongRunTaskTestGAgent : GAgentBase<LongRunTaskTestGAgentState, Long
     [EventHandler]
     public async Task HandleEventAsync(NaiveTestEvent eventData)
     {
+        State.StartTime = DateTime.UtcNow;
         await CreateLongRunTaskAsync<NaiveTestEvent, WorkingOnTestEvent>(eventData);
+        State.EndTime = DateTime.UtcNow;
     }
     
     [EventHandler]

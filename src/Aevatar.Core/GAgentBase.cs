@@ -185,13 +185,13 @@ public abstract partial class
 
     public async Task<IAsyncObserver<EventWrapperBase>> GetGAgentAsyncObserverAsync()
     {
-        var asyncObserver = new GAgentAsyncObserver(_observers);
+        var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString());
         return asyncObserver;
     }
 
     public async Task ResumeSubscriptionAsync(IAsyncStream<EventWrapperBase> stream)
     {
-        var asyncObserver = new GAgentAsyncObserver(_observers);
+        var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString());
         await ResumeOrSubscribeAsync(stream, asyncObserver);
     }
 
@@ -360,7 +360,7 @@ public abstract partial class
         try
         {
             var streamOfThisGAgent = StreamProvider.GetEventWrapperBaseStream(GrainId);
-            var asyncObserver = new GAgentAsyncObserver(_observers);
+            var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString());
             await ResumeOrSubscribeAsync(streamOfThisGAgent, asyncObserver);
         }
         catch (Exception e)

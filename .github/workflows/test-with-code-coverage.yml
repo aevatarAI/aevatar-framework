@@ -1,0 +1,43 @@
+name: Test with code coverage
+
+on:
+  push:
+    branches:
+      - '**'
+
+env:
+  DOTNET_INSTALL_DIR: "./.dotnet"
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: chown
+        run: |
+          sudo chown -R $USER:$USER /home/runneradmin
+      - name: Install dependencies
+        run: dotnet restore --verbosity quiet
+
+      - name: Build
+        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+
+      - name: Test
+        run: |
+          dotnet test --no-restore --no-build --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          files: ./coverage/*/coverage.cobertura.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
