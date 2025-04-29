@@ -74,6 +74,7 @@ public static class ExceptionPublisherExtensions
             var stream = streamProvider.GetStream<ExceptionEvent>(StreamId.Create(streamNamespace, options.ExceptionStreamKey));
             
             var eventId = Guid.NewGuid();
+            exceptionEvent.CorrelationId = eventId;
             await stream.OnNextAsync(exceptionEvent);
             
             return eventId;

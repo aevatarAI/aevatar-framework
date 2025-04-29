@@ -64,7 +64,7 @@ public abstract partial class
     /// <param name="callerMemberName">Caller method name, auto-populated</param>
     /// <param name="callerClassName">Caller class name, auto-populated</param>
     /// <returns>Exception event ID</returns>
-    public Task<Guid> PublishExceptionAsync(
+    protected Task<Guid> PublishExceptionAsync(
         Exception exception,
         object? contextData = null,
         [CallerMemberName] string? callerMemberName = null,
@@ -82,7 +82,7 @@ public abstract partial class
     /// <param name="callerMemberName">Caller method name, auto-populated</param>
     /// <param name="callerClassName">Caller class name, auto-populated</param>
     /// <returns>If an exception occurs, returns the exception event ID; otherwise returns Guid.Empty</returns>
-    public Task<Guid> CatchAndPublishExceptionAsync(
+    protected Task<Guid> CatchAndPublishExceptionAsync(
         Func<Task> action,
         object? contextData = null,
         bool rethrowException = true,
@@ -103,7 +103,7 @@ public abstract partial class
     /// <param name="callerMemberName">Caller method name, auto-populated</param>
     /// <param name="callerClassName">Caller class name, auto-populated</param>
     /// <returns>If the operation succeeds, returns the operation result; if an exception occurs and is not rethrown, returns the default value</returns>
-    public Task<(TResult Result, Guid ExceptionId)> CatchAndPublishExceptionAsync<TResult>(
+    protected Task<(TResult Result, Guid ExceptionId)> CatchAndPublishExceptionAsync<TResult>(
         Func<Task<TResult>> func,
         TResult defaultValue = default!,
         object? contextData = null,
