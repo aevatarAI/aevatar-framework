@@ -11,4 +11,8 @@
         <ProjectReference Include="..\..\..\src\Aevatar.Core\Aevatar.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="RestSharp" />
+    </ItemGroup>
+
 </Project>

@@ -15,6 +15,7 @@
     <PackageVersion Include="AutoGen" Version="0.2.1" />
     <PackageVersion Include="AutoGen.Core" Version="0.2.1" />
     <PackageVersion Include="Azure.AI.TextAnalytics" Version="5.3.0" />
+    <PackageVersion Include="ILRepack.Lib.MSBuild.Task" Version="2.0.40" />
     <PackageVersion Include="JetBrains.Annotations" Version="2024.2.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="8.0.4" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
@@ -23,6 +24,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Core" Version="1.33.0" />
     <PackageVersion Include="OpenAI.API" Version="1.0.0" />
     <PackageVersion Include="Orleans.SyncWork" Version="9.4.4" />
+    <PackageVersion Include="RestSharp" Version="112.1.1-alpha.0.4" />
     <PackageVersion Include="Serilog.Formatting.Compact" Version="2.0.0" />
     <!-- ABP packages -->
     <PackageVersion Include="Volo.Abp.Account.Application" Version="$(AbpVersion)" />

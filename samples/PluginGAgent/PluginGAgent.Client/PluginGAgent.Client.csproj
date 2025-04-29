@@ -30,8 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="plugins\PluginGAgent.Grains.dll" />
-      <Content Include="plugins\PluginGAgent.Grains.dll">
+      <None Remove="plugins\*.dll" />
+      <Content Include="plugins\*.dll">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

@@ -1,3 +1,4 @@
+using System.Reflection;
 using Aevatar.Core;
 using Aevatar.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +45,8 @@ public static class OrleansHostExtensions
             });
     }
 
-    private static async Task LoadPluginsAsync(IServiceCollection services, IAbpApplicationWithInternalServiceProvider application)
+    private static async Task LoadPluginsAsync(IServiceCollection services,
+        IAbpApplicationWithInternalServiceProvider application)
     {
         var assemblies = await application.GetTenantPluginAssemblyListAsync();
         services.AddSerializer(options =>
@@ -54,6 +56,13 @@ public static class OrleansHostExtensions
                 options.AddAssembly(assembly);
             }
         });
+
+        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+        {
+            var assemblyName = new AssemblyName(args.Name).Name;
+            var assembly = assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName);
+            return assembly != null ? assembly : null;
+        };
     }
 
     public static IClientBuilder UseAevatar(this IClientBuilder builder)
