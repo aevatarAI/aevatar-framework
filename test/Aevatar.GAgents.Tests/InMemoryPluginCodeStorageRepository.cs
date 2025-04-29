@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Aevatar.Core.Abstractions;
 using Aevatar.Plugins.Entities;
+using Aevatar.Plugins.GAgents;
 using Aevatar.Plugins.Repositories;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
@@ -52,6 +54,7 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         {
             return Task.FromResult(doc.Doc.Snapshot.Code?.Value);
         }
+
         return Task.FromResult<byte[]?>(null);
     }
 
@@ -62,9 +65,9 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         if (_store.TryGetValue(id, out var doc))
         {
             var entries = doc.Doc.Snapshot.Descriptions;
-            if (entries != null)
-                return Task.FromResult(entries.Skip(2).ToDictionary(e => Type.GetType(e.Key), e => e.Value));
+            return Task.FromResult(entries.ToDictionary(e => Type.GetType(e.Key), e => e.Value));
         }
+
         return Task.FromResult(new Dictionary<Type, string>());
     }
 
@@ -80,6 +83,7 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
                 result.Add(doc.Doc.Snapshot.Code.Value);
             }
         }
+
         return Task.FromResult((IReadOnlyList<byte[]>)result);
     }
 
@@ -93,7 +97,8 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         return Task.FromResult(_store.Values.Any(predicate));
     }
 
-    public Task<PluginCodeStorageSnapshotDocument?> FirstOrDefaultAsync(Func<PluginCodeStorageSnapshotDocument, bool> predicate)
+    public Task<PluginCodeStorageSnapshotDocument?> FirstOrDefaultAsync(
+        Func<PluginCodeStorageSnapshotDocument, bool> predicate)
     {
         return Task.FromResult(_store.Values.FirstOrDefault(predicate));
     }
@@ -103,17 +108,20 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         throw new NotImplementedException();
     }
 
-    public IQueryable<PluginCodeStorageSnapshotDocument> WithDetails(params Expression<Func<PluginCodeStorageSnapshotDocument, object>>[] propertySelectors)
+    public IQueryable<PluginCodeStorageSnapshotDocument> WithDetails(
+        params Expression<Func<PluginCodeStorageSnapshotDocument, object>>[] propertySelectors)
     {
         throw new NotImplementedException();
     }
 
-    Task<IQueryable<PluginCodeStorageSnapshotDocument>> IReadOnlyRepository<PluginCodeStorageSnapshotDocument>.WithDetailsAsync()
+    Task<IQueryable<PluginCodeStorageSnapshotDocument>> IReadOnlyRepository<PluginCodeStorageSnapshotDocument>.
+        WithDetailsAsync()
     {
         throw new NotImplementedException();
     }
 
-    public Task<IQueryable<PluginCodeStorageSnapshotDocument>> WithDetailsAsync(params Expression<Func<PluginCodeStorageSnapshotDocument, object>>[] propertySelectors)
+    public Task<IQueryable<PluginCodeStorageSnapshotDocument>> WithDetailsAsync(
+        params Expression<Func<PluginCodeStorageSnapshotDocument, object>>[] propertySelectors)
     {
         throw new NotImplementedException();
     }
@@ -123,7 +131,8 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         throw new NotImplementedException();
     }
 
-    public Task<List<PluginCodeStorageSnapshotDocument>> GetListAsync(Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate, bool includeDetails = false,
+    public Task<List<PluginCodeStorageSnapshotDocument>> GetListAsync(
+        Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate, bool includeDetails = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -143,7 +152,9 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
     }
 
     public bool? IsChangeTrackingEnabled { get; }
-    public Task<List<PluginCodeStorageSnapshotDocument>> GetListAsync(bool includeDetails = false, CancellationToken cancellationToken = new CancellationToken())
+
+    public Task<List<PluginCodeStorageSnapshotDocument>> GetListAsync(bool includeDetails = false,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
@@ -153,13 +164,15 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         throw new NotImplementedException();
     }
 
-    public Task<List<PluginCodeStorageSnapshotDocument>> GetPagedListAsync(int skipCount, int maxResultCount, string sorting, bool includeDetails = false,
+    public Task<List<PluginCodeStorageSnapshotDocument>> GetPagedListAsync(int skipCount, int maxResultCount,
+        string sorting, bool includeDetails = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<PluginCodeStorageSnapshotDocument> InsertAsync(PluginCodeStorageSnapshotDocument entity, bool autoSave = false,
+    public Task<PluginCodeStorageSnapshotDocument> InsertAsync(PluginCodeStorageSnapshotDocument entity,
+        bool autoSave = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -171,7 +184,8 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         throw new NotImplementedException();
     }
 
-    public Task<PluginCodeStorageSnapshotDocument> UpdateAsync(PluginCodeStorageSnapshotDocument entity, bool autoSave = false,
+    public Task<PluginCodeStorageSnapshotDocument> UpdateAsync(PluginCodeStorageSnapshotDocument entity,
+        bool autoSave = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -195,13 +209,15 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         throw new NotImplementedException();
     }
 
-    public Task<PluginCodeStorageSnapshotDocument?> FindAsync(Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate, bool includeDetails = true,
+    public Task<PluginCodeStorageSnapshotDocument?> FindAsync(
+        Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate, bool includeDetails = true,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<PluginCodeStorageSnapshotDocument> GetAsync(Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate, bool includeDetails = true,
+    public Task<PluginCodeStorageSnapshotDocument> GetAsync(
+        Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate, bool includeDetails = true,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -213,22 +229,26 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
         throw new NotImplementedException();
     }
 
-    public Task DeleteDirectAsync(Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate, CancellationToken cancellationToken = new CancellationToken())
+    public Task DeleteDirectAsync(Expression<Func<PluginCodeStorageSnapshotDocument, bool>> predicate,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<PluginCodeStorageSnapshotDocument> GetAsync(string id, bool includeDetails = true, CancellationToken cancellationToken = new CancellationToken())
+    public Task<PluginCodeStorageSnapshotDocument> GetAsync(string id, bool includeDetails = true,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<PluginCodeStorageSnapshotDocument?> FindAsync(string id, bool includeDetails = true, CancellationToken cancellationToken = new CancellationToken())
+    public Task<PluginCodeStorageSnapshotDocument?> FindAsync(string id, bool includeDetails = true,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteAsync(string id, bool autoSave = false, CancellationToken cancellationToken = new CancellationToken())
+    public Task DeleteAsync(string id, bool autoSave = false,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
@@ -238,4 +258,41 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
     {
         throw new NotImplementedException();
     }
-} 
+
+    private void PerformSyncState(string id, PluginCodeStorageGAgentState state)
+    {
+        var code = new ByteArrayContainer
+        {
+            Type = "System.Byte[], System.Private.CoreLib",
+            Value = state.Code
+        };
+        if (_store.TryGetValue(id, out var doc))
+        {
+            doc.Doc.Snapshot.Code = code;
+            doc.Doc.Snapshot.Descriptions = new Dictionary<string, string>(state.Descriptions);
+        }
+        else
+        {
+            _store[id] = new PluginCodeStorageSnapshotDocument
+            {
+                Doc = new PluginCodeStorageDoc
+                {
+                    Snapshot = new PluginCodeStorageSnapshot
+                    {
+                        Code = code,
+                        Descriptions = new Dictionary<string, string>(state.Descriptions)
+                    }
+                }
+            };
+        }
+    }
+
+    public async Task SyncStoreAsync(IStateGAgent<PluginCodeStorageGAgentState> codeStorageGAgent)
+    {
+        var pluginId = codeStorageGAgent.GetPrimaryKey();
+        var grainTypeName = typeof(PluginCodeStorageGAgent).FullName!;
+        var id = $"{grainTypeName}/{pluginId:N}";
+        var state = await codeStorageGAgent.GetStateAsync();
+        PerformSyncState(id, state);
+    }
+}

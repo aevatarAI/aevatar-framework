@@ -99,7 +99,10 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     foreach (var type in gAgentTypes)
                     {
                         var grainType = grainTypeResolver.GetGrainType(type);
-                        grainTypeMap = grainTypeMap.Add(grainType, type);
+                        if (!grainTypeMap.ContainsKey(grainType))
+                        {
+                            grainTypeMap = grainTypeMap.Add(grainType, type);
+                        }
                     }
                     services.AddSingleton(grainTypeMap);
                     services.AddSingleton<IStateProjector, TestStateProjector>();

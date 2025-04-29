@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
+using Aevatar.Core.Abstractions;
 using Aevatar.Plugins.Entities;
+using Aevatar.Plugins.GAgents;
 using Aevatar.Plugins.Repositories;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
@@ -48,6 +50,7 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         {
             return Task.FromResult((IReadOnlyList<Guid>?)doc.Doc.Snapshot.CodeStorageGuids?.Values);
         }
+
         return Task.FromResult<IReadOnlyList<Guid>?>(null);
     }
 
@@ -61,7 +64,8 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         return Task.FromResult(_store.Values.Any(predicate));
     }
 
-    public Task<TenantPluginCodeSnapshotDocument?> FirstOrDefaultAsync(Func<TenantPluginCodeSnapshotDocument, bool> predicate)
+    public Task<TenantPluginCodeSnapshotDocument?> FirstOrDefaultAsync(
+        Func<TenantPluginCodeSnapshotDocument, bool> predicate)
     {
         return Task.FromResult(_store.Values.FirstOrDefault(predicate));
     }
@@ -71,17 +75,20 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         throw new NotImplementedException();
     }
 
-    public IQueryable<TenantPluginCodeSnapshotDocument> WithDetails(params Expression<Func<TenantPluginCodeSnapshotDocument, object>>[] propertySelectors)
+    public IQueryable<TenantPluginCodeSnapshotDocument> WithDetails(
+        params Expression<Func<TenantPluginCodeSnapshotDocument, object>>[] propertySelectors)
     {
         throw new NotImplementedException();
     }
 
-    Task<IQueryable<TenantPluginCodeSnapshotDocument>> IReadOnlyRepository<TenantPluginCodeSnapshotDocument>.WithDetailsAsync()
+    Task<IQueryable<TenantPluginCodeSnapshotDocument>> IReadOnlyRepository<TenantPluginCodeSnapshotDocument>.
+        WithDetailsAsync()
     {
         throw new NotImplementedException();
     }
 
-    public Task<IQueryable<TenantPluginCodeSnapshotDocument>> WithDetailsAsync(params Expression<Func<TenantPluginCodeSnapshotDocument, object>>[] propertySelectors)
+    public Task<IQueryable<TenantPluginCodeSnapshotDocument>> WithDetailsAsync(
+        params Expression<Func<TenantPluginCodeSnapshotDocument, object>>[] propertySelectors)
     {
         throw new NotImplementedException();
     }
@@ -91,7 +98,8 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         throw new NotImplementedException();
     }
 
-    public Task<List<TenantPluginCodeSnapshotDocument>> GetListAsync(Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate, bool includeDetails = false,
+    public Task<List<TenantPluginCodeSnapshotDocument>> GetListAsync(
+        Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate, bool includeDetails = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -110,7 +118,9 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
     }
 
     public bool? IsChangeTrackingEnabled { get; }
-    public Task<List<TenantPluginCodeSnapshotDocument>> GetListAsync(bool includeDetails = false, CancellationToken cancellationToken = new CancellationToken())
+
+    public Task<List<TenantPluginCodeSnapshotDocument>> GetListAsync(bool includeDetails = false,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
@@ -120,13 +130,15 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         throw new NotImplementedException();
     }
 
-    public Task<List<TenantPluginCodeSnapshotDocument>> GetPagedListAsync(int skipCount, int maxResultCount, string sorting, bool includeDetails = false,
+    public Task<List<TenantPluginCodeSnapshotDocument>> GetPagedListAsync(int skipCount, int maxResultCount,
+        string sorting, bool includeDetails = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<TenantPluginCodeSnapshotDocument> InsertAsync(TenantPluginCodeSnapshotDocument entity, bool autoSave = false,
+    public Task<TenantPluginCodeSnapshotDocument> InsertAsync(TenantPluginCodeSnapshotDocument entity,
+        bool autoSave = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -138,7 +150,8 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         throw new NotImplementedException();
     }
 
-    public Task<TenantPluginCodeSnapshotDocument> UpdateAsync(TenantPluginCodeSnapshotDocument entity, bool autoSave = false,
+    public Task<TenantPluginCodeSnapshotDocument> UpdateAsync(TenantPluginCodeSnapshotDocument entity,
+        bool autoSave = false,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -162,13 +175,15 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         throw new NotImplementedException();
     }
 
-    public Task<TenantPluginCodeSnapshotDocument?> FindAsync(Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate, bool includeDetails = true,
+    public Task<TenantPluginCodeSnapshotDocument?> FindAsync(
+        Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate, bool includeDetails = true,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<TenantPluginCodeSnapshotDocument> GetAsync(Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate, bool includeDetails = true,
+    public Task<TenantPluginCodeSnapshotDocument> GetAsync(
+        Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate, bool includeDetails = true,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
@@ -180,22 +195,26 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         throw new NotImplementedException();
     }
 
-    public Task DeleteDirectAsync(Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate, CancellationToken cancellationToken = new CancellationToken())
+    public Task DeleteDirectAsync(Expression<Func<TenantPluginCodeSnapshotDocument, bool>> predicate,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<TenantPluginCodeSnapshotDocument> GetAsync(string id, bool includeDetails = true, CancellationToken cancellationToken = new CancellationToken())
+    public Task<TenantPluginCodeSnapshotDocument> GetAsync(string id, bool includeDetails = true,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<TenantPluginCodeSnapshotDocument?> FindAsync(string id, bool includeDetails = true, CancellationToken cancellationToken = new CancellationToken())
+    public Task<TenantPluginCodeSnapshotDocument?> FindAsync(string id, bool includeDetails = true,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteAsync(string id, bool autoSave = false, CancellationToken cancellationToken = new CancellationToken())
+    public Task DeleteAsync(string id, bool autoSave = false,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
@@ -205,4 +224,35 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
     {
         throw new NotImplementedException();
     }
-} 
+
+    public async Task SyncStoreAsync(IStateGAgent<TenantPluginCodeGAgentState> gAgent)
+    {
+        var tenantId = gAgent.GetPrimaryKey();
+        var grainTypeName = typeof(TenantPluginCodeGAgent).FullName!;
+        var id = $"{grainTypeName}/{tenantId:N}";
+        var state = await gAgent.GetStateAsync();
+        PerformSyncState(id, state);
+    }
+
+    private void PerformSyncState(string id, TenantPluginCodeGAgentState state)
+    {
+        var guidList = new CodeStorageGuidList { Values = state.CodeStorageGuids };
+        if (_store.TryGetValue(id, out var doc))
+        {
+            doc.Doc.Snapshot.CodeStorageGuids = guidList;
+        }
+        else
+        {
+            _store[id] = new TenantPluginCodeSnapshotDocument
+            {
+                Doc = new TenantPluginCodeDocEntity
+                {
+                    Snapshot = new TenantPluginCodeSnapshotEntity
+                    {
+                        CodeStorageGuids = guidList
+                    }
+                }
+            };
+        }
+    }
+}
