@@ -7,6 +7,12 @@ using Orleans.Streams;
 
 namespace Aevatar.Core.Projections;
 
+[GenerateSerializer]
+public class ProjectionState: StateBase
+{
+    [Id(0)]public int Index { get; set; }
+}
+
 public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
     where TState : StateBase, new()
 {
@@ -15,20 +21,20 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
     private ILogger<StateProjectionGrain<TState>> _logger;
     private bool _activated = false;
 
-    private readonly IPersistentState<int> _id;
+    private readonly IPersistentState<ProjectionState> _projectionState;
 
     public StateProjectionGrain(ILogger<StateProjectionGrain<TState>> logger,
         IOptionsSnapshot<AevatarOptions> aevatarOptions,
-        [PersistentState("id", "PubSubStore")] IPersistentState<int> id)
+        [PersistentState("ProjectorIndex", "PubSubStore")] IPersistentState<ProjectionState> projectionState)
     {
-        _id = id;
+        _projectionState = projectionState;
         _logger = logger;
         AevatarOptions = aevatarOptions.Value;
     }
 
     public Task ActivateAsync()
     {
-        _logger.LogInformation("Someone activated StateProjectionGrain<{TState}>, id={State}", typeof(TState).Name, _id.State);
+        _logger.LogInformation("Someone activated StateProjectionGrain<{TState}>, id={State}", typeof(TState).Name, _projectionState.State.Index);
         return Task.CompletedTask;
     }
 
@@ -43,8 +49,8 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
         _logger.LogDebug("[RequestContext][{0}]Projector Index: {1}", typeof(TState).Name, RequestContext.Get("id"));
         if (RequestContext.Get("id") is int id)
         {
-            _id.State = id;
-            await _id.WriteStateAsync();
+            _projectionState.State.Index = id;
+            await _projectionState.WriteStateAsync();
             _logger.LogInformation("State projection grain for {TState} set id to {Id}", typeof(TState).Name, id);
         }
         else
@@ -106,7 +112,7 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
 
     private IAsyncStream<StateWrapper<TState>> GetStateProjectionStream()
     {
-        var streamId = StreamId.Create(AevatarOptions.StateProjectionStreamNamespace, typeof(StateWrapper<TState>).FullName! + _id.State);
+        var streamId = StreamId.Create(AevatarOptions.StateProjectionStreamNamespace, typeof(StateWrapper<TState>).FullName! + _projectionState.State.Index);
         _logger.LogInformation("Getting state projection stream for {TState} with id {Id}", typeof(TState).Name, streamId);
         return StreamProvider.GetStream<StateWrapper<TState>>(streamId);
     }
