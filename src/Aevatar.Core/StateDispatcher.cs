@@ -23,7 +23,9 @@ public class StateDispatcher : IStateDispatcher
     {
         try
         {
-            var streamId = StreamId.Create(_aevatarOptions.StateProjectionStreamNamespace, typeof(StateWrapper<TState>).FullName!);
+            var index =  GetProjectorIndex(grainId);
+            var streamId = StreamId.Create(_aevatarOptions.StateProjectionStreamNamespace, typeof(StateWrapper<TState>).FullName! + index);
+            _logger.LogInformation($"Publishing state change for grain {grainId} to stream {streamId}-{index}");
             var stream = _streamProvider.GetStream<StateWrapper<TState>>(streamId);
             await stream.OnNextAsync(stateWrapper);
         }
@@ -32,5 +34,20 @@ public class StateDispatcher : IStateDispatcher
             _logger.LogError($"Error projecting state for grain {grainId}: {e.Message}");
             throw;
         }
+    }
+
+    private int GetProjectorIndex(GrainId grainId)
+    {
+        // Compute the hash code of the GrainId
+        var hash = grainId.GetHashCode();
+
+        // Combine the hash with the seed to add randomness
+        var combinedHash = hash ^ Random.Shared.Next();
+
+        // Ensure the combined hash is non-negative
+        var positiveHash = Math.Abs(combinedHash);
+
+        // Return a value between 0 and DefaultNumOfProjectorPerAgentType - 1
+        return positiveHash % AevatarCoreConstants.DefaultNumOfProjectorPerAgentType;
     }
 }

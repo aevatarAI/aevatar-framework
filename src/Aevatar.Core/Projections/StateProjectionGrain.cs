@@ -15,16 +15,20 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
     private ILogger<StateProjectionGrain<TState>> _logger;
     private bool _activated = false;
 
+    private readonly IPersistentState<int> _id;
+
     public StateProjectionGrain(ILogger<StateProjectionGrain<TState>> logger,
-        IOptionsSnapshot<AevatarOptions> aevatarOptions)
+        IOptionsSnapshot<AevatarOptions> aevatarOptions,
+        [PersistentState("id", "PubSubStore")] IPersistentState<int> id)
     {
+        _id = id;
         _logger = logger;
         AevatarOptions = aevatarOptions.Value;
     }
 
     public Task ActivateAsync()
     {
-        _logger.LogInformation("Someone activated StateProjectionGrain<{TState}>", typeof(TState).Name);
+        _logger.LogInformation("Someone activated StateProjectionGrain<{TState}>, id={State}", typeof(TState).Name, _id.State);
         return Task.CompletedTask;
     }
 
@@ -34,6 +38,18 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
         {
             _logger.LogInformation("State projection stream for {TState} already activated.", typeof(TState).Name);
             return;
+        }
+
+        _logger.LogDebug("[RequestContext][{0}]Projector Index: {1}", typeof(TState).Name, RequestContext.Get("id"));
+        if (RequestContext.Get("id") is int id)
+        {
+            _id.State = id;
+            await _id.WriteStateAsync();
+            _logger.LogInformation("State projection grain for {TState} set id to {Id}", typeof(TState).Name, id);
+        }
+        else
+        {
+            _logger.LogWarning("RequestContext does not contain a valid 'id' for StateProjectionGrain<{TState}>.", typeof(TState).Name);
         }
 
         await base.OnActivateAsync(cancellationToken);
@@ -90,7 +106,8 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
 
     private IAsyncStream<StateWrapper<TState>> GetStateProjectionStream()
     {
-        var streamId = StreamId.Create(AevatarOptions.StateProjectionStreamNamespace, typeof(StateWrapper<TState>).FullName!);
+        var streamId = StreamId.Create(AevatarOptions.StateProjectionStreamNamespace, typeof(StateWrapper<TState>).FullName! + _id.State);
+        _logger.LogInformation("Getting state projection stream for {TState} with id {Id}", typeof(TState).Name, streamId);
         return StreamProvider.GetStream<StateWrapper<TState>>(streamId);
     }
 }
