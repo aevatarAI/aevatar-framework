@@ -35,7 +35,7 @@ public class AevatarModule : AbpModule
         context.Services.AddTransient<IGAgentFactory, GAgentFactory>();
         context.Services.AddTransient<IPluginGAgentManager, PluginGAgentManager>();
         context.Services.AddSingleton<IConfigureGrainTypeComponents, ConfigureAevatarGrainActivator>();
-        context.Services.AddSingleton<IStateDispatcher, StateDispatcher>();
+        context.Services.AddTransient<IStateDispatcher, StateDispatcher>();
         context.Services.AddTransient(typeof(IArtifactGAgent<,,>), typeof(ArtifactGAgent<,,>));
     }
 }
