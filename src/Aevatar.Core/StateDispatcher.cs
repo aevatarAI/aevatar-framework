@@ -36,6 +36,22 @@ public class StateDispatcher : IStateDispatcher
         }
     }
 
+    public async Task PublishSingleAsync<TState>(GrainId grainId, StateWrapper<TState> stateWrapper) where TState : StateBase
+    {
+        try
+        {
+            var streamId = StreamId.Create(_aevatarOptions.StateProjectionStreamNamespace, typeof(StateWrapper<TState>).FullName!);
+            _logger.LogInformation($"Publishing state change for grain {grainId} to stream {streamId}");
+            var stream = _streamProvider.GetStream<StateWrapper<TState>>(streamId);
+            await stream.OnNextAsync(stateWrapper);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error projecting state for grain {grainId}: {e.Message}");
+            throw;
+        }
+    }
+
     private int GetProjectorIndex(GrainId grainId)
     {
         // Compute the hash code of the GrainId
