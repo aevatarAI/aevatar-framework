@@ -1,5 +1,6 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Projections;
+using Aevatar.Core.Placement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,6 +14,7 @@ public class ProjectionState: StateBase
     [Id(0)]public int Index { get; set; }
 }
 
+[SiloNamePatternPlacement("Projector")]
 public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
     where TState : StateBase, new()
 {
@@ -71,7 +73,8 @@ public class StateProjectionGrain<TState> : Grain, IProjectionGrain<TState>
         }
 
         _activated = true;
-        _logger.LogInformation("State projection stream for {TState} is activated and ready to use.", typeof(TState).Name);
+        _logger.LogInformation("State projection stream for {TState} is activated and ready to use on silo {SiloIdentity}.", 
+            typeof(TState).Name, this.RuntimeIdentity);
     }
 
     private async Task InitializeOrResumeStateProjectionStreamAsync()
