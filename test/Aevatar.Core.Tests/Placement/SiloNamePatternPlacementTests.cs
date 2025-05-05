@@ -131,6 +131,57 @@ namespace Aevatar.Core.Tests.Placement
             result.ShouldNotBe(analyticsSilo);
         }
         
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task SiloNamePatternPlacementDirector_OnAddActivation_NullOrWhiteSpacePattern_ThrowsException(string? invalidPattern)
+        {
+            // Arrange
+            // Create mock silo addresses
+            var silo1 = SiloAddress.New(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 11111), 0);
+            var silo2 = SiloAddress.New(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 22222), 0);
+            
+            // Setup mock silo status oracle
+            var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
+            
+            // Setup silo statuses
+            var siloStatuses = new Dictionary<SiloAddress, SiloStatus>
+            {
+                { silo1, SiloStatus.Active },
+                { silo2, SiloStatus.Active }
+            };
+            mockSiloStatusOracle.Setup(x => x.GetApproximateSiloStatuses(true)).Returns(siloStatuses);
+            
+            // Setup mock placement context
+            var mockPlacementContext = new Mock<IPlacementContext>();
+            var compatibleSilos = new[] { silo1, silo2 };
+            mockPlacementContext.Setup(x => x.GetCompatibleSilos(It.IsAny<PlacementTarget>())).Returns(compatibleSilos);
+            
+            // Create placement strategy with null/empty/whitespace pattern
+            // Use reflection to set the pattern to null/empty/whitespace since the Create method won't allow it
+            var strategy = new SiloNamePatternPlacement();
+            typeof(SiloNamePatternPlacement).GetProperty("SiloNamePattern")!.SetValue(strategy, invalidPattern);
+            
+            // Create placement director
+            var director = new SiloNamePatternPlacementDirector(mockSiloStatusOracle.Object);
+            
+            // Create placement target
+            var target = new PlacementTarget(
+                GrainId.Create("TestGrain", "1"),
+                new Dictionary<string, object>(),
+                GrainInterfaceType.Create("ITestGrain"), 
+                1);
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<OrleansException>(() => 
+                director.OnAddActivation(strategy, target, mockPlacementContext.Object));
+            
+            // Verify the exception message
+            exception.Message.ShouldContain("SiloNamePatternPlacement strategy requires a valid silo name pattern");
+            exception.Message.ShouldContain($"Current pattern: '{invalidPattern}'");
+        }
+        
         [Fact]
         public async Task SiloNamePatternPlacementDirector_OnAddActivation_NoMatchingPattern_ThrowsException()
         {
