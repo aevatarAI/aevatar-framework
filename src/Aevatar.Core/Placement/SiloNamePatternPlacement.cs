@@ -118,9 +118,8 @@ namespace Aevatar.Core.Placement
 
             if (string.IsNullOrWhiteSpace(siloNamePattern))
             {
-                // If no silo name pattern is specified, extract it from the grain's primary key
-                // This assumes the grain ID might contain information about target silo
-                siloNamePattern = target.GrainIdentity.Key.ToString();
+                throw new OrleansException($"SiloNamePatternPlacement strategy requires a valid silo name pattern. " +
+                                            $"Current pattern: '{siloNamePattern}'");
             }
 
             var compatibleSilos = context.GetCompatibleSilos(target);
