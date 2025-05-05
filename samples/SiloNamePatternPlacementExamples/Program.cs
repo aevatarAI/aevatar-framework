@@ -68,7 +68,7 @@ namespace Aevatar.Examples
             // This will match silos like "AnalyticsSilo-01", "AnalyticsSilo-02", etc.
             RequestContext.Set(SiloNamePatternPlacement.SiloNamePatternPropertyKey, "Analytics");
             
-            // This call will be routed to a silo whose name contains "Analytics" if available
+            // This call will be routed to a silo whose name begins with "Analytics" if available
             await grain.DoSomethingAsync();
             
             // Clear the placement hint after the call

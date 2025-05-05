@@ -28,9 +28,9 @@ namespace Aevatar.Core.Placement
 
         /// <summary>
         /// Gets or sets the silo name pattern used to match against silo names.
-        /// Grain will be activated on a silo whose name contains this pattern.
+        /// Grain will be activated on a silo whose name begins with this pattern.
         /// </summary>
-        [Id(1)]
+        [Id(0)]
         public string SiloNamePattern { get; private set; }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Aevatar.Core.Placement
         /// <summary>
         /// Creates a new instance of the <see cref="SiloNamePatternPlacement"/> class with the specified silo name pattern.
         /// </summary>
-        /// <param name="siloNamePattern">The pattern to match against silo names. Grain will be activated on a silo whose name contains this pattern.</param>
+        /// <param name="siloNamePattern">The pattern to match against silo names. Grain will be activated on a silo whose name begins with this pattern.</param>
         /// <returns>A new instance of <see cref="SiloNamePatternPlacement"/> with the specified silo name pattern.</returns>
         public static SiloNamePatternPlacement Create(string siloNamePattern)
         {
@@ -165,14 +165,14 @@ namespace Aevatar.Core.Placement
     public sealed class SiloNamePatternPlacementAttribute : PlacementAttribute
     {
         /// <summary>
-        /// Gets the name pattern to match silos. Grain will be activated on a silo whose name contains this pattern.
+        /// Gets the name pattern to match silos. Grain will be activated on a silo whose name begins with this pattern.
         /// </summary>
         public string SiloNamePattern { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SiloNamePatternPlacementAttribute"/> class.
         /// </summary>
-        /// <param name="siloNamePattern">The pattern to match silo names. Grain will be activated on a silo whose name contains this pattern.</param>
+        /// <param name="siloNamePattern">The pattern to match silo names. Grain will be activated on a silo whose name begins with this pattern.</param>
         public SiloNamePatternPlacementAttribute(string siloNamePattern)
             : base(SiloNamePatternPlacement.Create(siloNamePattern))
         {

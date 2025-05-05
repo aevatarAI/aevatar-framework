@@ -9,7 +9,7 @@ public class SpecializedGrain : Orleans.Grain, ISpecializedGrain
 {
     public Task DoSomethingAsync()
     {
-        // This grain will be activated on a silo whose name contains "Analytics" if available
+        // This grain will be activated on a silo whose name begins with "Analytics" if available
         // For example, it will match "AnalyticsSilo-01", "DataAnalytics", etc.
         Console.WriteLine($"Grain activated on silo: {this.RuntimeIdentity}");
         return Task.CompletedTask;
