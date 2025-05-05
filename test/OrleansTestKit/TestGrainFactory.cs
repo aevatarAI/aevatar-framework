@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Aevatar.Core.Abstractions.EventPublish;
+using Moq;
 using Orleans.Runtime;
 
 namespace Orleans.TestKit;
@@ -102,10 +103,15 @@ public sealed class TestGrainFactory : IGrainFactory
         AddProbe<T>(adaptedFactory);
     }
 
-    private static string GetKey(IdSpan identity, Type stateType, string? classPrefix = null) =>
-        classPrefix == null
-            ? $"{stateType.FullName}-{identity}"
-            : $"{stateType.FullName}-{classPrefix}-{identity}";
+    private static string GetKey(IdSpan identity, Type stateType, string? classPrefix = null)
+    {
+        var typeName = stateType.Name!.ToLower();
+        // 确保typeName长度足够使用[1..^5]索引操作
+        var prefix = typeName.Length > 6 ? typeName[1..^5] : typeName;
+        return classPrefix == null
+            ? $"{prefix}/{identity}"
+            : $"{prefix}/{classPrefix}/{identity}";
+    }
 
     private T GetProbe<T>(IdSpan identity, string? grainClassNamePrefix)
         where T : IGrain
@@ -117,6 +123,7 @@ public sealed class TestGrainFactory : IGrainFactory
     private IGrain GetProbe(Type grainType, IdSpan identity, string? grainClassNamePrefix)
     {
         var key = GetKey(identity, grainType, grainClassNamePrefix);
+
         if (_probes.TryGetValue(key, out var grain))
         {
             return grain;

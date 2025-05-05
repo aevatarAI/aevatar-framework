@@ -15,7 +15,7 @@ public class PublishingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(publishingGAgent, groupGAgent, eventHandlerTestGAgent);
+        AddProbesByGrainIdAsync(publishingGAgent, groupGAgent, eventHandlerTestGAgent);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -46,7 +46,7 @@ public class PublishingTests : GAgentTestKitBase
         var level1 = await CreateGroupGAgentAsync(level2A, level2B);
         var publishingGAgent = await CreatePublishingGAgentAsync(level1);
 
-        AddProbesByGrainId(publishingGAgent, level1, level2A, level2B, level3A, level3B);
+        await AddProbesByGrainIdAsync(publishingGAgent, level1, level2A, level2B, level3A, level3B);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -78,7 +78,7 @@ public class PublishingTests : GAgentTestKitBase
         var level1 = await CreateGroupGAgentAsync(level2A, level2B);
         var publishingGAgent = await CreatePublishingGAgentAsync(level1);
 
-        AddProbesByGrainId(publishingGAgent, level1, level2A, level2B, level3A, level3B);
+        AddProbesByGrainIdAsync(publishingGAgent, level1, level2A, level2B, level3A, level3B);
 
         // Act: ResponseTestEvent will cause level32 publish an NaiveTestEvent.
         await publishingGAgent.PublishEventAsync(new ResponseTestEvent
@@ -113,7 +113,7 @@ public class PublishingTests : GAgentTestKitBase
         await level1.RegisterAsync(level2B);
         var publishingGAgent = await CreatePublishingGAgentAsync(level1);
 
-        AddProbesByGrainId(publishingGAgent, level1, level2A, level2B, level3A, level3B);
+        AddProbesByGrainIdAsync(publishingGAgent, level1, level2A, level2B, level3A, level3B);
 
         // Act: ResponseTestEvent will cause level32 publish an NaiveTestEvent.
         await publishingGAgent.PublishEventAsync(new ResponseTestEvent

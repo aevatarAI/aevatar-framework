@@ -1,5 +1,7 @@
-using System.Collections.Concurrent;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.EventPublish;
+using Aevatar.Core.Abstractions.Projections;
+using Aevatar.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -45,14 +47,20 @@ public abstract partial class
     private Lazy<IStreamProvider> LazyStreamProvider => new(()
         => this.GetStreamProvider(AevatarCoreConstants.StreamProvider));
 
+    private Lazy<IGAgentFactory> LazyGAgentFactory => new(()
+        => ServiceProvider.GetRequiredService<IGAgentFactory>());
+
     protected IStreamProvider StreamProvider => LazyStreamProvider.Value;
+    protected IGAgentFactory GAgentFactory => LazyGAgentFactory.Value;
 
     public ILogger Logger { get; set; } = NullLogger.Instance;
 
     private readonly List<EventWrapperBaseAsyncObserver> _observers = [];
 
     private IStateDispatcher? StateDispatcher { get; set; }
-    protected AevatarOptions? AevatarOptions;
+    protected AevatarOptions? AevatarOptions { get; private set; }
+
+    private IStreamCoordinatorGrain? _coordinator;
 
     public async Task ActivateAsync()
     {
@@ -61,15 +69,22 @@ public abstract partial class
 
     public async Task RegisterAsync(IGAgent gAgent)
     {
-        if (gAgent.GetGrainId() == this.GetGrainId())
+        var grainId = gAgent.GetGrainId();
+        if (grainId == this.GetGrainId())
         {
             Logger.LogError($"Cannot register GAgent with same GrainId.");
             return;
         }
 
-        await AddChildAsync(gAgent.GetGrainId());
-        await gAgent.SubscribeToAsync(this);
-        await OnRegisterAgentAsync(gAgent.GetGrainId());
+        Logger.LogDebug("GrainId [{GrainId}] register child {Parent}", GrainId.ToString(), grainId.ToString());
+
+        var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(grainId.ToString());
+        if (await childStreamCoordinator.SetParentAsync(GrainId))
+        {
+            var groupIndex = await _coordinator!.RegisterChildAsync(grainId);
+            await childStreamCoordinator.SetGroupIndexAsync(groupIndex);
+            await OnRegisterAgentAsync(grainId);
+        }
     }
 
     public async Task RegisterManyAsync(List<IGAgent> gAgents)
@@ -86,34 +101,51 @@ public abstract partial class
         }
 
         var grainIds = gAgents.Select(g => g.GetGrainId()).ToList();
-        var tasks = new List<Task>();
+        var successGrainIds = new List<GrainId>();
+        var streamCoordinators = new List<IStreamCoordinatorGrain>();
         foreach (var gAgent in gAgents)
         {
-            tasks.Add(gAgent.SubscribeToAsync(this));
+            var childStreamCoordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(gAgent.GetGrainId().ToString());
+            streamCoordinators.Add(childStreamCoordinator);
+            if (await childStreamCoordinator.SetParentAsync(GrainId))
+            {
+                successGrainIds.Add(gAgent.GetGrainId());
+            }
         }
-        tasks.Add(AddChildManyAsync(grainIds));
-        tasks.Add(OnRegisterAgentManyAsync(grainIds));
-        await Task.WhenAll(tasks);
+
+        // TODO: Optimize.
+        var groupIndex = await _coordinator!.RegisterManyChildAsync(successGrainIds);
+        foreach (var coordinator in streamCoordinators)
+        {
+            await coordinator.SetGroupIndexAsync(groupIndex);
+        }
+
+        await OnRegisterAgentManyAsync(grainIds);
     }
 
     public async Task SubscribeToAsync(IGAgent gAgent)
     {
-        await SetParentAsync(gAgent.GetGrainId());
+        var grainId = gAgent.GetGrainId();
+        Logger.LogDebug("GrainId [{GrainId}] subscribe to {Parent}", GrainId.ToString(), grainId.ToString());
+        await _coordinator!.SetParentAsync(grainId);
     }
 
-    public Task UnsubscribeFromAsync(IGAgent gAgent)
+    public async Task UnsubscribeFromAsync(IGAgent gAgent)
     {
-        return ClearParentAsync(gAgent.GetGrainId());
+        var grainId = gAgent.GetGrainId();
+        Logger.LogDebug("GrainId [{GrainId}] unsubscribe from {Parent}", GrainId.ToString(), grainId.ToString());
+        await _coordinator!.ClearParentAsync(grainId);
     }
 
     public async Task UnregisterAsync(IGAgent gAgent)
     {
-        await RemoveChildAsync(gAgent.GetGrainId());
-        await gAgent.UnsubscribeFromAsync(this);
+        var grainId = gAgent.GetGrainId();
+        Logger.LogDebug("GrainId [{GrainId}] unregister child {Child}", GrainId.ToString(), grainId.ToString());
+        await _coordinator!.UnregisterChildAsync(gAgent.GetGrainId());
         await OnUnregisterAgentAsync(gAgent.GetGrainId());
     }
 
-    public virtual Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false)
+    public async virtual Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false)
     {
         var eventHandlerMethods = GetEventHandlerMethods(GetType());
         eventHandlerMethods = eventHandlerMethods.Where(m =>
@@ -125,17 +157,17 @@ public abstract partial class
             handlingTypes = handlingTypes.Where(t => t != typeof(RequestAllSubscriptionsEvent));
         }
 
-        return Task.FromResult(handlingTypes.ToList())!;
+        return handlingTypes.ToList();
     }
 
-    public Task<List<GrainId>> GetChildrenAsync()
+    public async Task<List<GrainId>> GetChildrenAsync()
     {
-        return Task.FromResult(State.Children);
+        return await _coordinator!.GetChildrenAsync();
     }
 
-    public Task<GrainId> GetParentAsync()
+    public async Task<GrainId> GetParentAsync()
     {
-        return Task.FromResult(State.Parent ?? default);
+        return await _coordinator!.GetParentAsync();
     }
 
     public virtual Task<Type?> GetConfigurationTypeAsync()
@@ -149,6 +181,18 @@ public abstract partial class
         {
             await PerformConfigAsync(config);
         }
+    }
+
+    public async Task<IAsyncObserver<EventWrapperBase>> GetGAgentAsyncObserverAsync()
+    {
+        var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString());
+        return asyncObserver;
+    }
+
+    public async Task ResumeSubscriptionAsync(IAsyncStream<EventWrapperBase> stream)
+    {
+        var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString());
+        await ResumeOrSubscribeAsync(stream, asyncObserver);
     }
 
     protected virtual Task PerformConfigAsync(TConfiguration configuration)
@@ -166,9 +210,12 @@ public abstract partial class
 
     private async Task<SubscribedEventListEvent> GetGroupSubscribedEventListEvent()
     {
-        var gAgentList = State.Children
+        var children = await _coordinator!.GetChildrenAsync();
+        var gAgentList = children
             .Distinct()
             .Select(grainId => GrainFactory.GetGrain<IGAgent>(grainId))
+            .GroupBy(g => g.GetType())
+            .Select(g => g.First())
             .ToList();
 
         if (gAgentList.IsNullOrEmpty())
@@ -218,7 +265,7 @@ public abstract partial class
                }))
         {
             Logger.LogDebug("Forwarding event to children: {Event}", JsonConvert.SerializeObject(typedWrapper));
-            await SendEventDownwardsAsync(typedWrapper);
+            await _coordinator!.DownwardsEventAsync(eventWrapper);
         }
     }
 
@@ -291,6 +338,9 @@ public abstract partial class
         {
             // This must be called first to initialize Observers field.
             await UpdateObserverListAsync(GetType());
+            _coordinator = GrainFactory.GetGrain<IStreamCoordinatorGrain>(
+                this.GetGrainId().ToString());
+
             await InitializeOrResumeEventBaseStreamAsync();
         }
         catch (Exception e)
@@ -302,27 +352,34 @@ public abstract partial class
 
     private async Task InitializeOrResumeEventBaseStreamAsync()
     {
+        if (_observers.Count == 0)
+        {
+            return;
+        }
+
         try
         {
-            var streamOfThisGAgent = GetEventBaseStream(this.GetGrainId());
-            var handles = await streamOfThisGAgent.GetAllSubscriptionHandles();
+            var streamOfThisGAgent = StreamProvider.GetEventWrapperBaseStream(GrainId);
             var asyncObserver = new GAgentAsyncObserver(_observers, this.GetGrainId().ToString());
-            if (handles.Count > 0)
-            {
-                foreach (var handle in handles)
-                {
-                    await handle.ResumeAsync(asyncObserver);
-                }
-            }
-            else
-            {
-                await streamOfThisGAgent.SubscribeAsync(asyncObserver);
-            }
+            await ResumeOrSubscribeAsync(streamOfThisGAgent, asyncObserver);
         }
         catch (Exception e)
         {
             Logger.LogError($"Error in InitializeOrResumeEventBaseStreamAsync: {e}");
             throw;
+        }
+    }
+
+    private async Task ResumeOrSubscribeAsync<T>(IAsyncStream<T> stream, IAsyncObserver<T> observer)
+    {
+        var handles = await stream.GetAllSubscriptionHandles();
+        if (handles.Count > 0)
+        {
+            await Task.WhenAll(handles.Select(async h => await h.ResumeAsync(observer)));
+        }
+        else
+        {
+            await stream.SubscribeAsync(observer);
         }
     }
 
@@ -387,12 +444,5 @@ public abstract partial class
     {
         // Derived classes can override this method.
         return Task.CompletedTask;
-    }
-
-    private IAsyncStream<EventWrapperBase> GetEventBaseStream(GrainId grainId)
-    {
-        var grainIdString = grainId.ToString();
-        var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, grainIdString);
-        return StreamProvider.GetStream<EventWrapperBase>(streamId);
     }
 }

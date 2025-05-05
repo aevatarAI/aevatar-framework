@@ -49,7 +49,7 @@ public class EventHandlingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, groupGAgent, publishingGAgent);
+        await AddProbesByGrainIdAsync(eventHandlerTestGAgent, groupGAgent, publishingGAgent);
 
         // Act of registering.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent
@@ -87,7 +87,7 @@ public class EventHandlingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, groupGAgent, publishingGAgent);
+        AddProbesByGrainIdAsync(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, groupGAgent, publishingGAgent);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new ResponseTestEvent
@@ -169,7 +169,7 @@ public class EventHandlingTests : GAgentTestKitBase
             subscribeTestGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, subscribeTestGAgent, groupGAgent,
+        await AddProbesByGrainIdAsync(eventHandlerTestGAgent, eventHandlerWithResponseTestGAgent, subscribeTestGAgent, groupGAgent,
             publishingGAgent);
 
         // Act.
@@ -192,7 +192,7 @@ public class EventHandlingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(eventHandlerTestGAgent, testGAgent);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(eventHandlerTestGAgent, testGAgent, groupGAgent, publishingGAgent);
+        await AddProbesByGrainIdAsync(eventHandlerTestGAgent, testGAgent, groupGAgent, publishingGAgent);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new NaiveTestEvent

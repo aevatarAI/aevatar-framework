@@ -1,6 +1,5 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Tests.TestEvents;
-using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
@@ -9,7 +8,8 @@ public interface IMarketingLeaderTestGAgent : IGAgent;
 public class MarketingLeaderTestGAgentState : NaiveTestGAgentState;
 
 [GAgent("marketingLeader", "test")]
-public class MarketingLeaderTestGAgent : GAgentBase<MarketingLeaderTestGAgentState, NaiveTestStateLogEvent>, IMarketingLeaderTestGAgent
+public class MarketingLeaderTestGAgent : GAgentBase<MarketingLeaderTestGAgentState, NaiveTestStateLogEvent>,
+    IMarketingLeaderTestGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {
@@ -31,14 +31,9 @@ public class MarketingLeaderTestGAgent : GAgentBase<MarketingLeaderTestGAgentSta
             Description = $"Working completed: {eventData.PullRequestUrl}"
         });
     }
-    
+
     public async Task HandleEventAsync(InvestorFeedbackTestEvent eventData)
     {
-        if (State.Content.IsNullOrEmpty())
-        {
-            State.Content = [];
-        }
-
         State.Content.Add($"Feedback from investor: {eventData.Content}");
     }
 }

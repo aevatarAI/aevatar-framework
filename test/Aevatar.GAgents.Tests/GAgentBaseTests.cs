@@ -49,12 +49,17 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         var developer1 = _grainFactory.GetGrain<IDeveloperTestGAgent>(guid);
         var developer2 = _grainFactory.GetGrain<IDeveloperTestGAgent>(Guid.NewGuid());
         var developer3 = _grainFactory.GetGrain<IDeveloperTestGAgent>(Guid.NewGuid());
+        await developer1.ActivateAsync();
+        await developer2.ActivateAsync();
+        await developer3.ActivateAsync();
         await developingLeader.RegisterAsync(developer1);
         await developingLeader.RegisterAsync(developer2);
         await developingLeader.RegisterAsync(developer3);
 
         var investor1 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(guid);
         var investor2 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(Guid.NewGuid());
+        await investor1.ActivateAsync();
+        await investor2.ActivateAsync();
         await marketingLeader.RegisterAsync(investor1);
         await marketingLeader.RegisterAsync(investor2);
 
@@ -71,7 +76,6 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         });
 
         await TestHelper.WaitUntilAsync(_ => CheckState(investor1), TimeSpan.FromSeconds(20));
-
         var groupState = await groupGAgent.GetStateAsync();
         groupState.RegisteredGAgents.ShouldBe(2);
 
@@ -79,12 +83,14 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         investorState.Content.Count.ShouldBe(2);
     }
 
+
     [Fact(DisplayName = "SyncWorker should be worked and not block current GAgent.")]
     public async Task SyncWorkerTest()
     {
         var guid = Guid.NewGuid();
         // Arrange.
         var testGAgent = _grainFactory.GetGrain<IStateGAgent<LongRunTaskTestGAgentState>>(guid);
+        await testGAgent.ActivateAsync();
         var publishingGAgent = _grainFactory.GetGrain<IPublishingGAgent>(guid);
         await publishingGAgent.RegisterAsync(testGAgent);
 

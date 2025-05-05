@@ -4,5 +4,6 @@ public class AevatarCoreConstants
 {
     public const int DefaultNumOfProjectorPerAgentType = 8;
     public const string StreamProvider = "Aevatar";
+    public const string DefaultStreamNamespace = "Aevatar";
     public const char GAgentNamespaceSeparator = '.';
 }

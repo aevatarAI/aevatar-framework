@@ -72,9 +72,9 @@ public class GroupingTests : GAgentTestKitBase
         // Assert: Check each group's states from GrainStorage.
         foreach (var groupGAgent in new List<GroupGAgent> { groupGAgent1, groupGAgent2, groupGAgent3 })
         {
-            var subscribers = await groupGAgent.GetChildrenAsync();
-            subscribers.Count.ShouldBe(1);
-            subscribers.First().ShouldBe(naiveTestGAgent.GetGrainId());
+            var children = await groupGAgent.GetChildrenAsync();
+            children.Count.ShouldBe(1);
+            children.First().ShouldBe(naiveTestGAgent.GetGrainId());
         }
     }
 
@@ -163,7 +163,8 @@ public class GroupingTests : GAgentTestKitBase
         var groupGAgent = await CreateGroupGAgentAsync(marketingLeader, developingLeader);
         var publishingGAgent = await CreatePublishingGAgentAsync(groupGAgent);
 
-        AddProbesByGrainId(publishingGAgent, groupGAgent, marketingLeader, developingLeader, developer1, developer2, developer3, investor1, investor2);
+        AddProbesByGrainIdAsync(publishingGAgent, groupGAgent, marketingLeader, developingLeader, developer1,
+            developer2, developer3, investor1, investor2);
 
         // Act.
         await publishingGAgent.PublishEventAsync(new NewDemandTestEvent
@@ -202,7 +203,7 @@ public class GroupingTests : GAgentTestKitBase
         var gAgent = await Silo.CreateGrainAsync<NaiveTestGAgent>(guid);
         await gAgent.RegisterAsync(gAgent);
         var groupGAgent = await CreateGroupGAgentAsync(gAgent, gAgent);
-        
+
         var subscribers = await groupGAgent.GetChildrenAsync();
         subscribers.Count.ShouldBe(1);
     }

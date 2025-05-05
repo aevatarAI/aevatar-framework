@@ -1,3 +1,4 @@
+using Aevatar.Core.Abstractions;
 using Aevatar.Core;
 using Aevatar.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,9 @@ public static class OrleansHostExtensions
                 {
                     services.Add(abpApplication.Services);
                 }
+
+                var prefix = services.GetConfiguration().GetSection("Aevatar").GetSection("StreamNamespace").Value;
+                AevatarCoreStreamConfig.Initialize(prefix);
 
                 services.AddSingleton(_ =>
                     new LimitedConcurrencyLevelTaskScheduler(AevatarGAgentConstants.MaxSyncWorkConcurrency));

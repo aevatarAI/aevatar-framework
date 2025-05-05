@@ -1,5 +1,6 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.SyncWorker;
+using Aevatar.Core.Extensions;
 using Microsoft.Extensions.Logging;
 using Orleans.SyncWork;
 
@@ -15,7 +16,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         {
             var grainId = $"{typeof(TRequest).Name}_to_{typeof(TResponse).Name}/{Guid.NewGuid()}";
             var syncWorker = GrainFactory.GetGrain<IAevatarSyncWorker<TRequest, TResponse>>(grainId);
-            await syncWorker.SetLongRunTaskAsync(GetEventBaseStream(GrainId));
+            await syncWorker.SetLongRunTaskAsync(StreamProvider.GetEventWrapperBaseStream(GrainId));
             await syncWorker.Start(request);
         }
         catch (Exception ex)

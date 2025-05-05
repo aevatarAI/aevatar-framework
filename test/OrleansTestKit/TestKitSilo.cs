@@ -2,6 +2,9 @@
 using Aevatar;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.EventPublish;
+using StreamCoordinatorGrain = Aevatar.Core.EventPublish.StreamCoordinatorGrain;
+using EventPubChildrenGroupGrain = Aevatar.Core.EventPublish.EventPubChildrenGroupGrain;
 using Aevatar.EventSourcing.Core;
 using Aevatar.EventSourcing.Core.Hosting;
 using Aevatar.EventSourcing.Core.LogConsistency;
@@ -303,6 +306,14 @@ public sealed class TestKitSilo
             // Used to enable reminder context on during activate
             using var reminderContext =
                 await GetReminderActivationContext(grain, cancellation).ConfigureAwait(false);
+        }
+
+        if (typeof(IGAgent).IsAssignableFrom(typeof(T)))
+        {
+            var streamCoordinatorGrain = await CreateGrainAsync<StreamCoordinatorGrain>(grainId.ToString());
+            GrainFactory.AddProbe<IStreamCoordinatorGrain>(streamCoordinatorGrain.GetGrainId(), streamCoordinatorGrain);
+            var childrenGroupGrain = await CreateGrainAsync<EventPubChildrenGroupGrain>(0, grainId.ToString());
+            GrainFactory.AddProbe<IEventPubChildrenGroupGrain>(childrenGroupGrain.GetGrainId(), childrenGroupGrain);
         }
 
         await grain.OnActivateAsync(cancellation).ConfigureAwait(false);

@@ -97,12 +97,9 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
             {
                 try
                 {
-                    var eventId = (Guid)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.EventId))
-                        ?.GetValue(item)!;
-                    var eventType = (TEvent)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.Event))
-                        ?.GetValue(item)!;
-                    var grainId = (GrainId)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.GrainId))
-                        ?.GetValue(item)!;
+                    var eventId = item.GetEventId();
+                    var eventType = (TEvent)item.GetEvent();
+                    var grainId = item.GetGrainId();
 
                     var eventWrapper = new EventWrapper<TEvent>(eventType, eventId, grainId);
 

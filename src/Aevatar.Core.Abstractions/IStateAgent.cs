@@ -1,4 +1,5 @@
 using Orleans.Concurrency;
+using Orleans.Streams;
 
 namespace Aevatar.Core.Abstractions;
 
@@ -80,6 +81,18 @@ public interface IGAgent : IGrainWithGuidKey
     /// <param name="configuration"></param>
     /// <returns></returns>
     Task ConfigAsync(ConfigurationBase configuration);
+
+    /// <summary>
+    /// Get GAgentAsyncObserver
+    /// </summary>
+    /// <returns></returns>
+    Task<IAsyncObserver<EventWrapperBase>> GetGAgentAsyncObserverAsync();
+
+    /// <summary>
+    /// Resume subscription of parent's stream.
+    /// </summary>
+    /// <returns></returns>
+    Task ResumeSubscriptionAsync(IAsyncStream<EventWrapperBase> stream);
 }
 
 public interface IStateGAgent<TState> : IGAgent

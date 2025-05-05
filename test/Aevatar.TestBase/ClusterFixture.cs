@@ -104,7 +104,8 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSingleton(grainTypeMap);
                     services.AddSingleton<IStateProjector, TestStateProjector>();
                     services.AddSingleton<IStateDispatcher, StateDispatcher>();
-                    
+                    services.AddSingleton<IGAgentFactory, GAgentFactory>();
+
                     services.Configure<PluginGAgentLoadOptions>(services.GetConfiguration().GetSection("Plugins"));
                     services.AddTransient<ITenantPluginCodeRepository, TenantPluginCodeRepository>();
                     services.AddTransient<IPluginCodeStorageRepository, PluginCodeStorageRepository>();

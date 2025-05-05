@@ -27,11 +27,6 @@ public class DevelopingLeaderTestGAgent : GAgentBase<DevelopingLeaderTestGAgentS
 
     public async Task HandleEventAsync(NewFeatureCompletedTestEvent eventData)
     {
-        if (State.Content.IsNullOrEmpty())
-        {
-            State.Content = [];
-        }
-
         State.Content.Add(eventData.PullRequestUrl);
 
         if (State.Content.Count == 3)
