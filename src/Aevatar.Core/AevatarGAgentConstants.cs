@@ -7,5 +7,5 @@ public static class AevatarGAgentConstants
     public const string ConfigDefaultMethodName = "PerformConfigAsync";
     public const string ForwardEventMethodName = "ForwardEventAsync";
     public const int MaxSyncWorkConcurrency = 4;
-    public const int MaxChildrenPerGroup = 2000;
+    public const int MaxChildrenPerGroup = 1500;
 }
