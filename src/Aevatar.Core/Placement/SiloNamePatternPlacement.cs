@@ -94,14 +94,19 @@ namespace Aevatar.Core.Placement
     public class SiloNamePatternPlacementDirector : IPlacementDirector
     {
         private readonly ISiloStatusOracle _siloStatusOracle;
+        
+        private readonly GrainPropertiesResolver _grainPropertiesResolver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SiloNamePatternPlacementDirector"/> class.
         /// </summary>
         /// <param name="siloStatusOracle">The silo status oracle.</param>
-        public SiloNamePatternPlacementDirector(ISiloStatusOracle siloStatusOracle)
+        public SiloNamePatternPlacementDirector(
+            ISiloStatusOracle siloStatusOracle,
+            GrainPropertiesResolver grainPropertiesResolver) 
         {
             _siloStatusOracle = siloStatusOracle ?? throw new ArgumentNullException(nameof(siloStatusOracle));
+            _grainPropertiesResolver = grainPropertiesResolver;
         }
 
         /// <summary>
@@ -113,8 +118,15 @@ namespace Aevatar.Core.Placement
         /// <returns>An appropriate silo to place the specified target on.</returns>
         public Task<SiloAddress> OnAddActivation(PlacementStrategy strategy, PlacementTarget target, IPlacementContext context)
         {
-            var siloNamePatternStrategy = strategy as SiloNamePatternPlacement;
-            var siloNamePattern = siloNamePatternStrategy?.SiloNamePattern;
+            // Get pattern from grain properties
+            string siloNamePattern = null;
+            
+            // Try to get the grain properties for this grain type
+            if (_grainPropertiesResolver.TryGetGrainProperties(target.GrainIdentity.Type, out var properties) && 
+                properties.Properties.TryGetValue(SiloNamePatternPlacement.SiloNamePatternPropertyKey, out var pattern))
+            {
+                siloNamePattern = pattern;
+            }
 
             if (string.IsNullOrWhiteSpace(siloNamePattern))
             {

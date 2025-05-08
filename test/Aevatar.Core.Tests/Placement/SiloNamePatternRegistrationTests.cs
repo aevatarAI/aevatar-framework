@@ -1,6 +1,9 @@
+using System;
 using System.Linq;
 using Aevatar.Core.Placement;
 using Microsoft.Extensions.DependencyInjection;
+using Orleans.Metadata;
+using Orleans.Runtime;
 using Orleans.Runtime.Placement;
 using Shouldly;
 using Xunit;
@@ -17,8 +20,15 @@ namespace Aevatar.Core.Tests.Placement
             var services = new ServiceCollection();
             
             // Register required services for SiloNamePatternPlacementDirector
-            var siloStatusOracle = Mock.Of<ISiloStatusOracle>();
-            services.AddSingleton(siloStatusOracle);
+            var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
+            services.AddSingleton(mockSiloStatusOracle.Object);
+            
+            // Register IClusterManifestProvider for GrainPropertiesResolver
+            var mockClusterManifestProvider = new Mock<IClusterManifestProvider>();
+            services.AddSingleton(mockClusterManifestProvider.Object);
+            
+            // Register GrainPropertiesResolver with the manifest provider
+            services.AddSingleton<GrainPropertiesResolver>();
             
             // Register the director directly without the extension method
             services.AddSingleton<SiloNamePatternPlacementDirector>();
@@ -38,8 +48,15 @@ namespace Aevatar.Core.Tests.Placement
             const string testPattern = "TestPattern";
             
             // Register required services and create the pattern placement
-            var siloStatusOracle = Mock.Of<ISiloStatusOracle>();
-            services.AddSingleton(siloStatusOracle);
+            var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
+            services.AddSingleton(mockSiloStatusOracle.Object);
+            
+            // Register IClusterManifestProvider for GrainPropertiesResolver
+            var mockClusterManifestProvider = new Mock<IClusterManifestProvider>();
+            services.AddSingleton(mockClusterManifestProvider.Object);
+            
+            // Register GrainPropertiesResolver with the manifest provider
+            services.AddSingleton<GrainPropertiesResolver>();
             
             // Register the director
             services.AddSingleton<SiloNamePatternPlacementDirector>();
@@ -61,6 +78,33 @@ namespace Aevatar.Core.Tests.Placement
             var strategies = serviceProvider.GetServices<PlacementStrategy>().ToList();
             strategies.Count.ShouldBeGreaterThan(0);
             strategies.Any(s => s is SiloNamePatternPlacement).ShouldBeTrue();
+        }
+        
+        [Fact]
+        public void PlacementDirector_Constructor_RequiresAllParameters()
+        {
+            // Arrange
+            var mockSiloStatusOracle = new Mock<ISiloStatusOracle>().Object;
+            
+            // Create a mock ClusterManifestProvider for GrainPropertiesResolver
+            var mockClusterManifestProvider = new Mock<IClusterManifestProvider>().Object;
+            var grainPropertiesResolver = new GrainPropertiesResolver(mockClusterManifestProvider);
+            
+            // Act - Verify creating with valid parameters succeeds
+            var director = new SiloNamePatternPlacementDirector(mockSiloStatusOracle, grainPropertiesResolver);
+            
+            // Assert
+            director.ShouldNotBeNull();
+            
+            // Verify constructor throws with null parameters
+            Should.NotThrow(() => new SiloNamePatternPlacementDirector(mockSiloStatusOracle, grainPropertiesResolver));
+            
+            // Check that constructor actually does throw for null parameters
+            Should.Throw<ArgumentNullException>(() => 
+                new SiloNamePatternPlacementDirector(null!, grainPropertiesResolver));
+                
+            Should.Throw<ArgumentNullException>(() => 
+                new SiloNamePatternPlacementDirector(mockSiloStatusOracle, null!));
         }
     }
 } 
