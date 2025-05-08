@@ -106,7 +106,7 @@ namespace Aevatar.Core.Placement
             GrainPropertiesResolver grainPropertiesResolver) 
         {
             _siloStatusOracle = siloStatusOracle ?? throw new ArgumentNullException(nameof(siloStatusOracle));
-            _grainPropertiesResolver = grainPropertiesResolver;
+            _grainPropertiesResolver = grainPropertiesResolver ?? throw new ArgumentNullException(nameof(grainPropertiesResolver));
         }
 
         /// <summary>
