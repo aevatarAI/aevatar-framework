@@ -24,6 +24,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
 
     private readonly ITenantPluginCodeRepository _tenantPluginCodeRepository;
     private readonly IPluginCodeStorageRepository _pluginCodeStorageRepository;
+    private readonly IPluginLoadStatusRepository _pluginLoadStatusRepository;
     
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
@@ -37,6 +38,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         _gAgentFactory = GetRequiredService<IGAgentFactory>();
         _tenantPluginCodeRepository = GetRequiredService<ITenantPluginCodeRepository>();
         _pluginCodeStorageRepository = GetRequiredService<IPluginCodeStorageRepository>();
+        _pluginLoadStatusRepository = GetRequiredService<IPluginLoadStatusRepository>();
         _loggerMock = new Mock<ILogger<PluginGAgentManager>>();
 
         var options = Options.Create(new PluginGAgentLoadOptions());
@@ -44,6 +46,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
             _gAgentFactory,
             _tenantPluginCodeRepository,
             _pluginCodeStorageRepository,
+            _pluginLoadStatusRepository,
             options,
             _loggerMock.Object
         );
@@ -250,5 +253,46 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         await ((InMemoryTenantPluginCodeRepository)_tenantPluginCodeRepository).SyncStoreAsync(tenantGAgent);
         var pluginCodeStorageGAgent = await _gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(pluginId);
         await ((InMemoryPluginCodeStorageRepository)_pluginCodeStorageRepository).SyncStoreAsync(pluginCodeStorageGAgent);
+    }
+
+    [Fact(DisplayName = "Can get plugin load status for all success case")]
+    public async Task GetPluginLoadStatus_AllSuccess_Test()
+    {
+        var (tenantId, pluginId) = await AddTestPluginAsync();
+        await SyncStoreAsync(tenantId, pluginId);
+        // Simulate a successful load status
+        var statusDict = new Dictionary<string, PluginLoadStatus>
+        {
+            { $"Plugin_{pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Success } }
+        };
+        await _pluginLoadStatusRepository.SetPluginLoadStatusAsync(pluginId, statusDict);
+        var result = await _pluginGAgentManager.GetPluginLoadStatusAsync(tenantId);
+        result.ShouldContainKey($"Plugin_{pluginId}.dll");
+        result[$"Plugin_{pluginId}.dll"].Status.ShouldBe(LoadStatus.Success);
+    }
+
+    [Fact(DisplayName = "Can get plugin load status for partial failure case")]
+    public async Task GetPluginLoadStatus_PartialFailure_Test()
+    {
+        var (tenantId, pluginId) = await AddTestPluginAsync();
+        await SyncStoreAsync(tenantId, pluginId);
+        // Simulate a failed load status
+        var statusDict = new Dictionary<string, PluginLoadStatus>
+        {
+            { $"Plugin_{pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Error, Reason = "Test failure" } }
+        };
+        await _pluginLoadStatusRepository.SetPluginLoadStatusAsync(pluginId, statusDict);
+        var result = await _pluginGAgentManager.GetPluginLoadStatusAsync();
+        result.ShouldContainKey($"Plugin_{pluginId}.dll");
+        result[$"Plugin_{pluginId}.dll"].Status.ShouldBe(LoadStatus.Error);
+        result[$"Plugin_{pluginId}.dll"].Reason.ShouldBe("Test failure");
+    }
+
+    [Fact(DisplayName = "Returns empty dictionary when tenant has no plugins")]
+    public async Task GetPluginLoadStatus_EmptyTenant_Test()
+    {
+        var tenantId = Guid.NewGuid();
+        var result = await _pluginGAgentManager.GetPluginLoadStatusAsync(tenantId);
+        result.ShouldBeEmpty();
     }
 }

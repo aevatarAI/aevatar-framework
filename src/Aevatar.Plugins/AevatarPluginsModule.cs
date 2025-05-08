@@ -31,7 +31,9 @@ public class AevatarPluginsModule : AbpModule
         });
         context.Services.AddTransient<ITenantPluginCodeRepository, TenantPluginCodeRepository>();
         context.Services.AddTransient<IPluginCodeStorageRepository, PluginCodeStorageRepository>();
+        context.Services.AddTransient<IPluginLoadStatusRepository, PluginLoadStatusRepository>();
         context.Services.AddTransient<TenantPluginCodeMongoDbContext>();
         context.Services.AddTransient<PluginCodeStorageMongoDbContext>();
+        context.Services.AddTransient<PluginLoadStatusMongoDbContext>();
     }
 }

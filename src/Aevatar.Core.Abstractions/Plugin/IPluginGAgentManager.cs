@@ -13,4 +13,10 @@ public interface IPluginGAgentManager
     Task<Guid> AddExistedPluginAsync(AddExistedPluginDto addExistedPluginDto);
     Task<IReadOnlyList<Assembly>> GetPluginAssembliesAsync(Guid tenantId);
     Task<IReadOnlyList<Assembly>> GetCurrentTenantPluginAssembliesAsync();
+    /// <summary>
+    /// Query plugin DLL load status for this startup.
+    /// </summary>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <returns>Dictionary: key is DLL name, value is load status and error reason if failed</returns>
+    Task<Dictionary<string, PluginLoadStatus>> GetPluginLoadStatusAsync(Guid? tenantId = null);
 }

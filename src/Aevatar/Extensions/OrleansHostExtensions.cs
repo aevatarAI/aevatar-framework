@@ -3,6 +3,7 @@ using Aevatar.Core;
 using Aevatar.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Orleans.Serialization;
 using Orleans.SyncWork;
 using Volo.Abp;

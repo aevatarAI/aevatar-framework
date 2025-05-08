@@ -13,38 +13,9 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
 {
     private readonly ConcurrentDictionary<string, TenantPluginCodeSnapshotDocument> _store = new();
 
-    public Task<TenantPluginCodeSnapshotDocument> InsertAsync(TenantPluginCodeSnapshotDocument entity)
-    {
-        _store[entity.Id] = entity;
-        return Task.FromResult(entity);
-    }
-
-    public Task<TenantPluginCodeSnapshotDocument> UpdateAsync(TenantPluginCodeSnapshotDocument entity)
-    {
-        _store[entity.Id] = entity;
-        return Task.FromResult(entity);
-    }
-
-    public Task DeleteAsync(string id)
-    {
-        _store.TryRemove(id, out _);
-        return Task.CompletedTask;
-    }
-
-    public Task<TenantPluginCodeSnapshotDocument> GetAsync(string id)
-    {
-        _store.TryGetValue(id, out var entity);
-        return Task.FromResult(entity);
-    }
-
-    public Task<List<TenantPluginCodeSnapshotDocument>> GetListAsync()
-    {
-        return Task.FromResult(_store.Values.ToList());
-    }
-
     public Task<IReadOnlyList<Guid>?> GetGAgentPrimaryKeysByTenantIdAsync(Guid tenantId)
     {
-        var grainTypeName = typeof(Aevatar.Plugins.GAgents.TenantPluginCodeGAgent).FullName!;
+        var grainTypeName = typeof(TenantPluginCodeGAgent).FullName!;
         var grainIdString = $"{grainTypeName}/{tenantId:N}";
         if (_store.TryGetValue(grainIdString, out var doc))
         {
@@ -54,21 +25,6 @@ public class InMemoryTenantPluginCodeRepository : ITenantPluginCodeRepository
         return Task.FromResult<IReadOnlyList<Guid>?>(null);
     }
 
-    public Task<int> CountAsync()
-    {
-        return Task.FromResult(_store.Count);
-    }
-
-    public Task<bool> AnyAsync(Func<TenantPluginCodeSnapshotDocument, bool> predicate)
-    {
-        return Task.FromResult(_store.Values.Any(predicate));
-    }
-
-    public Task<TenantPluginCodeSnapshotDocument?> FirstOrDefaultAsync(
-        Func<TenantPluginCodeSnapshotDocument, bool> predicate)
-    {
-        return Task.FromResult(_store.Values.FirstOrDefault(predicate));
-    }
 
     public IQueryable<TenantPluginCodeSnapshotDocument> WithDetails()
     {

@@ -1,4 +1,3 @@
-using Aevatar.EventSourcing.MongoDB;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Volo.Abp.Domain.Entities;
@@ -42,6 +41,9 @@ public class PluginCodeStorageSnapshot
     
     [BsonElement("Descriptions")]
     public Dictionary<string, string> Descriptions { get; set; }
+
+    [BsonElement("LoadStatus")]
+    public Dictionary<string, Aevatar.Core.Abstractions.Plugin.PluginLoadStatus> LoadStatus { get; set; } = new();
 }
 
 [BsonIgnoreExtraElements]

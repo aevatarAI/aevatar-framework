@@ -41,6 +41,7 @@ Console.WriteLine("2. Try Get Artifact GAgent");
 Console.WriteLine("3. Show all candidate GAgents");
 Console.WriteLine("4. Call PermissionGAgent");
 Console.WriteLine("5. Get descriptions");
+Console.WriteLine("6. Get load status");
 var choice = Console.ReadLine();
 
 switch (choice)
@@ -62,6 +63,9 @@ switch (choice)
         break;
     case "5":
         await GetDescriptions(pluginManager);
+        break;
+    case "6":
+        await GetLoadedStatus(pluginManager);
         break;
     default:
         Console.WriteLine("Invalid choice.");
@@ -136,5 +140,23 @@ async Task GetDescriptions(IPluginGAgentManager pluginGAgentManager)
     foreach (var description in pluginsInformation.Value.Values.SelectMany(descriptions => descriptions))
     {
         Console.WriteLine($"Plugin: {description.Key}, Description: {description.Value}");
+    }
+}
+
+async Task GetLoadedStatus(IPluginGAgentManager pluginGAgentManager)
+{
+    var status = await pluginGAgentManager.GetPluginLoadStatusAsync();
+    foreach (var tuple in status)
+    {
+        switch (tuple.Value.Status)
+        {
+            case LoadStatus.Success:
+                Console.WriteLine($"Plugin: {tuple.Key}, Status: ✅");
+                break;
+            default:
+                Console.WriteLine(
+                    $"Plugin: {tuple.Key}, Status: ❌({tuple.Value.Status.ToString()}), Reason: {tuple.Value.Reason}");
+                break;
+        }
     }
 }
