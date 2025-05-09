@@ -29,7 +29,8 @@ public class AevatarGAgentsTestModule : AbpModule
         });
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarGAgentsTestModule>(); });
         context.Services.AddTransient<IPermissionGrantRepository, MockPermissionGrantRepository>();
-        context.Services.AddTransient<IPluginCodeStorageRepository, InMemoryPluginCodeStorageRepository>();
-        context.Services.AddTransient<ITenantPluginCodeRepository, InMemoryTenantPluginCodeRepository>();
+        context.Services.AddSingleton<IPluginCodeStorageRepository, InMemoryPluginCodeStorageRepository>();
+        context.Services.AddSingleton<ITenantPluginCodeRepository, InMemoryTenantPluginCodeRepository>();
+        context.Services.AddSingleton<IPluginLoadStatusRepository, InMemoryPluginLoadStatusRepository>();
     }
 }

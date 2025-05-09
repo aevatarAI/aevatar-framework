@@ -24,7 +24,7 @@ public class PluginTestEvent : EventBase
     [Id(0)] public string Greeting { get; set; }
 }
 
-[GAgent("pluginTest")]
+[GAgent("pluginTest5")]
 public class PluginTestGAgent : GAgentBase<PluginTestGAgentState, PluginTestStateLogEvent, EventBase>
 {
     public override Task<string> GetDescriptionAsync()
