@@ -60,7 +60,7 @@ public class InMemoryPluginCodeStorageRepository : IPluginCodeStorageRepository
 
     public Task<Dictionary<Type, string>> GetPluginDescriptionsByGAgentPrimaryKey(Guid primaryKey)
     {
-        var grainTypeName = typeof(Aevatar.Plugins.GAgents.PluginCodeStorageGAgent).FullName!;
+        var grainTypeName = typeof(PluginCodeStorageGAgent).FullName!;
         var id = $"{grainTypeName}/{primaryKey:N}";
         if (_store.TryGetValue(id, out var doc))
         {

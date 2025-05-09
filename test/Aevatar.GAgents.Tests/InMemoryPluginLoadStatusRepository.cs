@@ -29,7 +29,7 @@ public class InMemoryPluginLoadStatusRepository : IPluginLoadStatusRepository
         return Task.CompletedTask;
     }
 
-    public Task<PluginLoadStatusDocument> GetAsync(string id)
+    public Task<PluginLoadStatusDocument?> GetAsync(string id)
     {
         _store.TryGetValue(id, out var entity);
         return Task.FromResult(entity);
@@ -40,14 +40,15 @@ public class InMemoryPluginLoadStatusRepository : IPluginLoadStatusRepository
         return Task.FromResult(_store.Values.ToList());
     }
 
-    public Task<Dictionary<string, PluginLoadStatus>> GetPluginLoadStatusAsync(Guid tenantId)
+    public async Task<Dictionary<string, PluginLoadStatus>> GetPluginLoadStatusAsync(Guid tenantId)
     {
-        return Task.FromResult(_store[tenantId.ToString("N")].LoadStatus);
+        var document = await GetAsync(tenantId.ToString("N"));
+        return document == null ? new Dictionary<string, PluginLoadStatus>() : document.LoadStatus;
     }
 
-    public async Task SetPluginLoadStatusAsync(Guid primaryKey, Dictionary<string, PluginLoadStatus> status)
+    public async Task SetPluginLoadStatusAsync(Guid tenantId, Dictionary<string, PluginLoadStatus> status)
     {
-        _store.TryAdd(primaryKey.ToString("N"), new PluginLoadStatusDocument { LoadStatus = status });
+        _store.TryAdd(tenantId.ToString("N"), new PluginLoadStatusDocument { LoadStatus = status });
     }
 
     public Task ClearPluginLoadStatusAsync()

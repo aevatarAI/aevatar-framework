@@ -1,3 +1,4 @@
+using System.Reflection;
 using Orleans.TestingHost;
 using Volo.Abp.Modularity;
 using Volo.Abp.Testing;

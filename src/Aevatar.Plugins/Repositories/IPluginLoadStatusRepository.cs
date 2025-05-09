@@ -14,7 +14,7 @@ public interface IPluginLoadStatusRepository : IRepository<PluginLoadStatusDocum
     /// <summary>
     /// Set plugin load status dictionary by plugin code primary key.
     /// </summary>
-    Task SetPluginLoadStatusAsync(Guid primaryKey, Dictionary<string, PluginLoadStatus> status);
+    Task SetPluginLoadStatusAsync(Guid tenantId, Dictionary<string, PluginLoadStatus> status);
 
     Task ClearPluginLoadStatusAsync();
 }
