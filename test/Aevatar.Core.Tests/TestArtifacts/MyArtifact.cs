@@ -1,4 +1,6 @@
-﻿using Aevatar.Core.Abstractions;
+﻿using Aevatar.Core.Artifact;
+using Aevatar.Agent.Abstractions;
+using Aevatar.Core.Abstractions;
 
 namespace Aevatar.Core.Tests.TestArtifacts;
 
@@ -35,7 +37,7 @@ public class MyArtifact : IMyArtifact
         return "Test";
     }
 
-    public void TransitionState(MyArtifactGAgentState state, StateLogEventBase<MyArtifactStateLogEvent> stateLogEvent)
+    public void TransitionState(IGAgentState state, IGAgentEventBase<MyArtifactStateLogEvent> stateLogEvent)
     {
         /* custom logic */
     }

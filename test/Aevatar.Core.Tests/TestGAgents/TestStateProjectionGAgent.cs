@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.Agent.Abstractions;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
@@ -29,7 +30,7 @@ public class TestStateProjectionGAgent : StateProjectionGAgentBase<GroupGAgentSt
         await ConfirmEvents();
     }
 
-    protected override void GAgentTransitionState(TestStateProjectionGAgentState state, StateLogEventBase<TestStateProjectionStateLogEvent> @event)
+    protected override void GAgentTransitionState(TestStateProjectionGAgentState state, IGAgentEventBase<TestStateProjectionStateLogEvent> @event)
     {
         if (@event is CallStateHandlerStateLogEvent)
         {

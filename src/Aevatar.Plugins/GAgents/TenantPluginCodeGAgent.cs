@@ -1,5 +1,6 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.Agent.Abstractions;
 
 namespace Aevatar.Plugins.GAgents;
 
@@ -32,7 +33,7 @@ public class TenantPluginCodeGAgent
     }
 
     protected override void GAgentTransitionState(TenantPluginCodeGAgentState state,
-        StateLogEventBase<TenantPluginStateLogEvent> @event)
+        IGAgentEventBase<TenantPluginStateLogEvent> @event)
     {
         switch (@event)
         {

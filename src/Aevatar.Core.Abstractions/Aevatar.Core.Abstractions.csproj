@@ -22,4 +22,9 @@
         <PackageReference Include="Orleans.SyncWork" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Aevatar.Agent.Abstractions\Aevatar.Agent.Abstractions.csproj" />
+      <ProjectReference Include="..\Aevatar.Core.Artifact\Aevatar.Core.Artifact.csproj" />
+    </ItemGroup>
+
 </Project>

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Aevatar.Agent.Abstractions;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,8 +36,8 @@ public abstract class
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public abstract partial class
-    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
-    : JournaledGrain<TState, StateLogEventBase<TStateLogEvent>>, IStateGAgent<TState>, IExtGAgent
+    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> 
+    : JournaledGrain<TState, IGAgentEventBase<TStateLogEvent>>, IStateGAgent<TState>, IExtGAgent
     where TState : StateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
@@ -378,7 +379,7 @@ public abstract partial class
         }, Logger);
     }
 
-    private async Task InternalRaiseEventAsync<T>(T raisedStateLogEvent) where T : StateLogEventBase<TStateLogEvent>
+    private async Task InternalRaiseEventAsync<T>(T raisedStateLogEvent) where T : IGAgentEventBase<TStateLogEvent>
     {
         await HandleRaiseEventAsync();
     }

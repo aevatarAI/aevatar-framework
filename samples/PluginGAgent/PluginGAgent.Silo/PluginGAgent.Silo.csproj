@@ -28,6 +28,7 @@
         <ProjectReference Include="..\..\..\src\Aevatar.Plugins\Aevatar.Plugins.csproj" />
         <ProjectReference Include="..\..\..\src\Aevatar\Aevatar.csproj" />
         <ProjectReference Include="..\..\..\test\Aevatar.Core.Tests\Aevatar.Core.Tests.csproj" />
+        <ProjectReference Include="..\..\..\src\Aevatar.Agent.Abstractions\Aevatar.Agent.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
