@@ -24,16 +24,7 @@ var builder = Host.CreateDefaultBuilder(args)
         client.UseLocalhostClustering()
             .UseMongoDBClient("mongodb://localhost:27017/?maxPoolSize=555")
             .AddMemoryStreams(AevatarCoreConstants.StreamProvider)
-            .UseAevatar();
-        var plugins = PluginLoader.LoadPlugins("plugins");
-        var assemblies = plugins.Select(Assembly.Load).ToList();
-        client.Services.AddSerializer(options =>
-        {
-            foreach (var assembly in assemblies)
-            {
-                options.AddAssembly(assembly);
-            }
-        });
+            .UseAevatar(true);
     })
     .ConfigureLogging(logging => logging.AddConsole())
     .UseConsoleLifetime();
@@ -44,8 +35,6 @@ await host.StartAsync();
 var pluginManager = host.Services.GetRequiredService<IPluginGAgentManager>();
 var gAgentFactory = host.Services.GetRequiredService<IGAgentFactory>();
 var gAgentManager = host.Services.GetRequiredService<IGAgentManager>();
-
-
 
 Console.WriteLine("Select an option:");
 Console.WriteLine("0. Add plugin code");

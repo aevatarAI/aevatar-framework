@@ -66,7 +66,7 @@ public static class OrleansHostExtensions
         };
     }
 
-    public static IClientBuilder UseAevatar(this IClientBuilder builder)
+    public static IClientBuilder UseAevatar(this IClientBuilder builder, bool includingAbpServices = false)
     {
         var abpApplication = AbpApplicationFactory.Create<AevatarModule>();
         abpApplication.Initialize();
@@ -74,9 +74,10 @@ public static class OrleansHostExtensions
         return builder
             .ConfigureServices(services =>
         {
-            foreach (var service in abpApplication.Services)
+            AsyncHelper.RunSync(() => LoadPluginsAsync(services, abpApplication));
+            if (includingAbpServices)
             {
-                services.Add(service);
+                services.Add(abpApplication.Services);
             }
         });
     }
