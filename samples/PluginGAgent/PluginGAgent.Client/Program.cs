@@ -1,4 +1,5 @@
-﻿using Aevatar.Core.Abstractions;
+﻿using System.Reflection;
+using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Extensions;
 using Aevatar.Core.Abstractions.Plugin;
 using Aevatar.Core.Tests.TestArtifacts;
@@ -10,7 +11,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PluginGAgent.Grains;
+using Newtonsoft.Json;
+using Orleans.Serialization;
 
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration((context, config) =>
@@ -23,6 +25,15 @@ var builder = Host.CreateDefaultBuilder(args)
             .UseMongoDBClient("mongodb://localhost:27017/?maxPoolSize=555")
             .AddMemoryStreams(AevatarCoreConstants.StreamProvider)
             .UseAevatar();
+        var plugins = PluginLoader.LoadPlugins("plugins");
+        var assemblies = plugins.Select(Assembly.Load).ToList();
+        client.Services.AddSerializer(options =>
+        {
+            foreach (var assembly in assemblies)
+            {
+                options.AddAssembly(assembly);
+            }
+        });
     })
     .ConfigureLogging(logging => logging.AddConsole())
     .UseConsoleLifetime();
@@ -33,6 +44,8 @@ await host.StartAsync();
 var pluginManager = host.Services.GetRequiredService<IPluginGAgentManager>();
 var gAgentFactory = host.Services.GetRequiredService<IGAgentFactory>();
 var gAgentManager = host.Services.GetRequiredService<IGAgentManager>();
+
+
 
 Console.WriteLine("Select an option:");
 Console.WriteLine("0. Add plugin code");
@@ -50,7 +63,7 @@ switch (choice)
         await AddCodeAsync(pluginManager);
         break;
     case "1":
-        await PerformCommandAsync(gAgentFactory);
+        await PerformCommandAsync(gAgentFactory, gAgentManager);
         break;
     case "2":
         await TryArtifactGAgentAsync(gAgentFactory);
@@ -87,14 +100,21 @@ async Task AddCodeAsync(IPluginGAgentManager pluginGAgentManager)
     }
 }
 
-async Task PerformCommandAsync(IGAgentFactory factory)
+async Task PerformCommandAsync(IGAgentFactory factory, IGAgentManager gAgentManager)
 {
     var publishingGAgent = await factory.GetGAgentAsync<IPublishingGAgent>();
     var commander = await factory.GetGAgentAsync(GrainId.Create("pluginTest.commander", Guid.NewGuid().ToString("N")));
     var worker = await factory.GetGAgentAsync("worker", "pluginTest");
     await publishingGAgent.RegisterAsync(commander);
     await commander.RegisterAsync(worker);
-    await publishingGAgent.PublishEventAsync(new Command { Content = "test" });
+    var properties = JsonConvert.SerializeObject(new Dictionary<string, object>
+    {
+        { "Content", "test" }
+    });
+    var availableTypes = gAgentManager.GetAvailableEventTypes();
+    var eventType = availableTypes.FirstOrDefault(t => string.Equals(t.FullName, "PluginGAgent.Grains.Command", StringComparison.CurrentCultureIgnoreCase));
+    var command = JsonConvert.DeserializeObject(properties, eventType!) as EventBase;
+    await publishingGAgent.PublishEventAsync(command!);
 }
 
 async Task TryArtifactGAgentAsync(IGAgentFactory factory)

@@ -1,7 +1,7 @@
+using System.Reflection;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Plugin;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Orleans.Metadata;
 using Volo.Abp.Threading;
 
@@ -45,7 +45,17 @@ public class GAgentManager : IGAgentManager
 
         foreach (var assembly in assemblies)
         {
-            var types = assembly.GetTypes()
+            Type[] allTypes;
+            try
+            {
+                allTypes = assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                allTypes = ex.Types.Where(t => t != null).ToArray()!;
+            }
+
+            var types = allTypes
                 .Where(t => t.IsSubclassOf(typeof(EventBase)) && t is { IsClass: true, IsAbstract: false });
             eventTypes.AddRange(types);
         }

@@ -99,7 +99,10 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
             _semaphore.Release();
         }
 
-        (_tenantId, _pluginId) = await AddTestPluginAsync();
+        if (_tenantId == Guid.Empty)
+        {
+            (_tenantId, _pluginId) = await AddTestPluginAsync();
+        }
     }
 
     public async Task DisposeAsync()
@@ -129,66 +132,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         return (tenantId, pluginId);
     }
 
-    [Fact(Skip = "Need mongodb.")]
-    async Task MongoRepositoryTest()
-    {
-        // need to supply
-        using (_unitOfWorkManager.Begin())
-        {
-            var primaryKey = Guid.NewGuid();
-            var result = await _pluginCodeStorageRepository.GetPluginCodeByGAgentPrimaryKey(primaryKey);
-            result.ShouldBeNull();
-
-            var primaryKeyList = new List<Guid>() { primaryKey};
-            var resultList = await _pluginCodeStorageRepository.GetPluginCodesByGAgentPrimaryKeys(primaryKeyList);
-            resultList.Count.ShouldBe(0);
-            
-            var result1 = await _tenantPluginCodeRepository.GetGAgentPrimaryKeysByTenantIdAsync(primaryKey);
-            result1.ShouldBeNull();
-        }
-
-        var tenantDoc = new TenantPluginCodeSnapshotDocument()
-        {
-            Etag = "",
-            Doc = new TenantPluginCodeDocEntity()
-            {
-                InternalId = "",
-                Type = "",
-                Snapshot = new TenantPluginCodeSnapshotEntity()
-                {
-                    InternalId = "",
-                    Type = "",
-                    CodeStorageGuids = new CodeStorageGuidList()
-                    {
-                        Type = "",
-                        Values = new List<Guid>()
-                    }
-                }
-            }
-        };
-        tenantDoc.ToString();
-        var pluginDoc = new PluginCodeStorageSnapshotDocument()
-        {
-            Etag = "",
-            Doc = new PluginCodeStorageDoc()
-            {
-                InternalId = "",
-                Type = "",
-                Snapshot = new PluginCodeStorageSnapshot()
-                {
-                    InternalId = "",
-                    Type = "",
-                    Code = new ByteArrayContainer()
-                    {
-                        Type = "",
-                        Value = new byte[1]
-                    }
-                }
-            }
-        };
-    }
-
-    [Fact(DisplayName = "Can add a new plugin successfully with real DLL", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can add a new plugin successfully with real DLL")]
     public async Task AddPluginWithRealDllTest()
     {
         _pluginId.ShouldNotBe(Guid.Empty);
@@ -201,7 +145,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         storedCode.Length.ShouldBeGreaterThan(0);
     }
 
-    [Fact(DisplayName = "Can get plugin description from real DLL", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can get plugin description from real DLL")]
     public async Task GetPluginDescriptionWithRealDllTest()
     {
         var (tenantId, pluginId) = await AddTestPluginAsync(1);
@@ -211,7 +155,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         description.Keys.Count.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "Can get plugin assemblies for a tenant with real DLL", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can get plugin assemblies for a tenant with real DLL")]
     public async Task GetPluginAssembliesWithRealDllTest()
     {
         var (tenantId, pluginId) = await AddTestPluginAsync(2);
@@ -222,7 +166,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         assemblies.Any(a => a.GetTypes().Any()).ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "Returns empty list when tenant has no plugin assemblies", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Returns empty list when tenant has no plugin assemblies")]
     public async Task GetPluginAssembliesForEmptyTenantWithRealDllTest()
     {
         var tenantId = Guid.NewGuid();
@@ -231,7 +175,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         assemblies.ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Can get plugins for a tenant with real DLL", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can get plugins for a tenant with real DLL")]
     public async Task GetPluginsWithRealDllTest()
     {
         var result = await _pluginGAgentManager.GetPluginsAsync(_tenantId);
@@ -239,7 +183,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         result.Count.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "Can get plugins with descriptions for a tenant with real DLL", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can get plugins with descriptions for a tenant with real DLL")]
     public async Task GetPluginsWithDescriptionWithRealDllTest()
     {
         var (tenantId, pluginId) = await AddTestPluginAsync(2);
@@ -250,7 +194,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         result.Value.Count.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "Can add an existing plugin to a tenant with real DLL", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can add an existing plugin to a tenant with real DLL")]
     public async Task AddExistedPluginWithRealDllTest()
     {
         var tenantId = Guid.NewGuid();
@@ -281,7 +225,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         await ((InMemoryPluginCodeStorageRepository)_pluginCodeStorageRepository).SyncStoreAsync(pluginCodeStorageGAgent);
     }
 
-    [Fact(DisplayName = "Can get plugin load status for all success case", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can get plugin load status for all success case")]
     public async Task GetPluginLoadStatus_AllSuccess_Test()
     {
         var (tenantId, pluginId) = await AddTestPluginAsync(2);
@@ -297,7 +241,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         result[$"Plugin_{pluginId}.dll"].Status.ShouldBe(LoadStatus.Success);
     }
 
-    [Fact(DisplayName = "Can get plugin load status for partial failure case", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Can get plugin load status for partial failure case")]
     public async Task GetPluginLoadStatus_PartialFailure_Test()
     {
         var (tenantId, pluginId) = await AddTestPluginAsync(2);
@@ -314,7 +258,7 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         result[$"Plugin_{pluginId}.dll"].Reason.ShouldBe("Test failure");
     }
 
-    [Fact(DisplayName = "Returns empty dictionary when tenant has no plugins", Skip = "Cannot run with other tests.")]
+    [Fact(DisplayName = "Returns empty dictionary when tenant has no plugins")]
     public async Task GetPluginLoadStatus_EmptyTenant_Test()
     {
         var tenantId = Guid.NewGuid();

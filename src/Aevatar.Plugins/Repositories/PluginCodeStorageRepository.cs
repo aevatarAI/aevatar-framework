@@ -65,6 +65,7 @@ public class PluginCodeStorageRepository :
 
     public async Task<IReadOnlyList<byte[]>> GetPluginCodesByGAgentPrimaryKeys(IReadOnlyList<Guid> primaryKeys)
     {
+        using var uow = _unitOfWorkManager.Begin();
         var codeList = new List<byte[]>();
         foreach (var primaryKey in primaryKeys)
         {
@@ -75,6 +76,7 @@ public class PluginCodeStorageRepository :
             }
         }
 
+        await uow.CompleteAsync();
         return codeList;
     }
 
