@@ -35,6 +35,13 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
         [Id(0)]public required string Key { get; set; } = string.Empty;
     }
 
+    [GenerateSerializer]
+    public class UpdateSubscribeStateLogEvent : StateLogEventBase<TBroadCastStateLogEvent>
+    {
+        [Id(0)]public required string Key { get; set; } = string.Empty;
+        [Id(1)]public required Guid Value { get; set; } = Guid.Empty;
+    }
+
     /// <summary>
     /// Returns the description of the agent
     /// </summary>
@@ -101,12 +108,16 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
             if (resumeHandles.IsNullOrEmpty())
             {
                 Logger.LogWarning("[{0}.{1}]Unable to locate handle {3} to be resumed, continue to subscribe", this.GetType().Name, nameof(SubscribeBroadCastEventAsync), handleId);
-                var unsubscribeEvent = new UnSubscribeStateLogEvent
+                var newHandle = await stream.SubscribeAsync(observer);
+                Logger.LogInformation("[{0}.{1}]SubscribeBroadCastEventAsync {2} created", this.GetType().Name, nameof(SubscribeBroadCastEventAsync), key);
+                var updateEvent = new UpdateSubscribeStateLogEvent
                 {
-                    Key = key
+                    Key = key,
+                    Value = newHandle.HandleId
                 };
-                RaiseEvent(unsubscribeEvent);
+                RaiseEvent(updateEvent);
                 await ConfirmEvents();
+                return newHandle;
             }
             else if (resumeHandles.Count > 1)
             {
@@ -224,6 +235,13 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
                 break;
             case UnSubscribeStateLogEvent unSubscribeStateLogEvent:
                 state.Subscription.Remove(unSubscribeStateLogEvent.Key);
+                break;
+            case UpdateSubscribeStateLogEvent updateEvent:
+                state.Subscription.Remove(updateEvent.Key);
+                if (updateEvent.Value != Guid.Empty)
+                {
+                    state.Subscription.Add(updateEvent.Key, updateEvent.Value);
+                }
                 break;
         }
         //call base class to handle the state transition if any
