@@ -237,10 +237,13 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
                 state.Subscription.Remove(unSubscribeStateLogEvent.Key);
                 break;
             case UpdateSubscribeStateLogEvent updateEvent:
-                state.Subscription.Remove(updateEvent.Key);
                 if (updateEvent.Value != Guid.Empty)
                 {
-                    state.Subscription.Add(updateEvent.Key, updateEvent.Value);
+                    state.Subscription[updateEvent.Key] = updateEvent.Value;
+                }
+                else
+                {
+                    state.Subscription.Remove(updateEvent.Key);
                 }
                 break;
         }
