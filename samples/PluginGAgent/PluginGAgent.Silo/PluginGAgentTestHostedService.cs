@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions.Extensions;
+using Aevatar.Core.Abstractions.Plugin;
 using Aevatar.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,9 +24,6 @@ public class PluginGAgentTestHostedService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await _application.InitializeAsync(_serviceProvider);
-        var permissionManager = _serviceProvider.GetRequiredService<IPermissionManager>();
-        var userId = "TestUser".ToGuid().ToString();
-        await permissionManager.SetAsync("DoSomething", "User", userId, true);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

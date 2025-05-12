@@ -1,3 +1,5 @@
+using Orleans.Concurrency;
+
 namespace Aevatar.Core.Abstractions;
 
 public interface IGAgent : IGrainWithGuidKey
@@ -12,6 +14,7 @@ public interface IGAgent : IGrainWithGuidKey
     /// Get GAgent description.
     /// </summary>
     /// <returns></returns>
+    [ReadOnly]
     Task<string> GetDescriptionAsync();
 
     /// <summary>
@@ -47,24 +50,28 @@ public interface IGAgent : IGrainWithGuidKey
     /// </summary>
     /// <param name="includeBaseHandlers"></param>
     /// <returns></returns>
+    [ReadOnly]
     Task<List<Type>?> GetAllSubscribedEventsAsync(bool includeBaseHandlers = false);
 
     /// <summary>
     /// Get subscriber list of current GAgent.
     /// </summary>
     /// <returns></returns>
+    [ReadOnly]
     Task<List<GrainId>> GetChildrenAsync();
 
     /// <summary>
     /// Get the subscription of current GAgent.
     /// </summary>
     /// <returns></returns>
+    [ReadOnly]
     Task<GrainId> GetParentAsync();
 
     /// <summary>
     /// Get the type of GAgent initialization event.
     /// </summary>
     /// <returns></returns>
+    [ReadOnly]
     Task<Type?> GetConfigurationTypeAsync();
 
     /// <summary>
@@ -77,5 +84,6 @@ public interface IGAgent : IGrainWithGuidKey
 
 public interface IStateGAgent<TState> : IGAgent
 {
+    [ReadOnly]
     Task<TState> GetStateAsync();
 }

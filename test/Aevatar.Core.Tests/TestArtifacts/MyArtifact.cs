@@ -1,6 +1,6 @@
 ﻿using Aevatar.Core.Abstractions;
 
-namespace Aevatar.ArtifactGAgents;
+namespace Aevatar.Core.Tests.TestArtifacts;
 
 [GenerateSerializer]
 public class MyArtifactGAgentState : StateBase;
@@ -19,6 +19,7 @@ public interface IMyArtifact : IArtifact<MyArtifactGAgentState, MyArtifactStateL
     string TestMethod();
 }
 
+[GenerateSerializer]
 public class MyArtifact : IMyArtifact
 {
     public string GetDescription() => "MyArtifact Description, this is for testing.";

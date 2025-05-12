@@ -4,6 +4,7 @@ using Aevatar.Core.Abstractions;
 using Aevatar.EventSourcing.Core;
 using Aevatar.EventSourcing.Core.Hosting;
 using Aevatar.EventSourcing.Core.LogConsistency;
+using Aevatar.EventSourcing.Core.Storage;
 using Castle.Core.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -59,8 +60,13 @@ public class TestKitSilo
         // Event Sourcing
         UseEventSourcing();
 
-        var mockAevatarOptionsManager = new Mock<IOptionsSnapshot<AevatarOptions>>();
-        mockAevatarOptionsManager.Setup(m => m.Value).Returns(new AevatarOptions());
+        var mockAevatarOptionsManager = new Mock<IOptions<AevatarOptions>>();
+        mockAevatarOptionsManager.Setup(m => m.Value).Returns(new AevatarOptions
+        {
+            StreamNamespace = "Aevatar",
+            StateProjectionStreamNamespace = "AevatarProjection",
+            BroadCastStreamNamespace = "AevatarBroadcast",
+        });
         ServiceProvider.AddService(mockAevatarOptionsManager.Object);
 
         GrainRuntime =
@@ -132,6 +138,7 @@ public class TestKitSilo
     public TestTimerRegistry TimerRegistry { get; }
 
     public TestLogConsistencyProvider LogConsistencyProvider { get; set; }
+    //public LogConsistencyProvider LogConsistencyProvider { get; set; }
     public DefaultProtocolServices ProtocolServices { get; set; }
     public InMemoryLogConsistentStorage TestLogConsistentStorage { get; set; } = new();
 

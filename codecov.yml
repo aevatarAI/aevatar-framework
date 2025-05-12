@@ -1,0 +1,8 @@
+codecov:
+  notify:
+    after_n_builds: 1
+coverage:
+  status:
+    project:
+      default:
+        target: auto

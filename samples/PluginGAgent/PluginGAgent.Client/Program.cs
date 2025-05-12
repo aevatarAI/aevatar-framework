@@ -1,7 +1,7 @@
-﻿using Aevatar.ArtifactGAgents;
-using Aevatar.Core.Abstractions;
+﻿using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Extensions;
 using Aevatar.Core.Abstractions.Plugin;
+using Aevatar.Core.Tests.TestArtifacts;
 using Aevatar.Core.Tests.TestGAgents;
 using Aevatar.Extensions;
 using Aevatar.PermissionManagement;
@@ -88,7 +88,7 @@ async Task PerformCommandAsync(IGAgentFactory factory)
 async Task TryArtifactGAgentAsync(IGAgentFactory factory)
 {
     var myArtifactGAgent =
-        await factory.GetGAgentAsync(typeof(MyArtifactGAgent));
+        await factory.GetArtifactGAgentAsync<MyArtifact, MyArtifactGAgentState, MyArtifactStateLogEvent>();
     var description = await myArtifactGAgent.GetDescriptionAsync();
     Console.WriteLine(description);
 }

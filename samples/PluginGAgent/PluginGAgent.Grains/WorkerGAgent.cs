@@ -6,16 +6,10 @@ namespace PluginGAgent.Grains;
 
 [GenerateSerializer]
 
-public class WorkerGAgentState : StateBase
-{
-
-}
+public class WorkerGAgentState : StateBase;
 
 [GenerateSerializer]
-public class WorkerStateLogEvent : StateLogEventBase<WorkerStateLogEvent>
-{
-
-}
+public class WorkerStateLogEvent : StateLogEventBase<WorkerStateLogEvent>;
 
 [GAgent("worker", "pluginTest")]
 public class WorkerGAgent : GAgentBase<WorkerGAgentState, WorkerStateLogEvent>

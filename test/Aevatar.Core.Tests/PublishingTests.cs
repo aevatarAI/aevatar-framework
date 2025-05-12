@@ -56,13 +56,13 @@ public class PublishingTests : GAgentTestKitBase
 
         // Assert.
         var state3A = await level3A.GetStateAsync();
-        state3A.Content.Count.ShouldBe(3);
+        state3A.Content.Count.ShouldBe(6);
         var state3B = await level3B.GetStateAsync();
-        state3B.Content.Count.ShouldBe(3);
+        state3B.Content.Count.ShouldBe(6);
         var state2A = await level2A.GetStateAsync();
-        state2A.Content.Count.ShouldBe(3);
+        state2A.Content.Count.ShouldBe(6);
         var state2B = await level2B.GetStateAsync();
-        state2B.Content.Count.ShouldBe(3);
+        state2B.Content.Count.ShouldBe(4);
     }
 
     [Fact(DisplayName = "Event can be published upwards.")]
@@ -88,13 +88,13 @@ public class PublishingTests : GAgentTestKitBase
 
         // Assert: level31 and level21 should receive the response event, then has 1 + 3 content stored.
         var state3A = await level3A.GetStateAsync();
-        state3A.Content.Count.ShouldBe(4);
+        state3A.Content.Count.ShouldBe(5);
         var state2A = await level2A.GetStateAsync();
-        state2A.Content.Count.ShouldBe(4);
+        state2A.Content.Count.ShouldBe(5);
 
         // Assert: level22 should not receive the response event, then has 1 content stored (due to [AllEventHandler]).
         var state2B = await level2B.GetStateAsync();
-        state2B.Content.Count.ShouldBe(1);
+        state2B.Content.Count.ShouldBe(2);
     }
 
     [Fact(DisplayName = "Everything works even if the same Guid is used for different grains.")]
@@ -123,12 +123,12 @@ public class PublishingTests : GAgentTestKitBase
 
         // Assert: level31 and level21 should receive the response event, then has 1 + 3 content stored.
         var state3A = await level3A.GetStateAsync();
-        state3A.Content.Count.ShouldBe(4);
+        state3A.Content.Count.ShouldBe(5);
         var state2A = await level2A.GetStateAsync();
-        state2A.Content.Count.ShouldBe(4);
+        state2A.Content.Count.ShouldBe(5);
 
         // Assert: level22 should not receive the response event, then has 1 content stored (due to [AllEventHandler]).
         var state2B = await level2B.GetStateAsync();
-        state2B.Content.Count.ShouldBe(1);
+        state2B.Content.Count.ShouldBe(2);
     }
 }

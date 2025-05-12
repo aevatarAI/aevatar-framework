@@ -171,6 +171,8 @@ public class GroupingTests : GAgentTestKitBase
             Description = "New demand from customer."
         });
 
+        await Task.Delay(1000);
+
         // Assert: Check state of market leading.
         var marketLeadingState = await marketingLeader.GetStateAsync();
         // 2 from market leader -> investors, 2 from developer -> develop leader -> market leader -> investors

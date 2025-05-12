@@ -46,6 +46,13 @@ public class EventHandlerTestGAgent : GAgentBase<EventHandlerTestGAgentState, Ev
         return Task.CompletedTask;
     }
 
+    [EventHandler]
+    public Task HandleEventWithExceptionAsync(NaiveTestEvent eventData)
+    {
+        // By design, for testing
+        throw new Exception();
+    }
+
     private void AddContent(string content)
     {
         if (State.Content.IsNullOrEmpty())

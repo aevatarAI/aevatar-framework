@@ -1,171 +1,297 @@
+using System.Buffers;
+using System.Collections.Concurrent;
 using System.Reflection;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Exceptions;
+using Aevatar.Core.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
 public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
 {
+    private readonly ConcurrentDictionary<Type, MethodInfo[]> _handlerCache = new();
+
     protected virtual Task UpdateObserverListAsync(Type type)
     {
-        var eventHandlerMethods = GetEventHandlerMethods(type);
+        var handlerMethods = GetCachedHandlerMethods(type);
 
-        foreach (var eventHandlerMethod in eventHandlerMethods)
+        var observers = ArrayPool<EventWrapperBaseAsyncObserver>.Shared.Rent(handlerMethods.Length);
+        try
         {
-            var parameter = eventHandlerMethod.GetParameters()[0];
-            var parameterType = parameter.ParameterType;
-            var parameterTypeName = parameterType.Name;
-            var observer = new EventWrapperBaseAsyncObserver(async item =>
+            var count = 0;
+            foreach (var method in handlerMethods)
             {
-                var grainId = (GrainId)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.GrainId))?.GetValue(item)!;
-                if (grainId == this.GetGrainId() && eventHandlerMethod.Name != nameof(ForwardEventAsync) &&
-                    eventHandlerMethod.Name != nameof(PerformConfigAsync))
+                try
                 {
-                    // Skip the event if it is sent by itself.
-                    return;
+                    var (parameterType, isResponseHandler) = method.AnalysisMethodMetadata();
+                    var observer = CreateMethodObserver(method, parameterType, isResponseHandler);
+                    observers[count++] = observer;
                 }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    Logger.LogCritical(ex, "Metadata analysis failed for method {Method}", method.Name);
+                    throw new InvalidOperationException($"Type load error in {method.Name}", ex);
+                }
+            }
 
+            try
+            {
+                _observers.AddRange(observers.Take(count));
+            }
+            catch (ArgumentNullException ex)
+            {
+                Logger.LogWarning(ex, "Attempted to add null observer for {Type}", type.Name);
+            }
+        }
+        finally
+        {
+            ArrayPool<EventWrapperBaseAsyncObserver>.Shared.Return(observers);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private MethodInfo[] GetCachedHandlerMethods(Type type)
+    {
+        try
+        {
+            return _handlerCache.GetOrAdd(type, t =>
+            {
+                try
+                {
+                    var methods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    return methods.AsParallel()
+                        .WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount - 1))
+                        .Where(IsEventHandlerMethod)
+                        .OrderBy(m => m.GetCustomAttribute<EventHandlerAttribute>()?.Priority ?? 0)
+                        .ToArray();
+                }
+                catch (ArgumentNullException ex)
+                {
+                    Logger.LogError(ex, "Type metadata resolution failed for {Type}", t.Name);
+                    return Array.Empty<MethodInfo>();
+                }
+            });
+        }
+        catch (Exception ex) when (ex is ArgumentNullException or OverflowException)
+        {
+            Logger.LogCritical(ex, "Handler cache corruption detected");
+            _handlerCache.Clear();
+            throw;
+        }
+    }
+
+    private EventWrapperBaseAsyncObserver CreateMethodObserver(
+        MethodInfo method,
+        Type parameterType,
+        bool isResponseHandler)
+    {
+        return EventWrapperBaseAsyncObserver.Create(async item =>
+        {
+            using (Logger.BeginScope(new Dictionary<string, object>
+                   {
+                       ["GrainId"] = this.GetGrainId(),
+                       ["EventWrapperBase"] = item
+                   }))
+            {
                 try
                 {
                     var eventId = (Guid)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.EventId))
                         ?.GetValue(item)!;
                     var eventType = (TEvent)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.Event))
                         ?.GetValue(item)!;
-                    _correlationId = eventType.CorrelationId;
+                    var grainId = (GrainId)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.GrainId))
+                        ?.GetValue(item)!;
 
-                    if (parameterType == eventType.GetType())
+                    var eventWrapper = new EventWrapper<TEvent>(eventType, eventId, grainId);
+
+                    Logger.LogInformation("Handling event {EventWrapper} in method {MethodName}", eventWrapper,
+                        method.Name);
+
+                    if (ShouldSkipEvent(eventWrapper, method))
+                        return;
+
+                    _correlationId = eventWrapper.Event.CorrelationId;
+
+                    try
                     {
-                        await HandleMethodInvocationAsync(eventHandlerMethod, parameter, eventType, eventId);
+                        await HandleEventWrapper(
+                            method,
+                            parameterType,
+                            eventWrapper,
+                            isResponseHandler
+                        );
                     }
-
-                    if (parameterType == typeof(EventWrapperBase))
+                    catch (Exception ex) when (ex is EventHandlingException)
                     {
-                        try
+                        Logger.LogError(ex,
+                            "Event handling failed | Method:{Method} | EventId:{EventId}",
+                            method.Name,
+                            eventWrapper.EventId);
+
+                        await PublishAsync(new EventHandlerExceptionEvent
                         {
-                            var invokeParameter =
-                                new EventWrapper<TEvent>(eventType, eventId, this.GetGrainId());
-                            var result = eventHandlerMethod.Invoke(this, [invokeParameter]);
-                            await (Task)result!;
-                        }
-                        catch (Exception ex)
+                            GrainId = this.GetGrainId(),
+                            HandleEventType = parameterType,
+                            ExceptionMessage = ex.ToString()
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex,
+                            "Framework error occured | Method:{Method} | EventId:{EventId}",
+                            method.Name,
+                            eventWrapper.EventId);
+
+                        await PublishAsync(new GAgentBaseExceptionEvent
                         {
-                            // TODO: Make this better.
-                            Logger.LogError(ex, "Error invoking method {MethodName} with event type {EventType}",
-                                eventHandlerMethod.Name, eventType.GetType().Name);
-                        }
+                            GrainId = this.GetGrainId(),
+                            ExceptionMessage = ex.ToString()
+                        });
                     }
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    Logger.LogError(ex, "Error invoking method {MethodName} with event type {EventType}",
-                        eventHandlerMethod.Name, parameterTypeName);
+                    Logger.LogCritical(ex, "Unhandled event processing error");
+                    throw;
                 }
-            })
-            {
-                MethodName = eventHandlerMethod.Name,
-                ParameterTypeName = parameterTypeName
-            };
+            }
+        }, ServiceProvider, method.Name, parameterType.Name);
+    }
 
-            _observers.Add(observer);
+    private bool ShouldSkipEvent(EventWrapper<TEvent> eventWrapper, MethodInfo method)
+    {
+        return eventWrapper.GrainId == this.GetGrainId() && !method.IsSelfHandlingAllowed();
+    }
+
+    private async Task HandleEventWrapper(
+        MethodInfo method,
+        Type parameterType,
+        EventWrapper<TEvent> eventWrapper,
+        bool isResponseHandler)
+    {
+        switch (eventWrapper.Event)
+        {
+            case { } ev when parameterType.BaseType == typeof(EventBase):
+                await HandleEvent(method, ev);
+                break;
+            
+            case not null when parameterType == typeof(EventWrapperBase):
+                await HandleEventWrapperBase(method, eventWrapper);
+                break;
+
+            case { } ev when isResponseHandler:
+                await HandleEventWithResponse(method, ev, eventWrapper.EventId);
+                break;
+
+            default:
+                Logger.LogWarning("Unmatched event type {Type} for method {Method}",
+                    eventWrapper.Event!.GetType().Name,
+                    method.Name);
+                break;
         }
-
-        return Task.CompletedTask;
     }
 
-    protected virtual IEnumerable<MethodInfo> GetEventHandlerMethods(Type type)
+    private async Task HandleEvent(MethodInfo method, TEvent ev)
     {
-        return type
-            .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-            .Where(IsEventHandlerMethod);
+        try
+        {
+            await (Task)method.Invoke(this, [ev])!;
+        }
+        catch (ArgumentException ex)
+        {
+            Logger.LogError(ex, "Parameter mismatch in {Method}", method.Name);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error while invoking {Method}", method.Name);
+            throw new EventHandlingException(ex.InnerException?.ToString() ?? ex.ToString(), ex.InnerException ?? ex);
+        }
     }
 
-    protected virtual bool IsEventHandlerMethod(MethodInfo methodInfo)
+    private async Task HandleEventWrapperBase(MethodInfo method, EventWrapper<TEvent> wrapperBase)
     {
-        return methodInfo.GetParameters().Length == 1 && (
-            // Either the method has the EventHandlerAttribute
-            // Or is named HandleEventAsync
-            //     and the parameter is not EventWrapperBase 
-            //     and the parameter is inherited from EventBase
-            ((methodInfo.GetCustomAttribute<EventHandlerAttribute>() != null ||
-              methodInfo.Name == AevatarGAgentConstants.EventHandlerDefaultMethodName) &&
-             methodInfo.GetParameters()[0].ParameterType != typeof(EventWrapperBase) &&
-             typeof(TEvent).IsAssignableFrom(methodInfo.GetParameters()[0].ParameterType))
-            // Or the method has the AllEventHandlerAttribute and the parameter is EventWrapperBase
-            || (methodInfo.GetCustomAttribute<AllEventHandlerAttribute>() != null &&
-                methodInfo.GetParameters()[0].ParameterType == typeof(EventWrapperBase))
-            // Or the method is for GAgent initialization
-            || (methodInfo.Name == nameof(PerformConfigAsync) &&
-                typeof(ConfigurationBase).IsAssignableFrom(methodInfo.GetParameters()[0].ParameterType))
-        );
+        try
+        {
+            await (Task)method.Invoke(this, [wrapperBase])!;
+        }
+        catch (InvalidCastException ex)
+        {
+            Logger.LogError(ex, "Invalid return type from {Method}", method.Name);
+            throw new InvalidOperationException("Handler returned non-task result", ex);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error while invoking {Method}", method.Name);
+            throw new EventHandlingException(ex.InnerException?.ToString() ?? ex.ToString(), ex.InnerException ?? ex);
+        }
     }
 
-    private async Task HandleMethodInvocationAsync(MethodInfo method, ParameterInfo parameter, EventBase eventType,
+    private async Task HandleEventWithResponse(
+        MethodInfo method,
+        EventBase ev,
         Guid eventId)
     {
-        if (IsEventWithResponse(parameter))
+        try
         {
-            await HandleEventWithResponseAsync(method, eventType, eventId);
+            dynamic result = method.Invoke(this, [ev])!;
+            if (result is not Task<EventBase> && !typeof(EventBase).IsAssignableFrom(result.GetType().GetGenericArguments()[0]))
+            {
+                throw new InvalidOperationException("Response handler must return Task<EventBase or its derived type>");
+            }
+
+            var eventResult = await result;
+            await PublishResponse(eventResult, eventId);
         }
-        else if (method.ReturnType == typeof(Task))
+        catch (Exception ex)
         {
-            try
-            {
-                var result = method.Invoke(this, [eventType]);
-                await (Task)result!;
-            }
-            catch (Exception ex)
-            {
-                // TODO: Make this better.
-                Logger.LogError(ex, "Error invoking method {MethodName} with event type {EventType}", method.Name,
-                    eventType.GetType().Name);
-            }
+            Logger.LogError(ex, "Error while invoking {Method}", method.Name);
+            throw new EventHandlingException(ex.InnerException?.ToString() ?? ex.ToString(), ex.InnerException ?? ex);
         }
     }
 
-    private bool IsEventWithResponse(ParameterInfo parameter)
+    private async Task PublishResponse(EventBase result, Guid eventId)
     {
-        return parameter.ParameterType.BaseType is { IsGenericType: true } &&
-               parameter.ParameterType.BaseType.GetGenericTypeDefinition() == typeof(EventWithResponseBase<>);
+        result.CorrelationId = _correlationId;
+        result.PublisherGrainId = this.GetGrainId();
+        var responseWrapper = new EventWrapper<TEvent>(
+            (TEvent)result,
+            eventId,
+            this.GetGrainId());
+
+        await PublishAsync(responseWrapper);
     }
 
-    private async Task HandleEventWithResponseAsync(MethodInfo method, EventBase eventType, Guid eventId)
+    protected virtual IEnumerable<MethodInfo> GetEventHandlerMethods(Type type) =>
+        _handlerCache.GetOrAdd(type, t =>
+            t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                .Where(IsEventHandlerMethod)
+                .ToArray());
+
+    protected virtual bool IsEventHandlerMethod(MethodInfo method)
     {
-        if (method.ReturnType.IsGenericType &&
-            method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+        var param = method.GetParameters();
+        if (param.Length != 1) return false;
+
+        var paramType = param[0].ParameterType;
+        return paramType switch
         {
-            var resultType = method.ReturnType.GetGenericArguments()[0];
-            if (typeof(EventBase).IsAssignableFrom(resultType))
-            {
-                try
-                {
-                    var eventResult = await (dynamic)method.Invoke(this, [eventType])!;
-                    eventResult.CorrelationId = _correlationId;
-                    eventResult.PublisherGrainId = this.GetGrainId();
-                    var eventWrapper =
-                        new EventWrapper<TEvent>(eventResult, eventId, this.GetGrainId());
-                    await PublishAsync(eventWrapper);
-                }
-                catch (Exception ex)
-                {
-                    // TODO: Make this better.
-                    Logger.LogError(ex, "Error invoking method {MethodName} with event type {EventType}", method.Name,
-                        eventType.GetType().Name);
-                }
-            }
-            else
-            {
-                var errorMessage =
-                    $"The event handler of {eventType.GetType()}'s return type needs to be inherited from EventBase.";
-                Logger.LogError(errorMessage);
-                throw new InvalidOperationException(errorMessage);
-            }
-        }
-        else
-        {
-            var errorMessage =
-                $"The event handler of {eventType.GetType()} needs to have a return value.";
-            Logger.LogError(errorMessage);
-            throw new InvalidOperationException(errorMessage);
-        }
+            _ when paramType.IsAssignableTo(typeof(TEvent)) =>
+                method.HasAttribute<EventHandlerAttribute>() || IsDefaultHandler(method),
+
+            _ when paramType.IsAssignableTo(typeof(EventWrapperBase)) =>
+                method.HasAttribute<AllEventHandlerAttribute>(),
+
+            _ when paramType.IsAssignableTo(typeof(ConfigurationBase)) =>
+                method.Name == nameof(PerformConfigAsync),
+
+            _ => false
+        };
+
+        bool IsDefaultHandler(MethodInfo m) =>
+            m.Name == AevatarGAgentConstants.EventHandlerDefaultMethodName &&
+            !paramType.IsAbstract;
     }
 }

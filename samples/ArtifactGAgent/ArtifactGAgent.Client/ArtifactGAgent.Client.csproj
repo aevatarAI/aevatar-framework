@@ -15,7 +15,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\Aevatar\Aevatar.csproj" />
-      <ProjectReference Include="..\..\..\test\Aevatar.ArtifactGAgents\Aevatar.ArtifactGAgents.csproj" />
       <ProjectReference Include="..\..\..\test\Aevatar.Core.Tests\Aevatar.Core.Tests.csproj" />
     </ItemGroup>
 

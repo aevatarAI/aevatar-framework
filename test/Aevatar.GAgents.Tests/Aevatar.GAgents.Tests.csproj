@@ -11,11 +11,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
+        <Using Include="Xunit" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="coverlet.collector" />
+        <PackageReference Include="coverlet.collector">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="Moq" />
         <PackageReference Include="Volo.Abp.PermissionManagement.Domain" />
@@ -30,7 +33,6 @@
         <ProjectReference Include="..\..\src\Aevatar.PermissionManagement\Aevatar.PermissionManagement.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.Plugins\Aevatar.Plugins.csproj" />
         <ProjectReference Include="..\Aevatar.Core.Tests\Aevatar.Core.Tests.csproj" />
-        <ProjectReference Include="..\Aevatar.ArtifactGAgents\Aevatar.ArtifactGAgents.csproj" />
         <ProjectReference Include="..\Aevatar.TestBase\Aevatar.TestBase.csproj" />
     </ItemGroup>
 

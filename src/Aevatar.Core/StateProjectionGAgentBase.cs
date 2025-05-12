@@ -99,7 +99,7 @@ public abstract class StateProjectionGAgentBase<TProjectionState, TState, TState
 
     private IAsyncStream<StateWrapper<TProjectionState>> GetStateProjectionStream()
     {
-        var streamId = StreamId.Create(AevatarOptions.StreamNamespace, typeof(StateWrapper<TProjectionState>).FullName!);
+        var streamId = StreamId.Create(AevatarOptions!.StateProjectionStreamNamespace, typeof(StateWrapper<TProjectionState>).FullName!);
         return StreamProvider.GetStream<StateWrapper<TProjectionState>>(streamId);
     }
 }

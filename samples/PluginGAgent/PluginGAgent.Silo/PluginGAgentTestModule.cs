@@ -1,15 +1,13 @@
-using System.Reflection;
+using Aevatar;
 using Aevatar.Core.Abstractions;
 using Aevatar.PermissionManagement;
 using Microsoft.Extensions.DependencyInjection;
-using Orleans.Serialization;
 using Serilog;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
-using Volo.Abp.PermissionManagement.MongoDB;
 
 namespace PluginGAgent.Silo;
 
@@ -17,7 +15,8 @@ namespace PluginGAgent.Silo;
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpAutofacModule),
     typeof(AbpAutoMapperModule),
-    typeof(AevatarPermissionManagementModule)
+    // typeof(AevatarPermissionManagementModule),
+    typeof(AevatarModule)
 )]
 public class PluginGAgentTestModule : AbpModule
 {
@@ -29,5 +28,9 @@ public class PluginGAgentTestModule : AbpModule
             true, writeToProviders: true);
         context.Services.AddHttpClient();
         context.Services.AddSingleton<IEventDispatcher, DefaultEventDispatcher>();
+        // Configure<PermissionManagementOptions>(options =>
+        // {
+        //     options.IsDynamicPermissionStoreEnabled = true;
+        // });
     }
 }

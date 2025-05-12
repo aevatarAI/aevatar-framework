@@ -1,11 +1,12 @@
 using Aevatar.Plugins.Entities;
+using Aevatar.Plugins.GAgents;
 using MongoDB.Driver;
 using Volo.Abp.Data;
 using Volo.Abp.MongoDB;
 
 namespace Aevatar.Plugins.DbContexts;
 
-[ConnectionStringName("Default")]
+[ConnectionStringName("Orleans")]
 public class TenantPluginCodeMongoDbContext(IServiceProvider serviceProvider)
     : AevatarMongoDbContextBase(serviceProvider)
 {
@@ -23,7 +24,9 @@ public class TenantPluginCodeMongoDbContext(IServiceProvider serviceProvider)
         base.CreateModel(modelBuilder);
         modelBuilder.Entity<TenantPluginCodeSnapshotDocument>(b =>
         {
-            b.CollectionName = "StreamStorageAevatar.Plugins.TenantPluginCodeGAgent";
+            // TODO: Get StreamStorage from configuration
+            var streamStorage = "StreamStorage";
+            b.CollectionName = $"{streamStorage}{typeof(TenantPluginCodeGAgent).FullName!}";
         });
     }
 }

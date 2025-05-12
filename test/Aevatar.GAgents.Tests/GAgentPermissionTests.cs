@@ -23,7 +23,7 @@ public sealed class GAgentPermissionTests : AevatarGAgentsTestBase
     {
         var allPermissionInfos = GAgentPermissionHelper.GetAllPermissionInfos();
         allPermissionInfos.ShouldContain(i =>
-            i.Name == "DoSomething1"
+            i.Name == "AbpIdentity.Roles.Create"
             && i.DisplayName == "Only for testing."
             && i.Type == "Aevatar.Core.Tests.TestGAgents.PermissionGAgent"
         );
@@ -35,5 +35,22 @@ public sealed class GAgentPermissionTests : AevatarGAgentsTestBase
             i.Name == "DoSomething3"
             && i.GroupName == "AnotherGroup"
         );
+    }
+    
+    [Fact]
+    public async Task PermissionCheckTest()
+    {
+        var permissionGAgent = await _gAgentFactory.GetGAgentAsync<IPermissionGAgent>();
+
+        var userContext = new UserContext()
+        {
+            UserId = "testUser".ToGuid(),
+            Roles = new []{"admin"},
+            UserName = "testUser",
+            Email = "testUser@abp.io",
+            ClientId = ""
+        };
+        RequestContext.Set("CurrentUser", userContext);
+        var exception = await Assert.ThrowsAsync<NullReferenceException>(() => permissionGAgent.DoSomething1Async());
     }
 }

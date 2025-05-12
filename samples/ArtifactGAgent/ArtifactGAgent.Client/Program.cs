@@ -1,8 +1,5 @@
-﻿using System.Security.Claims;
-using Aevatar.Core;
-using Aevatar.Core.Abstractions;
-using Aevatar.ArtifactGAgents;
-using Aevatar.Core.Tests.TestEvents;
+﻿using Aevatar.Core.Abstractions;
+using Aevatar.Core.Tests.TestArtifacts;
 using Aevatar.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,21 +31,9 @@ foreach (var gAgent in allGAgents)
 Console.WriteLine();
 
 {
-    Console.WriteLine("Get GAgent from IStateGAgent interface:");
-    var gAgent = await gAgentFactory.GetGAgentAsync<IStateGAgent<MyArtifactGAgentState>>();
-    var description = await gAgent.GetDescriptionAsync();
-    Console.WriteLine(description);
-    
-    var events = await gAgent.GetAllSubscribedEventsAsync();
-    foreach (var @event in events!.ToList())
-    {
-        Console.WriteLine($"Subscribing event: {@event}");
-    }
-}
-
-{
     Console.WriteLine("Get GAgent from Type:");
-    var myArtifactGAgent = await gAgentFactory.GetGAgentAsync(Guid.NewGuid(), typeof(MyArtifactGAgent));
+    var myArtifactGAgent =
+        await gAgentFactory.GetArtifactGAgentAsync<MyArtifact, MyArtifactGAgentState, MyArtifactStateLogEvent>();
     var description = await myArtifactGAgent.GetDescriptionAsync();
     Console.WriteLine(description);
 }

@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Coding Best Practices
+
+Iterate until the implementation adheres to the following:
+- SOLID principles
+- Add logging at important checkpoints of the code
+- Ensure scalability and performance
+
+Whenever `dotnet build` or `dotnet run` is executed, fix the compile error if there are any.
+When referencing code, make sure that the referenced code exists.
