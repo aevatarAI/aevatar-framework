@@ -1,5 +1,6 @@
 using System.Reflection;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Extensions;
 
 namespace Aevatar.PermissionManagement;
 
@@ -14,7 +15,7 @@ public static class GAgentPermissionHelper
 
         foreach (var assembly in assemblies)
         {
-            var types = assembly.GetTypes()
+            var types = assembly.GetTypesIgnoringLoadException()
                 .Where(t => agentType.IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false });
             gAgentTypes.AddRange(types);
         }

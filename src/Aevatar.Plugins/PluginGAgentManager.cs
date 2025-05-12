@@ -128,7 +128,7 @@ public class PluginGAgentManager : IPluginGAgentManager
     public async Task<IReadOnlyList<Assembly>> GetCurrentTenantPluginAssembliesAsync()
     {
         var tenantId = _pluginsOptions.TenantId;
-        if (tenantId == default)
+        if (tenantId == Guid.Empty)
         {
             return [];
         }
@@ -139,7 +139,7 @@ public class PluginGAgentManager : IPluginGAgentManager
     public async Task<Dictionary<string, PluginLoadStatus>> GetPluginLoadStatusAsync(Guid? tenantId = null)
     {
         tenantId ??= _pluginsOptions.TenantId;
-        if (tenantId.Value == default)
+        if (tenantId.Value == Guid.Empty)
         {
             return new Dictionary<string, PluginLoadStatus>();
         }

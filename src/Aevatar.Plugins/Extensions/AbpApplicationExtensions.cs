@@ -1,5 +1,6 @@
 using System.Reflection;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Extensions;
 using Aevatar.Plugins.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,19 +63,10 @@ public static class AbpApplicationExtensions
             var pluginKey = pluginCodeGAgentPrimaryKeys[i];
             var dllName = "Unknown";
             var status = new PluginLoadStatus();
-            Assembly? assembly = null;
             try
             {
-                Type[] types;
-                try
-                {
-                    assembly = Assembly.Load(code);
-                    types = assembly.GetTypes();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    types = ex.Types.Where(t => t != null).ToArray()!;
-                }
+                var assembly = Assembly.Load(code);
+                var types = assembly.GetTypesIgnoringLoadException();
                 dllName = assembly!.FullName;
                 var domainAssemblyNames = domainAssembliesBeforeLoading.Select(a => a.FullName);
                 if (domainAssemblyNames.Contains(dllName))

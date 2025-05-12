@@ -6,6 +6,7 @@ using Aevatar.Plugins.GAgents;
 using Plugins.Repositories;
 using Shouldly;
 using Xunit;
+using System.Runtime.Loader;
 
 [Collection(TestBase.ClusterCollection.Name)]
 public class PluginGAgentsTests : AevatarGAgentsTestBase
@@ -25,8 +26,8 @@ public class PluginGAgentsTests : AevatarGAgentsTestBase
             return assembly != null ? assembly : null;
         };
     }
-    
-    [Fact(DisplayName = "All-in-one Plugin DLL Test.")]
+
+    [Fact(DisplayName = "All-in-one Plugin DLL Test (AssemblyLoadContext)")]
     public async Task PluginDllIntegrationTest()
     {
         var gAgentFactory = GetRequiredService<IGAgentFactory>();
@@ -41,49 +42,62 @@ public class PluginGAgentsTests : AevatarGAgentsTestBase
         var addPluginDto = new AddPluginDto { TenantId = tenantId, Code = pluginBytes };
         var pluginId = await pluginGAgentManager.AddPluginAsync(addPluginDto);
 
-        // Assert plugin code has been added.
-        var tenant = await gAgentFactory.GetGAgentAsync<ITenantPluginCodeGAgent>(tenantId);
-        var tenantState = await tenant.GetStateAsync();
-        tenantState.CodeStorageGuids.ShouldContain(pluginId);
-        var pluginCodeStorage = await gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(pluginId);
-        var storedCode = await pluginCodeStorage.GetPluginCodeAsync();
-        storedCode.ShouldNotBeNull();
-        storedCode.Length.ShouldBeGreaterThan(0);
-
-        // Sync grain state to repositories.
-        await ((InMemoryTenantPluginCodeRepository)tenantPluginCodeRepository).SyncStoreAsync(tenant);
-        await ((InMemoryPluginCodeStorageRepository)pluginCodeStorageRepository).SyncStoreAsync(pluginCodeStorage);
-
-        // Able to get descriptions.
-        var description = await pluginGAgentManager.GetPluginDescriptions(pluginId);
-        description.ShouldNotBeEmpty();
-        description.Keys.Count.ShouldBe(1);
-
-        // Able to get assemblies.
-        var assemblies = await pluginGAgentManager.GetPluginAssembliesAsync(tenantId);
-        assemblies.ShouldNotBeNull();
-        assemblies.Count.ShouldBeGreaterThan(0);
-        assemblies.Any(a => a.GetTypes().Any()).ShouldBeTrue();
-
-        // Able to get plugin list.
-        var plugins = await pluginGAgentManager.GetPluginsAsync(tenantId);
-        plugins.ShouldContain(pluginId);
-        plugins.Count.ShouldBe(1);
-
-        // Able to get description list.
-        var pluginsWithDesc = await pluginGAgentManager.GetPluginsWithDescriptionAsync(tenantId);
-        pluginsWithDesc.Value.ShouldContainKey(pluginId);
-        pluginsWithDesc.Value.First().Value.Count.ShouldBe(1);
-        pluginsWithDesc.Value.Count.ShouldBe(1);
-
-        // Able to get load status.
-        var statusDict = new Dictionary<string, PluginLoadStatus>
+        var alc = new AssemblyLoadContext($"Plugin_{pluginId}", isCollectible: true);
+        Assembly? pluginAssembly = null;
+        using (var ms = new MemoryStream(pluginBytes))
         {
-            { $"Plugin_{pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Success } }
-        };
-        await pluginLoadStatusRepository.SetPluginLoadStatusAsync(tenantId, statusDict);
-        var result = await pluginGAgentManager.GetPluginLoadStatusAsync(tenantId);
-        result.ShouldContainKey($"Plugin_{pluginId}.dll");
-        result[$"Plugin_{pluginId}.dll"].Status.ShouldBe(LoadStatus.Success);
+            pluginAssembly = alc.LoadFromStream(ms);
+        }
+        try
+        {
+            // Assert plugin code has been added.
+            var tenant = await gAgentFactory.GetGAgentAsync<ITenantPluginCodeGAgent>(tenantId);
+            var tenantState = await tenant.GetStateAsync();
+            tenantState.CodeStorageGuids.ShouldContain(pluginId);
+            var pluginCodeStorage = await gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(pluginId);
+            var storedCode = await pluginCodeStorage.GetPluginCodeAsync();
+            storedCode.ShouldNotBeNull();
+            storedCode.Length.ShouldBeGreaterThan(0);
+
+            // Sync grain state to repositories.
+            await ((InMemoryTenantPluginCodeRepository)tenantPluginCodeRepository).SyncStoreAsync(tenant);
+            await ((InMemoryPluginCodeStorageRepository)pluginCodeStorageRepository).SyncStoreAsync(pluginCodeStorage);
+
+            // Able to get descriptions.
+            var description = await pluginGAgentManager.GetPluginDescriptions(pluginId);
+            description.ShouldNotBeEmpty();
+            description.Keys.Count.ShouldBe(1);
+
+            // Able to get assemblies.
+            var assemblies = await pluginGAgentManager.GetPluginAssembliesAsync(tenantId);
+            assemblies.ShouldNotBeNull();
+            assemblies.Count.ShouldBeGreaterThan(0);
+            assemblies.Any(a => a.GetTypes().Any()).ShouldBeTrue();
+
+            // Able to get plugin list.
+            var plugins = await pluginGAgentManager.GetPluginsAsync(tenantId);
+            plugins.ShouldContain(pluginId);
+            plugins.Count.ShouldBe(1);
+
+            // Able to get description list.
+            var pluginsWithDesc = await pluginGAgentManager.GetPluginsWithDescriptionAsync(tenantId);
+            pluginsWithDesc.Value.ShouldContainKey(pluginId);
+            pluginsWithDesc.Value.First().Value.Count.ShouldBe(1);
+            pluginsWithDesc.Value.Count.ShouldBe(1);
+
+            // Able to get load status.
+            var statusDict = new Dictionary<string, PluginLoadStatus>
+            {
+                { $"Plugin_{pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Success } }
+            };
+            await pluginLoadStatusRepository.SetPluginLoadStatusAsync(tenantId, statusDict);
+            var result = await pluginGAgentManager.GetPluginLoadStatusAsync(tenantId);
+            result.ShouldContainKey($"Plugin_{pluginId}.dll");
+            result[$"Plugin_{pluginId}.dll"].Status.ShouldBe(LoadStatus.Success);
+        }
+        finally
+        {
+            alc.Unload();
+        }
     }
 }

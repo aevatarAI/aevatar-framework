@@ -1,6 +1,7 @@
 using System.Reflection;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Plugins.GAgents;
@@ -79,7 +80,7 @@ public class PluginCodeStorageGAgent
         Type[] gAgentTypes;
         try
         {
-            gAgentTypes = assembly.GetTypes()
+            gAgentTypes = assembly.GetTypesIgnoringLoadException()
                 .Where(type => typeof(IGAgent).IsAssignableFrom(type) && type is { IsInterface: false, IsAbstract: false })
                 .ToArray();
         }
