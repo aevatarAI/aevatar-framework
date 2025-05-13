@@ -13,13 +13,27 @@ This document tracks the remaining tasks and their status for the Aevatar Framew
 
 ## Current Tasks
 
-| Feature | Status | Description | Unit Tests | Regression Tests | Integration Tests | Documentation |
-|---------|--------|-------------|------------|------------------|-------------------|---------------|
-| Kafka Stream optimization | Not Started | Optimize Kafka streams for better performance and lower resource usage | ✗ | ✗ | ✗ | ✗ |
-| End to end gagent streaming | Not Started | Implement complete end-to-end streaming for gagent | ✗ | ✗ | ✗ | ✗ |
-| Optimize GAgent Publish logic | Not Started | Improve GAgent Publish performance and speed | ✗ | ✗ | ✗ | ✗ |
+| Feature | Status | Description | Unit Tests | Regression Tests | Integration Tests | Documentation | Dev Machine |
+|---------|--------|-------------|------------|------------------|-------------------|---------------|------------|
+| ExceptionCatchAndPublish | 🚧 In Progress | Implement mechanism to catch GAgent EventHandler exceptions and publish them to Orleans Stream | ✗ | ✗ | ✗ | ✗ | 62:84:7a:e8:0f:65 |
+| Kafka Stream optimization | Not Started | Optimize Kafka streams for better performance and lower resource usage | ✗ | ✗ | ✗ | ✗ | |
+| End to end gagent streaming | Not Started | Implement complete end-to-end streaming for gagent | ✗ | ✗ | ✗ | ✗ | |
+| Optimize GAgent Publish logic | Not Started | Improve GAgent Publish performance and speed | ✗ | ✗ | ✗ | ✗ | |
 
 ## Task Details
+
+### ExceptionCatchAndPublish
+- Implement mechanism to catch exceptions from GAgent EventHandlers
+- Create data structure for exception information including context and timestamp
+- Publish exceptions to a dedicated Orleans Stream (separate KafkaTopic)
+- Ensure isolation between business topics and exception topic
+- Add configuration for exception stream name/topic
+
+**Testing & Documentation:**
+- **Unit tests**: Create unit tests for exception catching, formatting, and publishing
+- **Regression tests**: Ensure existing functionality isn't affected by the exception handling
+- **Integration tests**: Verify exceptions are properly published and received by subscribers
+- **Documentation**: Document the exception handling mechanism, configuration options, and subscriber implementation
 
 ### Kafka Stream optimization
 - Improve throughput and latency of Kafka streams

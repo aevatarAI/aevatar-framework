@@ -353,6 +353,8 @@ public abstract partial class
         await HandleStateChangedAsync();
         if (StateDispatcher != null)
         {
+            await StateDispatcher.PublishSingleAsync(this.GetGrainId(),
+                new StateWrapper<TState>(this.GetGrainId(), State, Version));
             await StateDispatcher.PublishAsync(this.GetGrainId(),
                 new StateWrapper<TState>(this.GetGrainId(), State, Version));
         }
@@ -387,7 +389,7 @@ public abstract partial class
         return Task.CompletedTask;
     }
 
-    private IAsyncStream<EventWrapperBase> GetEventBaseStream(GrainId grainId)
+    protected virtual IAsyncStream<EventWrapperBase> GetEventBaseStream(GrainId grainId)
     {
         var grainIdString = grainId.ToString();
         var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, grainIdString);
