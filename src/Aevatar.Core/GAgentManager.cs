@@ -23,7 +23,19 @@ public class GAgentManager : IGAgentManager
         var gAgentType = typeof(IGAgent);
         var assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
         var pluginsAssemblies = AsyncHelper.RunSync(() => _pluginGAgentManager.GetCurrentTenantPluginAssembliesAsync());
-        assemblies.AddIfNotContains(pluginsAssemblies);
+        var pluginsLoadStatus = AsyncHelper.RunSync(() => _pluginGAgentManager.GetPluginLoadStatusAsync());
+        var loadedAssemblies = pluginsLoadStatus
+            .Where(x => x.Value.Status == LoadStatus.Success)
+            .Select(x => x.Key)
+            .ToList();
+        foreach (var assembly in pluginsAssemblies)
+        {
+            if (loadedAssemblies.Contains(assembly.FullName!))
+            {
+                assemblies.AddIfNotContains(pluginsAssemblies);
+            }
+        }
+
         var gAgentTypes = new List<Type>();
 
         foreach (var assembly in assemblies)
