@@ -17,6 +17,7 @@
     
     <ItemGroup>
         <PackageReference Include="Microsoft.Orleans.EventSourcing" />
+        <PackageReference Include="Microsoft.Orleans.Runtime" />
         <PackageReference Include="AElf.OpenTelemetry" />
     </ItemGroup>
 
