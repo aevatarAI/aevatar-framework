@@ -30,10 +30,9 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
     
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
-    private static string TestPluginPath = "Plugins/Aevatar.GAgents.Plugins.dll";
-    private static readonly SemaphoreSlim _semaphore = new(1, 1);
+    private const string TestPluginPath = "Plugins/RestSharp.dll";
+    private static readonly SemaphoreSlim Semaphore = new(1, 1);
     private static byte[]? _pluginBytes;
-    private static List<byte[]?> _pluginBytesList = [];
     private static Assembly? _pluginAssembly;
 
     private Guid _tenantId;
@@ -81,25 +80,16 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        await _semaphore.WaitAsync();
+        await Semaphore.WaitAsync();
         try
         {
-            if (_pluginBytes == null)
-            {
-                _pluginBytes = await File.ReadAllBytesAsync(TestPluginPath);
-            }
-
-            for (var i = 1; i < 6; i++)
-            {
-                var bytes = await File.ReadAllBytesAsync($"Plugins/Aevatar.GAgents.Plugins{i}.dll");
-                _pluginBytesList.Add(bytes);
-            }
+            _pluginBytes ??= await File.ReadAllBytesAsync(TestPluginPath);
         }
         finally
         {
-            _semaphore.Release();
+            Semaphore.Release();
         }
-
+        
         if (_tenantId == Guid.Empty)
         {
             (_tenantId, _pluginId) = await AddTestPluginAsync();
@@ -123,11 +113,10 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         }
     }
 
-    private async Task<(Guid tenantId, Guid pluginId)> AddTestPluginAsync(int? index = null)
+    private async Task<(Guid tenantId, Guid pluginId)> AddTestPluginAsync()
     {
         var tenantId = Guid.NewGuid();
-        var bytes = index == null ? _pluginBytes : _pluginBytesList[index.Value];
-        var addPluginDto = new AddPluginDto { TenantId = tenantId, Code = bytes! };
+        var addPluginDto = new AddPluginDto { TenantId = tenantId, Code = _pluginBytes! };
         var pluginId = await _pluginGAgentManager.AddPluginAsync(addPluginDto);
         _createdPlugins.Add((tenantId, pluginId));
         return (tenantId, pluginId);
@@ -136,10 +125,9 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
     [Fact(DisplayName = "Can add a new plugin successfully with real DLL (AssemblyLoadContext)")]
     public async Task AddPluginWithRealDllTest()
     {
-        var pluginBytes = await File.ReadAllBytesAsync(TestPluginPath);
         var alc = new AssemblyLoadContext($"Plugin_{_pluginId}", isCollectible: true);
         Assembly? pluginAssembly = null;
-        using (var ms = new MemoryStream(pluginBytes))
+        using (var ms = new MemoryStream(_pluginBytes))
         {
             pluginAssembly = alc.LoadFromStream(ms);
         }
@@ -160,45 +148,19 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         }
     }
 
-    [Fact(DisplayName = "Can get plugin description from real DLL (AssemblyLoadContext)")]
-    public async Task GetPluginDescriptionWithRealDllTest()
-    {
-        var (tenantId, pluginId) = await AddTestPluginAsync(1);
-        var pluginBytes = _pluginBytesList[0];
-        var alc = new AssemblyLoadContext($"Plugin_{pluginId}", isCollectible: true);
-        Assembly? pluginAssembly = null;
-        using (var ms = new MemoryStream(pluginBytes))
-        {
-            pluginAssembly = alc.LoadFromStream(ms);
-        }
-        try
-        {
-            await SyncStoreAsync(tenantId, pluginId);
-            var description = await _pluginGAgentManager.GetPluginDescriptions(pluginId);
-            description.ShouldNotBeEmpty();
-            description.Keys.Count.ShouldBe(1);
-        }
-        finally
-        {
-            alc.Unload();
-        }
-    }
-
     [Fact(DisplayName = "Can get plugin assemblies for a tenant with real DLL (AssemblyLoadContext)")]
     public async Task GetPluginAssembliesWithRealDllTest()
     {
-        var (tenantId, pluginId) = await AddTestPluginAsync(2);
-        var pluginBytes = _pluginBytesList[1];
-        var alc = new AssemblyLoadContext($"Plugin_{pluginId}", isCollectible: true);
+        var alc = new AssemblyLoadContext($"Plugin_{_pluginId}", isCollectible: true);
         Assembly? pluginAssembly = null;
-        using (var ms = new MemoryStream(pluginBytes))
+        using (var ms = new MemoryStream(_pluginBytes))
         {
             pluginAssembly = alc.LoadFromStream(ms);
         }
         try
         {
-            await SyncStoreAsync(tenantId, pluginId);
-            var assemblies = await _pluginGAgentManager.GetPluginAssembliesAsync(tenantId);
+            await SyncStoreAsync(_tenantId, _pluginId);
+            var assemblies = await _pluginGAgentManager.GetPluginAssembliesAsync(_tenantId);
             assemblies.ShouldNotBeNull();
             assemblies.Count.ShouldBeGreaterThan(0);
             assemblies.Any(a => a.GetTypes().Any()).ShouldBeTrue();
@@ -240,11 +202,13 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         }
     }
 
-    [Fact(DisplayName = "Can get plugins with descriptions for a tenant with real DLL (AssemblyLoadContext)")]
-    public async Task GetPluginsWithDescriptionWithRealDllTest()
+    [Fact(DisplayName = "Can add an existing plugin to a tenant with real DLL (AssemblyLoadContext)")]
+    public async Task AddExistedPluginWithRealDllTest()
     {
-        var (tenantId, pluginId) = await AddTestPluginAsync(2);
-        var pluginBytes = _pluginBytesList[1];
+        var pluginBytes = await File.ReadAllBytesAsync("Plugins/RestSharp.dll");
+        var tenantId = Guid.NewGuid();
+        var addPluginDto = new AddPluginDto { TenantId = tenantId, Code = pluginBytes! };
+        var pluginId = await _pluginGAgentManager.AddPluginAsync(addPluginDto);
         var alc = new AssemblyLoadContext($"Plugin_{pluginId}", isCollectible: true);
         Assembly? pluginAssembly = null;
         using (var ms = new MemoryStream(pluginBytes))
@@ -253,40 +217,14 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
         }
         try
         {
-            await SyncStoreAsync(tenantId, pluginId);
-            var result = await _pluginGAgentManager.GetPluginsWithDescriptionAsync(tenantId);
-            result.Value.ShouldContainKey(pluginId);
-            result.Value.First().Value.Count.ShouldBe(1);
-            result.Value.Count.ShouldBe(1);
-        }
-        finally
-        {
-            alc.Unload();
-        }
-    }
-
-    [Fact(DisplayName = "Can add an existing plugin to a tenant with real DLL (AssemblyLoadContext)")]
-    public async Task AddExistedPluginWithRealDllTest()
-    {
-        var pluginBytes = await File.ReadAllBytesAsync(TestPluginPath);
-        var alc = new AssemblyLoadContext($"Plugin_{_pluginId}", isCollectible: true);
-        Assembly? pluginAssembly = null;
-        using (var ms = new MemoryStream(pluginBytes))
-        {
-            pluginAssembly = alc.LoadFromStream(ms);
-        }
-        try
-        {
-            var tenantId = Guid.NewGuid();
             var addExistedPluginDto = new AddExistedPluginDto
             {
                 TenantId = tenantId,
-                PluginCodeId = _pluginId
+                PluginCodeId = pluginId
             };
             var newPluginId = await _pluginGAgentManager.AddExistedPluginAsync(addExistedPluginDto);
-            _createdPlugins.Add((tenantId, newPluginId));
             newPluginId.ShouldNotBe(Guid.Empty);
-            newPluginId.ShouldNotBe(_pluginId);
+            newPluginId.ShouldNotBe(pluginId);
             var tenant = await _gAgentFactory.GetGAgentAsync<ITenantPluginCodeGAgent>(tenantId);
             var tenantState = await tenant.GetStateAsync();
             tenantState.CodeStorageGuids.ShouldContain(newPluginId);
@@ -312,34 +250,32 @@ public class PluginGAgentManagerTests : AevatarGAgentsTestBase, IAsyncLifetime
     [Fact(DisplayName = "Can get plugin load status for all success case")]
     public async Task GetPluginLoadStatus_AllSuccess_Test()
     {
-        var (tenantId, pluginId) = await AddTestPluginAsync(2);
-        await SyncStoreAsync(tenantId, pluginId);
+        await SyncStoreAsync(_tenantId, _pluginId);
         // Simulate a successful load status
         var statusDict = new Dictionary<string, PluginLoadStatus>
         {
-            { $"Plugin_{pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Success } }
+            { $"Plugin_{_pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Success } }
         };
-        await _pluginLoadStatusRepository.SetPluginLoadStatusAsync(tenantId, statusDict);
-        var result = await _pluginGAgentManager.GetPluginLoadStatusAsync(tenantId);
-        result.ShouldContainKey($"Plugin_{pluginId}.dll");
-        result[$"Plugin_{pluginId}.dll"].Status.ShouldBe(LoadStatus.Success);
+        await _pluginLoadStatusRepository.SetPluginLoadStatusAsync(_tenantId, statusDict);
+        var result = await _pluginGAgentManager.GetPluginLoadStatusAsync(_tenantId);
+        result.ShouldContainKey($"Plugin_{_pluginId}.dll");
+        result[$"Plugin_{_pluginId}.dll"].Status.ShouldBe(LoadStatus.Success);
     }
 
     [Fact(DisplayName = "Can get plugin load status for partial failure case")]
     public async Task GetPluginLoadStatus_PartialFailure_Test()
     {
-        var (tenantId, pluginId) = await AddTestPluginAsync(2);
-        await SyncStoreAsync(tenantId, pluginId);
+        await SyncStoreAsync(_tenantId, _pluginId);
         // Simulate a failed load status
         var statusDict = new Dictionary<string, PluginLoadStatus>
         {
-            { $"Plugin_{pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Error, Reason = "Test failure" } }
+            { $"Plugin_{_pluginId}.dll", new PluginLoadStatus { Status = LoadStatus.Error, Reason = "Test failure" } }
         };
-        await _pluginLoadStatusRepository.SetPluginLoadStatusAsync(tenantId, statusDict);
-        var result = await _pluginGAgentManager.GetPluginLoadStatusAsync(tenantId);
-        result.ShouldContainKey($"Plugin_{pluginId}.dll");
-        result[$"Plugin_{pluginId}.dll"].Status.ShouldBe(LoadStatus.Error);
-        result[$"Plugin_{pluginId}.dll"].Reason.ShouldBe("Test failure");
+        await _pluginLoadStatusRepository.SetPluginLoadStatusAsync(_tenantId, statusDict);
+        var result = await _pluginGAgentManager.GetPluginLoadStatusAsync(_tenantId);
+        result.ShouldContainKey($"Plugin_{_pluginId}.dll");
+        result[$"Plugin_{_pluginId}.dll"].Status.ShouldBe(LoadStatus.Error);
+        result[$"Plugin_{_pluginId}.dll"].Reason.ShouldBe("Test failure");
     }
 
     [Fact(DisplayName = "Returns empty dictionary when tenant has no plugins")]

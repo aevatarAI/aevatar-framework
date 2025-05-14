@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Extensions;
 using Aevatar.Core.Tests;
 using Aevatar.Extensions;
 using Aevatar.PermissionManagement.Extensions;
@@ -90,7 +91,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     var gAgentTypes = new List<Type>();
                     foreach (var assembly in assemblies)
                     {
-                        var types = assembly.GetTypes()
+                        var types = assembly.GetTypesIgnoringLoadException()
                             .Where(t => gAgentType.IsAssignableFrom(t) && t is { IsClass: true, IsAbstract: false });
                         gAgentTypes.AddRange(types);
                     }
