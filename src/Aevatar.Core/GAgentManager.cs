@@ -1,3 +1,4 @@
+using System.Reflection;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Extensions;
 using Aevatar.Core.Abstractions.Plugin;
@@ -23,7 +24,26 @@ public class GAgentManager : IGAgentManager
         var gAgentType = typeof(IGAgent);
         var assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
         var pluginsAssemblies = AsyncHelper.RunSync(() => _pluginGAgentManager.GetCurrentTenantPluginAssembliesAsync());
-        assemblies.AddIfNotContains(pluginsAssemblies);
+        var pluginsLoadStatus = AsyncHelper.RunSync(() => _pluginGAgentManager.GetPluginLoadStatusAsync());
+        var loadedFailedAssemblies = pluginsLoadStatus
+            .Where(x => x.Value.Status != LoadStatus.Success)
+            .Select(x => x.Key.Split('_').First())
+            .ToList();
+        var uniqueAssemblies = new Dictionary<string, Assembly>();
+        foreach (var assembly in assemblies)
+        {
+            uniqueAssemblies.TryAdd(assembly.FullName!, assembly);
+        }
+        assemblies = uniqueAssemblies.Values.ToList();
+    
+        foreach (var assembly in pluginsAssemblies)
+        {
+            if (loadedFailedAssemblies.Contains(assembly.FullName!))
+            {
+                assemblies.RemoveAll(a => a.FullName == assembly.FullName);
+            }
+        }
+
         var gAgentTypes = new List<Type>();
 
         foreach (var assembly in assemblies)
