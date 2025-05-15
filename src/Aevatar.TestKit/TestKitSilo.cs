@@ -84,12 +84,16 @@ public class TestKitSilo
         // ReSharper disable once VirtualMemberCallInConstructor
         ConfigureServices(services);
         var provider = services.BuildServiceProvider();
+        foreach (var service in services)
+        {
+            ServiceProvider.AddService(service);
+        }
+
         _grainTypeResolver = provider.GetRequiredService<GrainTypeResolver>();
     }
 
     protected virtual void ConfigureServices(IServiceCollection services)
     {
-        
     }
 
     private void UseEventSourcing()
@@ -124,7 +128,7 @@ public class TestKitSilo
     public TestReminderRegistry ReminderRegistry { get; }
 
     /// <summary>Gets the service provider used when creating new instances.</summary>
-    public TestServiceProvider ServiceProvider { get; }
+    public TestServiceProvider ServiceProvider { get; set; }
 
     /// <summary>Gets the manager of all test silo storage.</summary>
     public StorageManager StorageManager { get; }

@@ -64,8 +64,19 @@ public sealed class TestServiceProvider : IServiceProvider, IKeyedServiceProvide
     public T AddService<T>(T instance)
     {
         ArgumentNullException.ThrowIfNull(instance);
+        if (instance is ServiceDescriptor serviceDescriptor)
+        {
+            var serviceInstance = serviceDescriptor.ImplementationInstance;
+            if (serviceInstance != null)
+            {
+                _services[serviceDescriptor.ServiceType] = serviceInstance;
+            }
+        }
+        else
+        {
+            _services[typeof(T)] = instance;
+        }
 
-        _services[typeof(T)] = instance;
         return instance;
     }
 
