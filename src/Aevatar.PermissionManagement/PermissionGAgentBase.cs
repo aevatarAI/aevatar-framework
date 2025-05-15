@@ -64,6 +64,12 @@ public abstract partial class
                 State.IsPublic = State.AuthorizedUserIds.Count == 0;
                 break;
         }
+
+        PermissionGAgentTransitionState(state, @event);
+    }
+    
+    protected virtual void PermissionGAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    {
     }
     
     [GenerateSerializer]
