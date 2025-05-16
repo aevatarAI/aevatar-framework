@@ -9,33 +9,6 @@ using System.Collections.Generic;
 
 public interface IBroadCastGAgent : IGAgent
 {
-    Task<StreamSubscriptionHandle<EventWrapperBase>> SubscribeBroadCastEventAsync<T>(string agentType, Func<T, Task> eventHandler) where T : EventBase;
-
-    Task UnSubscribeBroadCastAsync<T>(string grType, StreamSubscriptionHandle<EventWrapperBase> handle) where T : EventBase;
-
-    Task UnSubscribeBroadCastEventsAsync<T>(Dictionary<string, StreamSubscriptionHandle<EventWrapperBase>> subscriptions) where T : EventBase;
-
-    /// <summary>
-    /// Starts a batch subscription operation
-    /// </summary>
-    /// <returns>The agent instance for fluent chaining</returns>
-    Task StartBatchSubscriptionAsync();
-
-    /// <summary>
-    /// Adds a subscription to the current batch
-    /// </summary>
-    /// <typeparam name="T">The type of event to listen on</typeparam>
-    /// <param name="agentType">The name of agent which published the event</param>
-    /// <param name="eventHandler">The method that processes the event</param>
-    /// <returns>The agent instance for fluent chaining</returns>
-    Task AddSubscriptionAsync<T>(string agentType, Func<T, Task> eventHandler) where T : EventBase;
-
-    /// <summary>
-    /// Saves all pending subscriptions in the current batch with a single database write
-    /// </summary>
-    /// <returns>Dictionary of handles by key (agentType.eventType)</returns>
-    Task<Dictionary<string, StreamSubscriptionHandle<EventWrapperBase>>> SaveBatchSubscriptionsAsync();
-
     Task BroadCastEventAsync<T>(string streamIdString, T @event) where T : EventBase;
 }
 
@@ -102,7 +75,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     /// Starts a batch subscription operation
     /// </summary>
     /// <returns>The agent instance for fluent chaining</returns>
-    public Task StartBatchSubscriptionAsync()
+    protected Task StartBatchSubscriptionAsync()
     {
         // Clear any previous pending operations
         _pendingSubscriptions.Clear();
@@ -115,7 +88,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     /// <summary>
     /// Subscribe to a broadcast event and returns the subscription handle
     /// </summary>
-    public async Task<StreamSubscriptionHandle<EventWrapperBase>> SubscribeBroadCastEventAsync<T>(string agentType, Func<T, Task> eventHandler) where T : EventBase
+    protected async Task<StreamSubscriptionHandle<EventWrapperBase>> SubscribeBroadCastEventAsync<T>(string agentType, Func<T, Task> eventHandler) where T : EventBase
     {
         // Clear any previous pending operations for a single subscription
         StartBatchSubscriptionAsync();
@@ -142,7 +115,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     /// <param name="agentType">The name of agent which published the event</param>
     /// <param name="eventHandler">The method that processes the event</param>
     /// <returns>The agent instance for fluent chaining</returns>
-    public async Task AddSubscriptionAsync<T>(string agentType, Func<T, Task> eventHandler) where T : EventBase
+    protected async Task AddSubscriptionAsync<T>(string agentType, Func<T, Task> eventHandler) where T : EventBase
     {
         var stream = GenStream<T>(agentType);
 
@@ -203,7 +176,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     /// Saves all pending subscriptions in the current batch with a single database write
     /// </summary>
     /// <returns>Dictionary of handles by key (agentType.eventType)</returns>
-    public async Task<Dictionary<string, StreamSubscriptionHandle<EventWrapperBase>>> SaveBatchSubscriptionsAsync()
+    protected async Task<Dictionary<string, StreamSubscriptionHandle<EventWrapperBase>>> SaveBatchSubscriptionsAsync()
     {
         if (!_pendingSubscriptions.Any())
         {
@@ -231,7 +204,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     /// <typeparam name="T">The type of event listened to</typeparam>
     /// <param name="subscriptions">Dictionary containing grain types and their corresponding handles to unsubscribe</param>
     /// <returns></returns>
-    public async Task UnSubscribeBroadCastEventsAsync<T>(Dictionary<string, StreamSubscriptionHandle<EventWrapperBase>> subscriptions) where T : EventBase
+    protected async Task UnSubscribeBroadCastEventsAsync<T>(Dictionary<string, StreamSubscriptionHandle<EventWrapperBase>> subscriptions) where T : EventBase
     {
         if (subscriptions == null || !subscriptions.Any())
         {
@@ -313,7 +286,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     /// <param name="grType">The name of agent which published the event</param>
     /// <param name="handle"></param>
     /// <returns></returns>
-    public async Task UnSubscribeBroadCastAsync<T>(string grType, StreamSubscriptionHandle<EventWrapperBase> handle) where T : EventBase
+    protected async Task UnSubscribeBroadCastAsync<T>(string grType, StreamSubscriptionHandle<EventWrapperBase> handle) where T : EventBase
     {
         var stream = GenStream<T>(grType);
 
@@ -352,7 +325,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
         }
     }
 
-    public async Task UnSubscribeBroadCastAsync<T>(string grType) where T : EventBase
+    protected async Task UnSubscribeBroadCastAsync<T>(string grType) where T : EventBase
     {
         var key = GetStreamIdString<T>(grType);
 
