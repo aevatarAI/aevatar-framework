@@ -4,11 +4,15 @@ using Aevatar.Core.Abstractions;
 
 namespace Aevatar.PermissionManagement;
 
-[GenerateSerializer]
-public class PermissionStateBase : StateBase
+public interface IPermissionStateBase
 {
-    [Id(0)]
-    public bool IsPublic { get; set; } = true;
-    [Id(1)]
-    public HashSet<Guid> AuthorizedUserIds { get; set; } = new();
-} 
+    bool IsPublic { get; set; }
+   HashSet<Guid> AuthorizedUserIds { get; set; }
+}
+
+[GenerateSerializer]
+public abstract class PermissionStateBase : StateBase, IPermissionStateBase
+{
+    [Id(0)] public bool IsPublic { get; set; } = true;
+    [Id(1)] public HashSet<Guid> AuthorizedUserIds { get; set; } = new();
+}
