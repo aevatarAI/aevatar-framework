@@ -18,7 +18,8 @@ public class PluginLoadStatus
 
 public enum LoadStatus
 {
-    Success,
+    Unload = -1,
+    Success = 0,
     GAgentDuplicated,
     AlreadyLoaded,
     Error
