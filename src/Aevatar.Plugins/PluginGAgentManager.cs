@@ -15,21 +15,21 @@ public class PluginGAgentManager : IPluginGAgentManager
     private readonly IGAgentFactory _gAgentFactory;
     private readonly ITenantPluginCodeRepository _tenantPluginCodeRepository;
     private readonly IPluginCodeStorageRepository _pluginCodeStorageRepository;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly PluginGAgentLoadOptions _options;
+    private readonly IPluginLoadStatusRepository _pluginLoadStatusRepository;
+    private readonly PluginGAgentLoadOptions _pluginsOptions;
 
     public PluginGAgentManager(IGAgentFactory gAgentFactory,
         ITenantPluginCodeRepository tenantPluginCodeRepository,
         IPluginCodeStorageRepository pluginCodeStorageRepository,
-        IOptions<PluginGAgentLoadOptions> options, ILogger<PluginGAgentManager> logger,
-        IServiceProvider serviceProvider)
+        IPluginLoadStatusRepository pluginLoadStatusRepository,
+        IOptions<PluginGAgentLoadOptions> options, ILogger<PluginGAgentManager> logger)
     {
         _gAgentFactory = gAgentFactory;
         _tenantPluginCodeRepository = tenantPluginCodeRepository;
         _pluginCodeStorageRepository = pluginCodeStorageRepository;
+        _pluginLoadStatusRepository = pluginLoadStatusRepository;
         Logger = logger;
-        _serviceProvider = serviceProvider;
-        _options = options.Value;
+        _pluginsOptions = options.Value;
     }
 
     public async Task<Guid> AddPluginAsync(AddPluginDto addPluginDto)
@@ -66,18 +66,17 @@ public class PluginGAgentManager : IPluginGAgentManager
         var pluginsInformation = new PluginsInformation();
         foreach (var pluginCodeId in pluginCodeIds)
         {
-            var description = await GetPluginDescription(pluginCodeId);
-            pluginsInformation.Value[pluginCodeId] = description;
+            var descriptions = await GetPluginDescriptions(pluginCodeId);
+            pluginsInformation.Value[pluginCodeId] = descriptions;
         }
 
         return pluginsInformation;
     }
 
-    public async Task<string> GetPluginDescription(Guid pluginCodeId)
+    public async Task<Dictionary<Type, string>> GetPluginDescriptions(Guid pluginCodeId)
     {
-        var pluginCodeStorage =
-            await _gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(pluginCodeId);
-        return await pluginCodeStorage.GetDescriptionAsync();
+        var descriptions = await _pluginCodeStorageRepository.GetPluginDescriptionsByGAgentPrimaryKey(pluginCodeId);
+        return descriptions;
     }
 
     public async Task RemovePluginAsync(RemovePluginDto removePluginDto)
@@ -98,7 +97,7 @@ public class PluginGAgentManager : IPluginGAgentManager
         var existedPluginCode =
             await _gAgentFactory.GetGAgentAsync<IPluginCodeStorageGAgent>(addExistedPluginDto.PluginCodeId);
         var code = await existedPluginCode.GetPluginCodeAsync();
-        if (code == null || code.Length == 0)
+        if (code.Length == 0)
         {
             return Guid.Empty;
         }
@@ -124,5 +123,30 @@ public class PluginGAgentManager : IPluginGAgentManager
             await _pluginCodeStorageRepository.GetPluginCodesByGAgentPrimaryKeys(pluginCodeGAgentPrimaryKeys);
         assemblies = pluginCodes.Select(Assembly.Load).DistinctBy(assembly => assembly.FullName).ToList();
         return assemblies;
+    }
+
+    public async Task<IReadOnlyList<Assembly>> GetCurrentTenantPluginAssembliesAsync()
+    {
+        var tenantId = _pluginsOptions.TenantId;
+        if (tenantId == Guid.Empty)
+        {
+            return [];
+        }
+
+        return await GetPluginAssembliesAsync(tenantId);
+    }
+
+    public async Task<Dictionary<string, PluginLoadStatus>> GetPluginLoadStatusAsync(Guid? tenantId = null)
+    {
+        tenantId ??= _pluginsOptions.TenantId;
+        if (tenantId.Value == Guid.Empty)
+        {
+            return new Dictionary<string, PluginLoadStatus>();
+        }
+
+        var result = await _pluginLoadStatusRepository.GetPluginLoadStatusAsync(tenantId.Value);
+        Logger.LogInformation(
+            $"[GetPluginLoadStatusAsync] Loaded status for tenant: {tenantId}, count: {result.Count}");
+        return result;
     }
 }

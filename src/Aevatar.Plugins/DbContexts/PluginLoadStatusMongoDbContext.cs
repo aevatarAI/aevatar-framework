@@ -1,5 +1,4 @@
 using Aevatar.Plugins.Entities;
-using Aevatar.Plugins.GAgents;
 using MongoDB.Driver;
 using Volo.Abp.Data;
 using Volo.Abp.MongoDB;
@@ -7,25 +6,25 @@ using Volo.Abp.MongoDB;
 namespace Aevatar.Plugins.DbContexts;
 
 [ConnectionStringName("Orleans")]
-public class TenantPluginCodeMongoDbContext(IServiceProvider serviceProvider)
+public class PluginLoadStatusMongoDbContext(IServiceProvider serviceProvider)
     : AevatarMongoDbContextBase(serviceProvider)
 {
-    public IMongoCollection<TenantPluginCodeSnapshotDocument> TenantPluginCode
+    public IMongoCollection<PluginLoadStatusDocument> PluginLoadStatus
     {
         get
         {
             InitializeModelSource();
-            return Collection<TenantPluginCodeSnapshotDocument>();
+            return Collection<PluginLoadStatusDocument>();
         }
     }
 
     protected override void CreateModel(IMongoModelBuilder modelBuilder)
     {
         base.CreateModel(modelBuilder);
-        modelBuilder.Entity<TenantPluginCodeSnapshotDocument>(b =>
+        modelBuilder.Entity<PluginLoadStatusDocument>(b =>
         {
             var prefix = GetCollectionPrefix();
-            b.CollectionName = $"{prefix}{typeof(TenantPluginCodeGAgent).FullName!}";
+            b.CollectionName = $"{prefix}PluginLoadStatus";
         });
     }
 }

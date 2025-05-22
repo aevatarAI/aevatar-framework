@@ -60,6 +60,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PubSubDemoWithoutGroup", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BroadCastGAgentDemo", "samples\BroadCastGAgentDemo\BroadCastGAgentDemo.csproj", "{B99810FF-125F-44E2-BACC-36828ED42A05}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginGAgent.GrainsDup", "samples\PluginGAgent\PluginGAgent.GrainsDup\PluginGAgent.GrainsDup.csproj", "{C3AF5B03-C118-471D-9021-66551C39B210}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -358,6 +360,18 @@ Global
 		{B99810FF-125F-44E2-BACC-36828ED42A05}.Release|x64.Build.0 = Release|Any CPU
 		{B99810FF-125F-44E2-BACC-36828ED42A05}.Release|x86.ActiveCfg = Release|Any CPU
 		{B99810FF-125F-44E2-BACC-36828ED42A05}.Release|x86.Build.0 = Release|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Debug|x64.Build.0 = Debug|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Debug|x86.Build.0 = Debug|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Release|x64.ActiveCfg = Release|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Release|x64.Build.0 = Release|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Release|x86.ActiveCfg = Release|Any CPU
+		{C3AF5B03-C118-471D-9021-66551C39B210}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -390,5 +404,6 @@ Global
 		{A1B2C3D4-E5F6-4747-8899-AABBCCDDEEFF} = {96D7B45D-F041-44DD-BFCC-E17048911357}
 		{6B34A025-802E-4F26-89F1-831BDBEB76D0} = {78519A39-0189-4978-9529-F9C6F361D8F2}
 		{B99810FF-125F-44E2-BACC-36828ED42A05} = {78519A39-0189-4978-9529-F9C6F361D8F2}
+		{C3AF5B03-C118-471D-9021-66551C39B210} = {13E448B2-8748-440D-9AB4-254FAC81F7D2}
 	EndGlobalSection
 EndGlobal

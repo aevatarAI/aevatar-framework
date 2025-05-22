@@ -154,7 +154,7 @@ public class BsonGrainSerializerTests
         // Act & Assert
         // This should throw an exception since we're trying to deserialize the full document
         // instead of just the "data" part
-        Should.Throw<InvalidOperationException>(() => serializer.Deserialize<TestClass>(document));
+        Should.Throw<FormatException>(() => serializer.Deserialize<TestClass>(document));
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class BsonGrainSerializerTests
         var serializer = new BsonGrainSerializer();
         
         // Act & Assert - Direct deserialization of whole document should fail
-        var exception = Assert.Throws<InvalidOperationException>(() => 
+        var exception = Assert.Throws<FormatException>(() => 
             serializer.Deserialize<TestClass>(document));
         
         // Now extract just the data field and deserialize - this should work

@@ -22,11 +22,11 @@ public class PluginCodeStorageMongoDbContext(IServiceProvider serviceProvider)
     protected override void CreateModel(IMongoModelBuilder modelBuilder)
     {
         base.CreateModel(modelBuilder);
+        
         modelBuilder.Entity<PluginCodeStorageSnapshotDocument>(b =>
         {
-            // TODO: Get StreamStorage from configuration
-            var streamStorage = "StreamStorage";
-            b.CollectionName = $"{streamStorage}{typeof(PluginCodeStorageGAgent).FullName!}";
+            var prefix = GetCollectionPrefix();
+            b.CollectionName = $"{prefix}{typeof(PluginCodeStorageGAgent).FullName!}";
         });
     }
 }
