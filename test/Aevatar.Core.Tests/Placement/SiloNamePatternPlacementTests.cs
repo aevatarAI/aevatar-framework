@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Aevatar.Core.Placement;
+using Microsoft.Extensions.Logging;
 using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Runtime.Placement;
@@ -89,7 +90,8 @@ namespace Aevatar.Core.Tests.Placement
             
             // Setup mock silo status oracle
             var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
-            
+            var mockLogger = new Mock<ILogger<SiloNamePatternPlacementDirector>>();
+
             // Setup silo statuses
             var siloStatuses = new Dictionary<SiloAddress, SiloStatus>
             {
@@ -162,7 +164,7 @@ namespace Aevatar.Core.Tests.Placement
             // Create placement director with the resolver
             var director = new SiloNamePatternPlacementDirector(
                 mockSiloStatusOracle.Object,
-                grainPropertiesResolver);
+                grainPropertiesResolver,mockLogger.Object);
             
             // Create placement target
             var grainId = GrainId.Create("ITestGrain", "1");
@@ -196,6 +198,7 @@ namespace Aevatar.Core.Tests.Placement
             
             // Setup mock silo status oracle
             var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
+            var mockLogger = new Mock<ILogger<SiloNamePatternPlacementDirector>>();
             
             // Setup silo statuses
             var siloStatuses = new Dictionary<SiloAddress, SiloStatus>
@@ -252,7 +255,7 @@ namespace Aevatar.Core.Tests.Placement
             // Create placement director
             var director = new SiloNamePatternPlacementDirector(
                 mockSiloStatusOracle.Object,
-                grainPropertiesResolver);
+                grainPropertiesResolver,mockLogger.Object);
             
             // Create placement target
             var grainId = GrainId.Create("ITestGrain", "1");
@@ -286,6 +289,7 @@ namespace Aevatar.Core.Tests.Placement
             
             // Setup mock silo status oracle
             var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
+            var mockLogger = new Mock<ILogger<SiloNamePatternPlacementDirector>>();
             
             // Setup silo statuses
             var siloStatuses = new Dictionary<SiloAddress, SiloStatus>
@@ -356,7 +360,7 @@ namespace Aevatar.Core.Tests.Placement
             // Create placement director
             var director = new SiloNamePatternPlacementDirector(
                 mockSiloStatusOracle.Object,
-                grainPropertiesResolver);
+                grainPropertiesResolver,mockLogger.Object);
             
             // Create placement target
             var grainId = GrainId.Create("ITestGrain", "1");
@@ -400,6 +404,7 @@ namespace Aevatar.Core.Tests.Placement
             
             // Setup mock silo status oracle
             var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
+            var mockLogger = new Mock<ILogger<SiloNamePatternPlacementDirector>>();
             
             // Setup silo statuses - all silos are active
             var siloStatuses = new Dictionary<SiloAddress, SiloStatus>
@@ -480,7 +485,7 @@ namespace Aevatar.Core.Tests.Placement
             // Verify that no methods were called on our SiloNamePatternPlacementDirector
             var ourDirector = new SiloNamePatternPlacementDirector(
                 mockSiloStatusOracle.Object,
-                grainPropertiesResolver);
+                grainPropertiesResolver,mockLogger.Object);
                 
             // This is a structural verification - our code can't actually track calls on a newly created object
             // The real verification is that the default placement works as expected

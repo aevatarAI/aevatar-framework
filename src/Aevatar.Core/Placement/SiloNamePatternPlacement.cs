@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Orleans.Metadata;
 using Orleans.Placement;
-using Orleans.Runtime;
 using Orleans.Runtime.Placement;
+using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Placement
 {
@@ -94,8 +90,8 @@ namespace Aevatar.Core.Placement
     public class SiloNamePatternPlacementDirector : IPlacementDirector
     {
         private readonly ISiloStatusOracle _siloStatusOracle;
-        
         private readonly GrainPropertiesResolver _grainPropertiesResolver;
+        private readonly ILogger<SiloNamePatternPlacementDirector> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SiloNamePatternPlacementDirector"/> class.
@@ -103,10 +99,12 @@ namespace Aevatar.Core.Placement
         /// <param name="siloStatusOracle">The silo status oracle.</param>
         public SiloNamePatternPlacementDirector(
             ISiloStatusOracle siloStatusOracle,
-            GrainPropertiesResolver grainPropertiesResolver) 
+            GrainPropertiesResolver grainPropertiesResolver,
+            ILogger<SiloNamePatternPlacementDirector> logger)
         {
             _siloStatusOracle = siloStatusOracle ?? throw new ArgumentNullException(nameof(siloStatusOracle));
             _grainPropertiesResolver = grainPropertiesResolver ?? throw new ArgumentNullException(nameof(grainPropertiesResolver));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -143,8 +141,6 @@ namespace Aevatar.Core.Placement
             }
 
             // Get all active silos
-            var siloStatuses = _siloStatusOracle.GetApproximateSiloStatuses(onlyActive: true);
-            
             // Find all active silos whose names contain the specified pattern
             var matchingSilos = new List<SiloAddress>();
             // Iterate over compatible silos directly (likely fewer items)
@@ -165,7 +161,10 @@ namespace Aevatar.Core.Placement
             }
 
             // Randomly select one of the matching silos
-            return Task.FromResult(matchingSilos[Random.Shared.Next(matchingSilos.Count)]);
+            var idx = Random.Shared.Next(matchingSilos.Count);
+            _logger.LogDebug("[SiloNamePatternPlacement] GrainId={GrainId}, Pattern={Pattern}, compatibleSiloCount={CompatibleSiloCount}, matchingSiloCount={MatchingCount}, idx ={Idx}",
+                target.GrainIdentity, siloNamePattern, compatibleSilos.Length, matchingSilos.Count,idx);
+            return Task.FromResult(matchingSilos[idx]);
         }
     }
 
