@@ -24,7 +24,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
     private bool _initialized;
     private readonly string _serviceId;
 
-    private readonly string _fieldData = "data";
+    private readonly string _fieldData = "snapshot";
     private readonly IGrainStateSerializer _grainStateSerializer;
     public MongoDbLogConsistentStorage(string name, MongoDbStorageOptions options,
         IOptions<ClusterOptions> clusterOptions, ILogger<MongoDbLogConsistentStorage> logger)
@@ -75,7 +75,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             await documents.ForEachAsync(document =>
             {
                 // Use our grain state serializer to deserialize
-                var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document);
+                var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document[_fieldData]);
                 
                 results.Add(logEntry);
             }).ConfigureAwait(false);
@@ -84,7 +84,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            _logger.LogError(ex,
                 "Failed to read log entries for {GrainType} grain with ID {GrainId} and collection {CollectionName}",
                 grainTypeName, grainId, collectionName);
             throw new MongoDbStorageException(FormattableString.Invariant(
@@ -130,7 +130,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            _logger.LogError(ex,
                 "Failed to read last log entry for {GrainType} grain with ID {GrainId} and collection {CollectionName}",
                 grainTypeName, grainId, collectionName);
             throw new MongoDbStorageException(FormattableString.Invariant(
@@ -190,7 +190,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         }
         catch (Exception ex) when (ex is not InconsistentStateException)
         {
-            _logger.LogError(
+            _logger.LogError(ex,
                 "Failed to write log entries for {GrainType} grain with ID {GrainId} and collection {CollectionName}",
                 grainTypeName, grainId, collectionName);
             throw new MongoDbStorageException(FormattableString.Invariant(
