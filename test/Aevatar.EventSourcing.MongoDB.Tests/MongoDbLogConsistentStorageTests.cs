@@ -162,7 +162,10 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
         // Arrange
         var grainId = GrainId.Create("ConflictGrain", "TestKey");
         var grainTypeName = "TestGrainType";
-        var entries = new List<TestLogEntry> { new TestLogEntry { Data = "Conflict Test Entry" } };
+        var entries = new List<TestLogEntry> 
+        { 
+            new TestLogEntry { snapshot = new TestGrainState { Data = "Conflict Test Entry" } } 
+        };
 
         var mockCursor = new Mock<IAsyncCursor<BsonDocument>>();
         mockCursor.Setup(x => x.MoveNextAsync(It.IsAny<CancellationToken>()))
@@ -199,8 +202,8 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
 
         var testData = new List<TestLogEntry>
         {
-            new TestLogEntry { Data = "Test1" },
-            new TestLogEntry { Data = "Test2" }
+            new TestLogEntry { snapshot = new TestGrainState { Data = "Test1" } },
+            new TestLogEntry { snapshot = new TestGrainState { Data = "Test2" } }
         };
 
         // Mock GetLastVersionAsync to return -1 initially
@@ -245,10 +248,10 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
-        Assert.NotNull(result[0].data);
-        Assert.NotNull(result[1].data);
-        Assert.Equal("Test1", result[0].data.Data);
-        Assert.Equal("Test2", result[1].data.Data);
+        Assert.NotNull(result[0].snapshot);
+        Assert.NotNull(result[1].snapshot);
+        Assert.Equal("Test1", result[0].snapshot.Data);
+        Assert.Equal("Test2", result[1].snapshot.Data);
 
         // Clean up after test
         await DisposeAsync();
@@ -317,7 +320,7 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
             {
                 { "GrainId", grainId.ToString() },
                 { "Version", 0 },
-                { "data", new BsonDocument
+                { "snapshot", new BsonDocument
                     {
                         { "Data", "Test1" },
                         { "Value", "Test1Value" }
@@ -328,7 +331,7 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
             {
                 { "GrainId", grainId.ToString() },
                 { "Version", 1 },
-                { "data", new BsonDocument
+                { "snapshot", new BsonDocument
                     {
                         { "Data", "Test2" },
                         { "Value", "Test2Value" }
@@ -343,22 +346,30 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
         
         foreach (var document in testDocuments)
         {
-            // Extract the data field
-            if (document.Contains("data") && document["data"] != BsonNull.Value)
+            // Extract the snapshot field and deserialize it as TestGrainState
+            if (document.Contains("snapshot") && document["snapshot"] != BsonNull.Value)
             {
-                var dataField = document["data"];
-                Console.WriteLine($"Deserializing data field: {dataField}");
-                var logEntry = serializer.Deserialize<TestLogEntry>(dataField);
+                var snapshotField = document["snapshot"];
+                Console.WriteLine($"Deserializing snapshot field: {snapshotField}");
+                var grainState = serializer.Deserialize<TestGrainState>(snapshotField);
+                
+                // Create a TestLogEntry with the deserialized snapshot
+                var logEntry = new TestLogEntry
+                {
+                    GrainId = document["GrainId"].AsString,
+                    Version = document["Version"].AsInt32,
+                    snapshot = grainState
+                };
                 entries.Add(logEntry);
             }
         }
         
         // Assert direct serialization works
         Assert.Equal(2, entries.Count);
-        Assert.Equal("Test1", entries[0].Data);
-        Assert.Equal("Test1Value", entries[0].Value);
-        Assert.Equal("Test2", entries[1].Data);
-        Assert.Equal("Test2Value", entries[1].Value);
+        Assert.Equal("Test1", entries[0].snapshot.Data);
+        Assert.Equal("Test1Value", entries[0].snapshot.Value);
+        Assert.Equal("Test2", entries[1].snapshot.Data);
+        Assert.Equal("Test2Value", entries[1].snapshot.Value);
     }
 
 
@@ -406,17 +417,24 @@ public class MongoDbLogConsistentStorageTests : IAsyncDisposable
     [GenerateSerializer]
     public class TestLogEntry
     {
+        [Id(1)]
+        public ObjectId _id { get; set; }
+        [Id(2)]
+        public string GrainId { get; set; } = string.Empty;
+        [Id(3)]
+        public int Version { get; set; }
+        [Id(4)]
+        public required TestGrainState snapshot { get; set; }
+    }
+
+    [GenerateSerializer]
+    public class TestGrainState
+    {
         [Id(0)]
         public required string Data { get; set; }
         [Id(1)]
         public string Value { get; set; } = string.Empty;
-        [Id(2)]
-        public ObjectId _id { get; set; }
-        [Id(3)]
-        public string GrainId { get; set; } = string.Empty;
-        [Id(4)]
-        public int Version { get; set; }
-        [Id(5)]
-        public TestLogEntry data { get; set; }
     }
-} 
+
+
+}
