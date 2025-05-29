@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using System.Runtime.CompilerServices;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
@@ -26,5 +27,57 @@ public class ExceptionHandlingTestGAgent : GAgentBase<ExceptionHandlingTestGAgen
     public async Task HandleEventHandlingExceptionAsync(EventHandlerExceptionEvent @event)
     {
         State.ErrorMessages.Add(@event.ExceptionMessage);
+    }
+
+    // Implementation of test methods
+    public Task<Guid> TestPublishExceptionAsync(Exception exception, object? contextData = null)
+    {
+        return PublishExceptionAsync(exception, contextData);
+    }
+
+    public Task<Guid> TestCatchAndPublishWithoutResultAsync(bool throwException, bool rethrowException = true)
+    {
+        return CatchAndPublishExceptionAsync(
+            async () =>
+            {
+                await Task.Delay(10);
+                if (throwException)
+                {
+                    throw new InvalidOperationException("Test exception");
+                }
+            },
+            new { TestSource = "TestCatchAndPublishWithoutResultAsync" },
+            rethrowException);
+    }
+
+    public Task<(int Result, Guid ExceptionId)> TestCatchAndPublishWithResultAsync(
+        bool throwException, bool rethrowException = true)
+    {
+        return CatchAndPublishExceptionAsync(
+            async () =>
+            {
+                await Task.Delay(10);
+                if (throwException)
+                {
+                    throw new InvalidOperationException("Test exception");
+                }
+                return 42;
+            },
+            0,
+            new { TestSource = "TestCatchAndPublishWithResultAsync" },
+            rethrowException);
+    }
+
+    public Task<(int Result, Guid ExceptionId)> TestCatchAndPublishWithCustomDefaultAsync()
+    {
+        return CatchAndPublishExceptionAsync(
+            async () =>
+            {
+                await Task.Delay(10);
+                throw new InvalidOperationException("Test exception with custom default");
+            },
+            999,
+            new { TestSource = "TestCatchAndPublishWithCustomDefaultAsync" },
+            false);
     }
 }

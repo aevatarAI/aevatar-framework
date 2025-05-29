@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Aevatar.Core.Abstractions;
+using Aevatar.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -53,6 +55,64 @@ public abstract partial class
 
     private IStateDispatcher? StateDispatcher { get; set; }
     protected AevatarOptions? AevatarOptions;
+
+    /// <summary>
+    /// Publishes an exception to Orleans Stream
+    /// </summary>
+    /// <param name="exception">Exception to publish</param>
+    /// <param name="contextData">Context data, can be any serializable object</param>
+    /// <param name="methodName">Caller method name, auto-populated</param>
+    /// <param name="agentType">Caller class name, auto-populated</param>
+    /// <returns>Exception event ID</returns>
+    protected Task<Guid> PublishExceptionAsync(
+        Exception exception,
+        object? contextData = null,
+        string? methodName = null,
+        string? agentType = null)
+    {
+        return ((Grain)this).PublishExceptionAsync(exception, contextData, methodName, agentType);
+    }
+
+    /// <summary>
+    /// Executes an operation, catches any exception and publishes it to Orleans Stream
+    /// </summary>
+    /// <param name="action">Operation to execute</param>
+    /// <param name="contextData">Context data, can be any serializable object</param>
+    /// <param name="rethrowException">Whether to rethrow the exception, defaults to true</param>
+    /// <param name="methodName">Caller method name, auto-populated</param>
+    /// <param name="agentType">Caller class name, auto-populated</param>
+    /// <returns>If an exception occurs, returns the exception event ID; otherwise returns Guid.Empty</returns>
+    protected Task<Guid> CatchAndPublishExceptionAsync(
+        Func<Task> action,
+        object? contextData = null,
+        bool rethrowException = true,
+        string? methodName = null,
+        string? agentType = null)
+    {
+        return ((Grain)this).CatchAndPublishExceptionAsync(action, contextData, rethrowException, methodName, agentType);
+    }
+
+    /// <summary>
+    /// Executes an operation, catches any exception and publishes it to Orleans Stream, returns the operation result
+    /// </summary>
+    /// <typeparam name="TResult">Operation result type</typeparam>
+    /// <param name="func">Operation to execute</param>
+    /// <param name="defaultValue">Default value to return if an exception occurs and is not rethrown</param>
+    /// <param name="contextData">Context data, can be any serializable object</param>
+    /// <param name="rethrowException">Whether to rethrow the exception, defaults to true</param>
+    /// <param name="methodName">Caller method name, auto-populated</param>
+    /// <param name="agentType">Caller class name, auto-populated</param>
+    /// <returns>If the operation succeeds, returns the operation result; if an exception occurs and is not rethrown, returns the default value</returns>
+    protected Task<(TResult Result, Guid ExceptionId)> CatchAndPublishExceptionAsync<TResult>(
+        Func<Task<TResult>> func,
+        TResult defaultValue = default!,
+        object? contextData = null,
+        bool rethrowException = true,
+        string? methodName = null,
+        string? agentType = null)
+    {
+        return ((Grain)this).CatchAndPublishExceptionAsync(func, defaultValue, contextData, rethrowException, methodName, agentType);
+    }
 
     public async Task ActivateAsync()
     {
