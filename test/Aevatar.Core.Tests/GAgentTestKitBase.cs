@@ -1,11 +1,12 @@
 using System.Linq.Expressions;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Tests.TestGAgents;
-using Orleans.TestKit;
+using Aevatar.TestKit;
+using Aevatar.TestKit.Extensions;
 
 namespace Aevatar.Core.Tests;
 
-public abstract class GAgentTestKitBase : TestKitBase
+public abstract class GAgentTestKitBase : TestKitBase<AevatarTestKitSilo>
 {
     protected async Task<PublishingGAgent> CreatePublishingGAgentAsync(params IGAgent[] gAgentsToPublish)
     {
