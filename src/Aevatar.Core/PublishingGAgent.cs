@@ -1,17 +1,19 @@
-using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
-using Orleans.Providers;
 
-namespace MessagingGAgent.Grains.Agents.Publisher;
+namespace Aevatar.Core;
 
 [GenerateSerializer]
 public class PublishingAgentState : StateBase
 {
 }
 
-[StorageProvider(ProviderName = "PubSubStore")]
-[LogConsistencyProvider(ProviderName = "LogStorage")]
+[GenerateSerializer]
+public class PublishingStateLogEvent : StateLogEventBase<PublishingStateLogEvent>
+{
+}
+
+[GAgent]
 public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingStateLogEvent>, IPublishingGAgent
 {
     public override Task<string> GetDescriptionAsync()
@@ -19,12 +21,14 @@ public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingState
         return Task.FromResult("Agent to be used for publishing new events.");
     }
 
-    public async Task PublishEventAsync<T>(T @event) where T : EventBase
+    public async Task PublishEventAsync<T>(T @event, params IGAgent[] agents) where T : EventBase
     {
         if (@event == null)
         {
             throw new ArgumentNullException(nameof(@event));
         }
+        
+        await RegisterManyAsync(agents.ToList());
 
         Logger.LogInformation($"PublishingAgent publish {@event}");
         await PublishAsync(@event);

@@ -60,7 +60,7 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
             var gAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
             gAgent.ShouldNotBeNull();
             Should.NotThrow(() => gAgent.GetPrimaryKey());
-            gAgent.GetGrainId().ShouldBe(GrainId.Create("Aevatar.Core.Tests.TestGAgents.publishing",
+            gAgent.GetGrainId().ShouldBe(GrainId.Create("Aevatar.Core.PublishingGAgent",
                 gAgent.GetPrimaryKey().ToString("N")));
             await CheckSubscribedEventsAsync(gAgent);
         }
