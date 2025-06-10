@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Aevatar.Core.Placement;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Orleans.Metadata;
 using Orleans.Runtime;
 using Orleans.Runtime.Placement;
@@ -22,6 +23,9 @@ namespace Aevatar.Core.Tests.Placement
             // Register required services for SiloNamePatternPlacementDirector
             var mockSiloStatusOracle = new Mock<ISiloStatusOracle>();
             services.AddSingleton(mockSiloStatusOracle.Object);
+            
+            var mockLogger = new Mock<ILogger<SiloNamePatternPlacementDirector>>();
+            services.AddSingleton(mockLogger.Object);
             
             // Register IClusterManifestProvider for GrainPropertiesResolver
             var mockClusterManifestProvider = new Mock<IClusterManifestProvider>();
@@ -90,21 +94,23 @@ namespace Aevatar.Core.Tests.Placement
             var mockClusterManifestProvider = new Mock<IClusterManifestProvider>().Object;
             var grainPropertiesResolver = new GrainPropertiesResolver(mockClusterManifestProvider);
             
+            var logger = new Mock<ILogger<SiloNamePatternPlacementDirector>>().Object;
+            
             // Act - Verify creating with valid parameters succeeds
-            var director = new SiloNamePatternPlacementDirector(mockSiloStatusOracle, grainPropertiesResolver);
+            var director = new SiloNamePatternPlacementDirector(mockSiloStatusOracle, grainPropertiesResolver,logger);
             
             // Assert
             director.ShouldNotBeNull();
             
             // Verify constructor throws with null parameters
-            Should.NotThrow(() => new SiloNamePatternPlacementDirector(mockSiloStatusOracle, grainPropertiesResolver));
+            Should.NotThrow(() => new SiloNamePatternPlacementDirector(mockSiloStatusOracle, grainPropertiesResolver,logger));
             
             // Check that constructor actually does throw for null parameters
             Should.Throw<ArgumentNullException>(() => 
-                new SiloNamePatternPlacementDirector(null!, grainPropertiesResolver));
+                new SiloNamePatternPlacementDirector(null!, grainPropertiesResolver,logger));
                 
             Should.Throw<ArgumentNullException>(() => 
-                new SiloNamePatternPlacementDirector(mockSiloStatusOracle, null!));
+                new SiloNamePatternPlacementDirector(mockSiloStatusOracle, null!,logger));
         }
     }
 } 

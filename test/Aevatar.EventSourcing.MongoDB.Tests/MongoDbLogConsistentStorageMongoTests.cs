@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Aevatar.EventSourcing.Core.Storage;
-using Aevatar.EventSourcing.MongoDB.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -18,6 +16,12 @@ using Orleans.Runtime;
 using Orleans.Storage;
 using Shouldly;
 using Xunit;
+
+using Aevatar.EventSourcing.Core.Storage;
+using Aevatar.EventSourcing.MongoDB.Options;
+using Aevatar.EventSourcing.Core.Exceptions;
+using Aevatar.EventSourcing.MongoDB.Hosting;
+using Aevatar.EventSourcing.MongoDB.Serializers;
 
 namespace Aevatar.EventSourcing.MongoDB.Tests;
 
@@ -67,7 +71,8 @@ public class MongoDbLogConsistentStorageMongoTests
         _mongoDbOptions = new MongoDbStorageOptions
         {
             ClientSettings = settings,
-            Database = "TestDb"
+            Database = "TestDb",
+            GrainStateSerializer = new BsonGrainSerializer()
         };
 
         _storage = new MongoDbLogConsistentStorage(_name, _mongoDbOptions, _clusterOptionsMock.Object, _loggerMock.Object);
@@ -79,6 +84,7 @@ public class MongoDbLogConsistentStorageMongoTests
         // Arrange
         var grainId = GrainId.Create("TestGrain", "TestKey");
         var grainTypeName = "TestGrainType";
+        // Test data: Reading attempt with ID TestGrain/TestKey
 
         var mockCursor = new Mock<IAsyncCursor<BsonDocument>>();
         mockCursor.Setup(x => x.MoveNextAsync(It.IsAny<CancellationToken>()))
@@ -165,6 +171,7 @@ public class MongoDbLogConsistentStorageMongoTests
     public async Task Init_WhenMongoDbError_ThrowsMongoDbStorageException()
     {
         // Arrange
+        // Test data: Initialize with specific MongoDB connection string
         var settings = MongoClientSettings.FromConnectionString("mongodb://localhost:27017");
         settings.ClusterConfigurator = builder =>
         {
@@ -177,7 +184,8 @@ public class MongoDbLogConsistentStorageMongoTests
         var options = new MongoDbStorageOptions
         {
             ClientSettings = settings,
-            Database = "TestDb"
+            Database = "TestDb",
+            GrainStateSerializer = new BsonGrainSerializer()
         };
 
         var storage = new MongoDbLogConsistentStorage(_name, options, _clusterOptionsMock.Object, _loggerMock.Object);
@@ -193,6 +201,7 @@ public class MongoDbLogConsistentStorageMongoTests
     public async Task Close_WhenMongoDbError_ThrowsMongoDbStorageException()
     {
         // Arrange
+        // Test data: Close connection for storage with name "TestStorage"
         var settings = MongoClientSettings.FromConnectionString("mongodb://localhost:27017");
         settings.ClusterConfigurator = builder =>
         {
@@ -205,7 +214,8 @@ public class MongoDbLogConsistentStorageMongoTests
         var options = new MongoDbStorageOptions
         {
             ClientSettings = settings,
-            Database = "TestDb"
+            Database = "TestDb",
+            GrainStateSerializer = new BsonGrainSerializer()
         };
 
         var storage = new MongoDbLogConsistentStorage(_name, options, _clusterOptionsMock.Object, _loggerMock.Object);
@@ -222,6 +232,7 @@ public class MongoDbLogConsistentStorageMongoTests
     [Fact]
     public async Task MongoDbStorageOptionsTests()
     {
+        // Test data: Testing options with InitStage=0 and Database="TestDb"
         var settings = MongoClientSettings.FromConnectionString("mongodb://localhost:27017");
         settings.ClusterConfigurator = builder =>
         {
@@ -235,7 +246,8 @@ public class MongoDbLogConsistentStorageMongoTests
         {
             ClientSettings = settings,
             Database = "TestDb",
-            InitStage = 0
+            InitStage = 0,
+            GrainStateSerializer = new BsonGrainSerializer()
         };
         options.InitStage.ShouldBe(0);
         options.Credentials.ShouldBeNull();
@@ -243,12 +255,16 @@ public class MongoDbLogConsistentStorageMongoTests
         var mongoDbOptionValidator = new MongoDbStorageOptionsValidator(options, "test");
         mongoDbOptionValidator.ValidateConfiguration();
         
-        mongoDbOptionValidator = new MongoDbStorageOptionsValidator(new MongoDbStorageOptions(), "test");
+        var emptyOptions = new MongoDbStorageOptions
+        {
+            GrainStateSerializer = new BsonGrainSerializer()
+        };
+        mongoDbOptionValidator = new MongoDbStorageOptionsValidator(emptyOptions, "test");
         Assert.Throws<OrleansConfigurationException>(() => mongoDbOptionValidator.ValidateConfiguration());
     }
 
     private class TestLogEntry
     {
-        public required string Data { get; set; }
+        public required string Data { get; set; } = string.Empty;
     }
 } 

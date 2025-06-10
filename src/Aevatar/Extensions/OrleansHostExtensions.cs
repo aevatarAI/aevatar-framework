@@ -1,7 +1,9 @@
+using System.Reflection;
 using Aevatar.Core;
 using Aevatar.Plugins.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Orleans.Serialization;
 using Orleans.SyncWork;
 using Volo.Abp;
@@ -44,7 +46,8 @@ public static class OrleansHostExtensions
             });
     }
 
-    private static async Task LoadPluginsAsync(IServiceCollection services, IAbpApplicationWithInternalServiceProvider application)
+    private static async Task LoadPluginsAsync(IServiceCollection services,
+        IAbpApplicationWithInternalServiceProvider application)
     {
         var assemblies = await application.GetTenantPluginAssemblyListAsync();
         services.AddSerializer(options =>
@@ -54,9 +57,16 @@ public static class OrleansHostExtensions
                 options.AddAssembly(assembly);
             }
         });
+
+        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+        {
+            var assemblyName = new AssemblyName(args.Name).Name;
+            var assembly = assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName);
+            return assembly != null ? assembly : null;
+        };
     }
 
-    public static IClientBuilder UseAevatar(this IClientBuilder builder)
+    public static IClientBuilder UseAevatar(this IClientBuilder builder, bool includingAbpServices = false)
     {
         var abpApplication = AbpApplicationFactory.Create<AevatarModule>();
         abpApplication.Initialize();
@@ -64,9 +74,10 @@ public static class OrleansHostExtensions
         return builder
             .ConfigureServices(services =>
         {
-            foreach (var service in abpApplication.Services)
+            AsyncHelper.RunSync(() => LoadPluginsAsync(services, abpApplication));
+            if (includingAbpServices)
             {
-                services.Add(service);
+                services.Add(abpApplication.Services);
             }
         });
     }

@@ -19,6 +19,7 @@ This document tracks the remaining tasks and their status for the Aevatar Framew
 | Kafka Stream optimization | Not Started | Optimize Kafka streams for better performance and lower resource usage | ✗ | ✗ | ✗ | ✗ | |
 | End to end gagent streaming | Not Started | Implement complete end-to-end streaming for gagent | ✗ | ✗ | ✗ | ✗ | |
 | Optimize GAgent Publish logic | Not Started | Improve GAgent Publish performance and speed | ✗ | ✗ | ✗ | ✗ | |
+| ProjectionGrain Placement Update | 🚧 In Progress | Update placement logic for StateProjectionGrain and related grains | ✗ | ✗ | ✗ | ✗ | 42:82:57:47:65:d3 |
 
 ## Task Details
 
@@ -74,6 +75,18 @@ This document tracks the remaining tasks and their status for the Aevatar Framew
 - **Regression tests**: Develop test suite to ensure optimizations don't break existing functionality, create baseline metrics, automate regression testing
 - **Integration tests**: Verify interaction between optimized publish logic and other system components, test end-to-end publishing flow, measure performance improvements
 - **Documentation**: Document optimization strategies, create configuration guides, document benchmarks and results, update architecture diagrams
+
+### ProjectionGrain Placement Update
+- Update placement logic for StateProjectionGrain and related grains
+- Ensure proper placement of grains in the system
+- Implement new placement strategies
+- Benchmark performance before and after update
+
+**Testing & Documentation:**
+- **Unit tests**: Create unit tests for placement logic, test different placement scenarios, verify behavior under various loads
+- **Regression tests**: Develop test suite to ensure updates don't break existing functionality, create baseline metrics, automate regression testing
+- **Integration tests**: Verify interaction between placement logic and other system components, test end-to-end placement flow, measure performance improvements
+- **Documentation**: Document placement strategies, create configuration guides, document benchmarks and results, create troubleshooting guide
 
 ## Future Tasks
 - *To be determined*

@@ -28,4 +28,11 @@ public class AevatarMongoDbContextBase : AbpMongoDbContext
         var options = _serviceProvider.GetRequiredService<IOptions<PluginGAgentLoadOptions>>().Value;
         base.InitializeDatabase(database, client, sessionHandle);
     }
+
+    protected string GetCollectionPrefix()
+    {
+        var pluginsOptions = _serviceProvider.GetRequiredService<IOptions<PluginGAgentLoadOptions>>().Value;
+        var hostId = pluginsOptions.HostId;
+        return hostId.IsNullOrEmpty() ? "StreamStorage" : $"Stream{hostId}";
+    }
 }
