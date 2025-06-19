@@ -10,5 +10,10 @@ public interface IPermissionEvent
 [GenerateSerializer]
 public abstract class PermissionEventBase : EventBase, IPermissionEvent
 {
+    protected PermissionEventBase()
+    {
+        UserContext = new UserContext();
+    }
+
     [Id(0)] public UserContext? UserContext { get; set; }
 }
