@@ -2,8 +2,13 @@ using Aevatar.Core.Abstractions;
 
 namespace Aevatar.PermissionManagement;
 
-[GenerateSerializer]
-public abstract class PermissionEventBase : EventBase
+public interface IPermissionEvent
 {
-    [Id(2)] public UserContext? UserContext { get; set; }
+    UserContext? UserContext { get; set; }
+}
+
+[GenerateSerializer]
+public abstract class PermissionEventBase : EventBase, IPermissionEvent
+{
+    [Id(0)] public UserContext? UserContext { get; set; }
 }
