@@ -107,6 +107,17 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         state.Called.ShouldBe(true);
     }
 
+    [Fact]
+    public async Task EventBaseTypeTest()
+    {
+        var gAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<EventBaseTypeTestGAgentState>>();
+        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
+        await publishingGAgent.RegisterAsync(gAgent);
+        await publishingGAgent.PublishEventAsync(new TestPermissionEvent());
+        var state = await gAgent.GetStateAsync();
+        state.Content.Count.ShouldBePositive();
+    }
+
     private async Task<bool> CheckState(IStateGAgent<InvestorTestGAgentState> investor1)
     {
         var state = await investor1.GetStateAsync();
