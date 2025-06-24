@@ -70,7 +70,7 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
             Description = "New demand from customer."
         });
 
-        await TestHelper.WaitUntilAsync(_ => CheckState(investor1), TimeSpan.FromSeconds(20));
+        await TestHelper.CheckStateAsync(investor1, 2);
 
         var groupState = await groupGAgent.GetStateAsync();
         groupState.RegisteredGAgents.ShouldBe(2);
@@ -107,20 +107,22 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         state.Called.ShouldBe(true);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Can handle multiple inherited event types.")]
     public async Task EventBaseTypeTest()
     {
         var gAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<EventBaseTypeTestGAgentState>>();
         var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
         await publishingGAgent.RegisterAsync(gAgent);
         await publishingGAgent.PublishEventAsync(new TestPermissionEvent());
+        await TestHelper.CheckStateAsync(gAgent);
         var state = await gAgent.GetStateAsync();
         state.Content.Count.ShouldBePositive();
     }
 
-    private async Task<bool> CheckState(IStateGAgent<InvestorTestGAgentState> investor1)
+    private async Task<bool> CheckState<TState>(IStateGAgent<TState> testGAgent, int expectedCount = 1)
+        where TState : NaiveTestGAgentState, new()
     {
-        var state = await investor1.GetStateAsync();
-        return !state.Content.IsNullOrEmpty() && state.Content.Count == 2;
+        var state = await testGAgent.GetStateAsync();
+        return !state.Content.IsNullOrEmpty() && state.Content.Count == expectedCount;
     }
 }

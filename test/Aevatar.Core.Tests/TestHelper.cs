@@ -1,3 +1,6 @@
+using Aevatar.Core.Abstractions;
+using Aevatar.Core.Tests.TestGAgents;
+
 namespace Aevatar.GAgents.Tests;
 
 public static class TestHelper
@@ -37,5 +40,23 @@ public static class TestHelper
                 await predicate(true);
             }
         }
+    }
+
+    public static async Task CheckStateAsync<TState>(IStateGAgent<TState> testGAgent, int expectedCount = 1,
+        TimeSpan? timeout = null) where TState : NaiveTestGAgentState, new()
+    {
+        if (timeout != null)
+        {
+            timeout = TimeSpan.FromSeconds(20);
+        }
+
+        await WaitUntilAsync(_ => PerformCheckStateAsync(testGAgent, expectedCount), timeout);
+    }
+
+    private static async Task<bool> PerformCheckStateAsync<TState>(IStateGAgent<TState> testGAgent, int expectedCount)
+        where TState : NaiveTestGAgentState, new()
+    {
+        var state = await testGAgent.GetStateAsync();
+        return state.Content.Count == expectedCount;
     }
 }
