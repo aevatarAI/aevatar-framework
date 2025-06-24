@@ -4,25 +4,27 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
-public interface IDevelopingLeaderTestGAgent : IGAgent;
+public interface IDevelopingLeaderTestGAgent : IStateGAgent<DevelopingLeaderTestGAgentState>;
 
 [GenerateSerializer]
 public class DevelopingLeaderTestGAgentState : NaiveTestGAgentState;
 
 [GAgent("developingLeader", "test")]
-public class DevelopingLeaderTestGAgent : GAgentBase<DevelopingLeaderTestGAgentState, NaiveTestStateLogEvent>, IDevelopingLeaderTestGAgent
+public class DevelopingLeaderTestGAgent : GAgentBase<DevelopingLeaderTestGAgentState, NaiveTestStateLogEvent>,
+    IDevelopingLeaderTestGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("This GAgent acts as a developing leader.");
     }
-    
+
     public async Task HandleEventAsync(NewDemandTestEvent eventData)
     {
         await PublishAsync(new DevelopTaskTestEvent
         {
             Description = $"This is the demand for the task: {eventData.Description}"
         });
+        State.PublishedEventList.Add(nameof(DevelopTaskTestEvent));
     }
 
     public async Task HandleEventAsync(NewFeatureCompletedTestEvent eventData)
@@ -40,6 +42,7 @@ public class DevelopingLeaderTestGAgent : GAgentBase<DevelopingLeaderTestGAgentS
             {
                 PullRequestUrl = string.Join("\n", State.Content)
             });
+            State.PublishedEventList.Add(nameof(NewFeatureCompletedTestEvent));
         }
     }
 }
