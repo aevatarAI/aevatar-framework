@@ -6,6 +6,7 @@ namespace Aevatar.Core.Tests.TestGAgents;
 public class NaiveTestGAgentState : StateBase
 {
     [Id(0)] public List<string> Content { get; set; } = [];
+    [Id(1)] public List<string> PublishedEventList { get; set; } = [];
 }
 
 public class NaiveTestStateLogEvent : StateLogEventBase<NaiveTestStateLogEvent>

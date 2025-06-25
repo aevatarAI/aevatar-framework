@@ -173,17 +173,16 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
     {
         switch (eventWrapper.Event)
         {
-            case { } ev when parameterType.BaseType != null &&
-                             typeof(EventBase).IsAssignableFrom(parameterType.BaseType):
+            case { } ev when isResponseHandler:
+                await HandleEventWithResponse(method, ev, eventWrapper.EventId);
+                break;
+
+            case { } ev when typeof(EventBase).IsAssignableFrom(parameterType.BaseType):
                 await HandleEvent(method, ev);
                 break;
 
             case not null when parameterType == typeof(EventWrapperBase):
                 await HandleEventWrapperBase(method, eventWrapper);
-                break;
-
-            case { } ev when isResponseHandler:
-                await HandleEventWithResponse(method, ev, eventWrapper.EventId);
                 break;
 
             default:

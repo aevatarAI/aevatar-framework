@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
-public interface IDeveloperTestGAgent : IGAgent;
+public interface IDeveloperTestGAgent : IStateGAgent<DeveloperTestGAgentState>;
 
 [GenerateSerializer]
 public class DeveloperTestGAgentState : NaiveTestGAgentState;
@@ -27,6 +27,8 @@ public class DeveloperTestGAgent : GAgentBase<DeveloperTestGAgentState, NaiveTes
         State.Content.Add(eventData.Description);
 
         Logger.LogInformation("TEST");
+
+        State.PublishedEventList.Add(nameof(NewFeatureCompletedTestEvent));
         return new NewFeatureCompletedTestEvent
         {
             PullRequestUrl = $"PR for {eventData.Description}"

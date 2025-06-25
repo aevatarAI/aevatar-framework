@@ -53,8 +53,8 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         await developingLeader.RegisterAsync(developer2);
         await developingLeader.RegisterAsync(developer3);
 
-        var investor1 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(guid);
-        var investor2 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(Guid.NewGuid());
+        var investor1 = _grainFactory.GetGrain<IInvestorTestGAgent>(guid);
+        var investor2 = _grainFactory.GetGrain<IInvestorTestGAgent>(Guid.NewGuid());
         await marketingLeader.RegisterAsync(investor1);
         await marketingLeader.RegisterAsync(investor2);
 
@@ -72,11 +72,24 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
 
         await TestHelper.CheckStateAsync(investor1, 2);
 
+        var marketingLeaderState = await marketingLeader.GetStateAsync();
+        marketingLeaderState.PublishedEventList.Count.ShouldBe(2);
+        marketingLeaderState.PublishedEventList.ShouldContain(nameof(WorkingOnTestEvent));
+
+        var developingLeaderState = await developingLeader.GetStateAsync();
+        developingLeaderState.PublishedEventList.Count.ShouldBe(2);
+        developingLeaderState.PublishedEventList.ShouldContain(nameof(DevelopTaskTestEvent));
+        developingLeaderState.PublishedEventList.ShouldContain(nameof(NewFeatureCompletedTestEvent));
+
+        var developer1State = await developer1.GetStateAsync();
+        developer1State.PublishedEventList.Count.ShouldBe(1);
+
+        var investor1State = await investor1.GetStateAsync();
+        investor1State.Content.Count.ShouldBe(2);
+        investor1State.PublishedEventList.Count.ShouldBe(2);
+
         var groupState = await groupGAgent.GetStateAsync();
         groupState.RegisteredGAgents.ShouldBe(2);
-
-        var investorState = await investor1.GetStateAsync();
-        investorState.Content.Count.ShouldBe(2);
     }
 
     [Fact(DisplayName = "SyncWorker should be worked and not block current GAgent.")]
