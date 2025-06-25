@@ -1,12 +1,25 @@
 using System.Linq.Expressions;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Tests.TestGAgents;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Orleans.TestKit;
 
 namespace Aevatar.Core.Tests;
 
 public abstract class GAgentTestKitBase : TestKitBase
 {
+    protected GAgentTestKitBase()
+    {
+        // Configure proper logging for test environment
+        // This replaces the NullLoggerFactory with a proper one that won't cause NullReferenceExceptions
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole().SetMinimumLevel(LogLevel.Warning); // Only show warnings and errors in tests
+        });
+        
+        Silo.ServiceProvider.AddService<ILoggerFactory>(loggerFactory);
+    }
     protected async Task<PublishingGAgent> CreatePublishingGAgentAsync(params IGAgent[] gAgentsToPublish)
     {
         var publishingGAgent = await Silo.CreateGrainAsync<PublishingGAgent>(Guid.NewGuid());
