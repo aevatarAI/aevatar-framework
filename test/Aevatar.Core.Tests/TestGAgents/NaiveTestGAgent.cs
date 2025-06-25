@@ -1,6 +1,4 @@
 using Aevatar.Core.Abstractions;
-using Aevatar.Core.Tests.TestInitializeDtos;
-using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core.Tests.TestGAgents;
 
@@ -13,6 +11,12 @@ public class NaiveTestGAgentState : StateBase
 public class NaiveTestStateLogEvent : StateLogEventBase<NaiveTestStateLogEvent>
 {
     [Id(0)] public Guid Id { get; set; }
+}
+
+[GenerateSerializer]
+public class NaiveGAgentConfiguration : ConfigurationBase
+{
+    [Id(0)] public string Greeting { get; set; } = string.Empty;
 }
 
 [GAgent("naiveTest")]

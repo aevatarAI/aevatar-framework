@@ -54,6 +54,7 @@ public abstract partial class
     private IStateDispatcher? StateDispatcher { get; set; }
     protected AevatarOptions? AevatarOptions;
 
+    private DeepCopier? _copier;
     public async Task ActivateAsync()
     {
         await Task.Yield();
@@ -245,7 +246,8 @@ public abstract partial class
     }
 
     public sealed override async Task OnActivateAsync(CancellationToken cancellationToken)
-    {
+    {   
+         _copier = ServiceProvider.GetRequiredService<DeepCopier>();
         StateDispatcher = ServiceProvider.GetService<IStateDispatcher>();
         AevatarOptions = ServiceProvider.GetRequiredService<IOptions<AevatarOptions>>().Value;
         try
@@ -353,10 +355,11 @@ public abstract partial class
         await HandleStateChangedAsync();
         if (StateDispatcher != null)
         {
+            var snapshot = _copier!.Copy(State);
             await StateDispatcher.PublishSingleAsync(this.GetGrainId(),
-                new StateWrapper<TState>(this.GetGrainId(), State, Version));
+                new StateWrapper<TState>(this.GetGrainId(), snapshot, Version));
             await StateDispatcher.PublishAsync(this.GetGrainId(),
-                new StateWrapper<TState>(this.GetGrainId(), State, Version));
+                new StateWrapper<TState>(this.GetGrainId(), snapshot, Version));
         }
     }
 

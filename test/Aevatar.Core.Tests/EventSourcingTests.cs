@@ -31,7 +31,7 @@ public class EventSourcingTests : GAgentTestKitBase
         });
 
         // Act: Deactivate and re-activate the logViewGAgent.
-        // TODO: Modify this, because OrleansTestKit cannot execute OnActivateAsync.
+        // TODO: Modify this, because Aevatar.TestKit cannot execute OnActivateAsync.
         //await Silo.DeactivateAsync(logViewGAgent);
         logViewGAgent = await Silo.CreateGrainAsync<LogViewAdaptorTestGAgent>(guid);
 

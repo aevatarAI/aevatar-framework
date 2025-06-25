@@ -15,8 +15,7 @@ public interface ITestStateProjectionGAgent : IStateGAgent<TestStateProjectionGA
 
 [GAgent]
 public class TestStateProjectionGAgent : StateProjectionGAgentBase<GroupGAgentState,
-        TestStateProjectionGAgentState, TestStateProjectionStateLogEvent>,
-    ITestStateProjectionGAgent
+    TestStateProjectionGAgentState, TestStateProjectionStateLogEvent>, ITestStateProjectionGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {
@@ -29,7 +28,8 @@ public class TestStateProjectionGAgent : StateProjectionGAgentBase<GroupGAgentSt
         await ConfirmEvents();
     }
 
-    protected override void GAgentTransitionState(TestStateProjectionGAgentState state, StateLogEventBase<TestStateProjectionStateLogEvent> @event)
+    protected override void GAgentTransitionState(TestStateProjectionGAgentState state,
+        StateLogEventBase<TestStateProjectionStateLogEvent> @event)
     {
         if (@event is CallStateHandlerStateLogEvent)
         {

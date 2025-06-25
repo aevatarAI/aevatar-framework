@@ -2,7 +2,6 @@
 using MessagingGAgent.Grains.Agents.Events;
 using MessagingGAgent.Grains.Agents.Group;
 using MessagingGAgent.Grains.Agents.Messaging;
-using MessagingGAgent.Grains.Agents.Publisher;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;

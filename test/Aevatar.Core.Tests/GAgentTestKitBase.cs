@@ -4,10 +4,12 @@ using Aevatar.Core.Tests.TestGAgents;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Orleans.TestKit;
+using Aevatar.TestKit.Extensions;
+
 
 namespace Aevatar.Core.Tests;
 
-public abstract class GAgentTestKitBase : TestKitBase
+public abstract class GAgentTestKitBase : TestKitBase<AevatarTestKitSilo>
 {
     protected GAgentTestKitBase()
     {

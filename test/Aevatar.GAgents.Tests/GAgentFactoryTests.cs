@@ -1,7 +1,6 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Tests.TestArtifacts;
 using Aevatar.Core.Tests.TestGAgents;
-using Aevatar.Core.Tests.TestInitializeDtos;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Metadata;
 using Shouldly;
@@ -61,7 +60,7 @@ public sealed class GAgentFactoryTests : AevatarGAgentsTestBase
             var gAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
             gAgent.ShouldNotBeNull();
             Should.NotThrow(() => gAgent.GetPrimaryKey());
-            gAgent.GetGrainId().ShouldBe(GrainId.Create("Aevatar.Core.Tests.TestGAgents.publishing",
+            gAgent.GetGrainId().ShouldBe(GrainId.Create("Aevatar.Core.PublishingGAgent",
                 gAgent.GetPrimaryKey().ToString("N")));
             await CheckSubscribedEventsAsync(gAgent);
         }

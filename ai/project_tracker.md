@@ -15,6 +15,7 @@ This document tracks the remaining tasks and their status for the Aevatar Framew
 
 | Feature | Status | Description | Unit Tests | Regression Tests | Integration Tests | Documentation | Dev Machine |
 |---------|--------|-------------|------------|------------------|-------------------|---------------|------------|
+| PermissionEventBase | ✅ Completed | Implement PermissionEventBase class inheriting from EventBase with UserContext for permission management events | ✓ | ✗ | ✗ | ✓ | c6:c4:e5:e8:c6:4c |
 | ExceptionCatchAndPublish | 🚧 In Progress | Implement mechanism to catch GAgent EventHandler exceptions and publish them to Orleans Stream | ✗ | ✗ | ✗ | ✗ | 62:84:7a:e8:0f:65 |
 | Kafka Stream optimization | Not Started | Optimize Kafka streams for better performance and lower resource usage | ✗ | ✗ | ✗ | ✗ | |
 | End to end gagent streaming | Not Started | Implement complete end-to-end streaming for gagent | ✗ | ✗ | ✗ | ✗ | |
@@ -92,7 +93,7 @@ This document tracks the remaining tasks and their status for the Aevatar Framew
 - *To be determined*
 
 ## Completed Tasks
-- *None recorded yet*
+- **PermissionEventBase** (2024-01-XX): Implemented abstract base class for permission-related events with UserContext propagation. Includes comprehensive documentation and follows Orleans serialization patterns.
 
 ## Notes
 - Update this tracker regularly as tasks progress
