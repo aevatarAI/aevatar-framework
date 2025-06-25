@@ -20,6 +20,7 @@ public abstract class GAgentTestKitBase : TestKitBase
         
         Silo.ServiceProvider.AddService<ILoggerFactory>(loggerFactory);
     }
+    
     protected async Task<PublishingGAgent> CreatePublishingGAgentAsync(params IGAgent[] gAgentsToPublish)
     {
         var publishingGAgent = await Silo.CreateGrainAsync<PublishingGAgent>(Guid.NewGuid());
