@@ -31,4 +31,10 @@
       <ProjectReference Include="..\..\src\Aevatar.TestKit\Aevatar.TestKit.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
+      <PackageReference Include="Microsoft.Orleans.Streaming" />
+      <PackageReference Include="Orleans.Streams.Kafka" />
+    </ItemGroup>
+
 </Project>

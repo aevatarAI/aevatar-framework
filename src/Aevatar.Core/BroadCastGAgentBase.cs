@@ -68,6 +68,7 @@ public abstract class BroadCastGAgentBase<TBroadCastState, TBroadCastStateLogEve
     {
         var stream = GenStream<T>(streamIdString);
         var eventWrapper = new EventWrapper<T>(@event, Guid.NewGuid(), this.GetGrainId());
+        eventWrapper.PublishedTimestampUtc = DateTime.UtcNow;
         await stream.OnNextAsync(eventWrapper);
     }
 

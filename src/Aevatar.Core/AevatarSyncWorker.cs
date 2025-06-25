@@ -29,7 +29,9 @@ public abstract class AevatarSyncWorker<TRequest, TResponse> : SyncWorker<TReque
         {
             var response = await PerformLongRunTask(request);
             _logger.LogInformation($"Performed long run task for request of type {typeof(TRequest).FullName}, response is {response}");
-            await _asyncStream.OnNextAsync(new EventWrapper<TResponse>(response, Guid.NewGuid(), this.GetGrainId()));
+            var eventWrapper = new EventWrapper<TResponse>(response, Guid.NewGuid(), this.GetGrainId());
+            eventWrapper.PublishedTimestampUtc = DateTime.UtcNow;
+            await _asyncStream.OnNextAsync(eventWrapper);
             return response;
         }
         catch (Exception ex)

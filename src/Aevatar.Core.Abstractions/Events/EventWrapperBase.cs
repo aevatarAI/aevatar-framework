@@ -18,6 +18,9 @@ public abstract class EventWrapperBase
     [Id(0)]
     public Dictionary<string, string> ContextMetadata { get; set; } = new Dictionary<string, string>();
 
+    [Id(1)]
+    public DateTime PublishedTimestampUtc { get; set; }
+
     protected EventWrapperBase()
     {
         // Initialize ContextMetadata

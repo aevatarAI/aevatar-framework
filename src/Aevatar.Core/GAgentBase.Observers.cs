@@ -103,8 +103,11 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
                         ?.GetValue(item)!;
                     var grainId = (GrainId)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.GrainId))
                         ?.GetValue(item)!;
+                    var publishedTimestamp = (DateTime)item.GetType().GetProperty(nameof(EventWrapper<TEvent>.PublishedTimestampUtc))
+                        ?.GetValue(item)!;
 
                     var eventWrapper = new EventWrapper<TEvent>(eventType, eventId, grainId);
+                    eventWrapper.PublishedTimestampUtc = publishedTimestamp;
 
                     Logger.LogInformation("Handling event {EventWrapper} in method {MethodName}", eventWrapper,
                         method.Name);
@@ -260,6 +263,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
             (TEvent)result,
             eventId,
             this.GetGrainId());
+        responseWrapper.PublishedTimestampUtc = DateTime.UtcNow;
 
         await PublishAsync(responseWrapper);
     }
