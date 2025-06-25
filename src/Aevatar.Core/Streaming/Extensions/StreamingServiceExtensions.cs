@@ -35,13 +35,7 @@ namespace Aevatar.Core.Streaming.Extensions
             services.TryAddSingleton<IMonitoredQueueCacheFactory, MonitoredQueueCacheFactory>();
 
             // Configure default pressure monitoring options
-            services.Configure<StreamPressureOptions>(options =>
-            {
-                options.PressureThreshold = 0.8; // 80% pressure threshold
-                options.PressureCheckInterval = TimeSpan.FromSeconds(5); // Check every 5 seconds
-                options.MaxCacheSizeBytes = 100 * 1024 * 1024; // 100MB max cache size
-                options.MaxMessageCount = 10_000; // 10,000 messages max
-            });
+            services.Configure<StreamPressureOptions>(options => {});
 
             return services;
         }
