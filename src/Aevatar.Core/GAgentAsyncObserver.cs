@@ -2,6 +2,8 @@ using Aevatar.Core.Abstractions;
 using Orleans.Streams;
 using OrleansCodeGen.Orleans.Runtime;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging;
 
 namespace Aevatar.Core;
 
@@ -9,12 +11,20 @@ public class GAgentAsyncObserver : IAsyncObserver<EventWrapperBase>
 {
     private readonly List<EventWrapperBaseAsyncObserver> _observers;
     private readonly string _grainId;
+    private readonly ILogger<GAgentAsyncObserver> _logger;
+    private static readonly Meter Meter = new(OpenTelemetryConstants.AevatarStreamsMeterName);
+    private static readonly Histogram<double> PublishLatencyHistogram = Meter.CreateHistogram<double>(
+        OpenTelemetryConstants.EventPublishLatencyHistogram, "s", "Event publish-to-consume latency");
 
-    public GAgentAsyncObserver(List<EventWrapperBaseAsyncObserver> observers, string grainId)
+    public GAgentAsyncObserver(List<EventWrapperBaseAsyncObserver> observers, string grainId, ILogger<GAgentAsyncObserver> logger)
     {
         _observers = observers;
         _grainId = grainId;
+        _logger = logger;
     }
+
+    public GAgentAsyncObserver(List<EventWrapperBaseAsyncObserver> observers, string grainId)
+        : this(observers, grainId, null) { }
     
     /// <summary>
     /// Finds observers that match the given event type
@@ -65,8 +75,9 @@ public class GAgentAsyncObserver : IAsyncObserver<EventWrapperBase>
 
     public async Task OnNextAsync(EventWrapperBase item, StreamSequenceToken? token = null)
     {
-        // Extract event and ID from wrapper
         var (eventType, eventId) = EventWrapperHelper.ExtractProperties(item);
+        var latency = (DateTime.UtcNow - item.PublishedTimestampUtc).TotalSeconds;
+        Observability.EventPublishLatencyMetrics.Record(latency, item, null, null, _logger);
         
         // Try to create an activity with parent context if available
         var activity = ActivityHelper.CreateEventActivity(item, eventType, _grainId, eventId, token);

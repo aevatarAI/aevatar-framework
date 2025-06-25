@@ -38,6 +38,17 @@ public class EventWrapperBaseAsyncObserver : IAsyncObserver<EventWrapperBase>
 
     public async Task OnNextAsync(EventWrapperBase item, StreamSequenceToken? token = null)
     {
+        if (item == null)
+        {
+            throw new ArgumentNullException(nameof(item));
+        }
+        
+        var eventType = item.GetType().Name;
+        var latency = (DateTime.UtcNow - item.PublishedTimestampUtc).TotalSeconds;
+        _logger?.LogInformation("[OnNextAsync] Consuming event_type={EventType} PublishedTimestampUtc={PublishedTimestampUtc} latency={Latency}s",
+            eventType, item.PublishedTimestampUtc, latency);
+        Observability.EventPublishLatencyMetrics.Record(latency, item, MethodName, ParameterTypeName, null);
+
         await _func(item);
     }
 

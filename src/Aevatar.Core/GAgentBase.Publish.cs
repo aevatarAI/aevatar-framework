@@ -37,6 +37,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         {
             // Create event wrapper with context propagation
             var eventWrapper = new EventWrapper<T>(@event, eventId, this.GetGrainId());
+            eventWrapper.PublishedTimestampUtc = DateTime.UtcNow;
             if (State.Parent == null)
             {
                 Logger.LogInformation(
@@ -66,7 +67,9 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
     {
         try
         {
-            await SendEventUpwardsAsync(new EventWrapper<T>(@event, eventId, GrainId));
+            var eventWrapper = new EventWrapper<T>(@event, eventId, GrainId);
+            eventWrapper.PublishedTimestampUtc = DateTime.UtcNow;
+            await SendEventUpwardsAsync(eventWrapper);
             Logger.LogDebug("{GrainId} published {Event} to upwards", GrainId.ToString(),
                 JsonConvert.SerializeObject(@event));
         }
@@ -94,7 +97,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         {
             Logger.LogError("{GrainId} failed to send event {EventWrapper} upwards", GrainId.ToString(),
                 eventWrapper);
-            throw new EventPublishingException($"{GrainId.ToString()} failed to event event upwards", ex);
+            throw new EventPublishingException($"{GrainId.ToString()} failed to send event upwards", ex);
         }
     }
 
@@ -111,7 +114,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         {
             Logger.LogError("{GrainId} failed to send event {EventWrapper} to itself", GrainId.ToString(),
                 eventWrapper);
-            throw new EventPublishingException($"{GrainId.ToString()} failed to event event to itself", ex);
+            throw new EventPublishingException($"{GrainId.ToString()} failed to send event to itself", ex);
         }
     }
 
@@ -135,7 +138,7 @@ public abstract partial class GAgentBase<TState, TStateLogEvent, TEvent, TConfig
         {
             Logger.LogError("{GrainId} failed to send event {EventWrapper} downwards", GrainId.ToString(),
                 eventWrapper);
-            throw new EventPublishingException($"{GrainId.ToString()} failed to event event downwards", ex);
+            throw new EventPublishingException($"{GrainId.ToString()} failed to send event downwards", ex);
         }
     }
 }
