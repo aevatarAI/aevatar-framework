@@ -21,9 +21,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-      - name: chown
-        run: |
-          sudo chown -R $USER:$USER /home/runneradmin
       - name: Install dependencies
         run: dotnet restore --verbosity quiet
 
