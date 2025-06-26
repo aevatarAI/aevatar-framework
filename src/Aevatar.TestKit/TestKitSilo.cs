@@ -103,11 +103,15 @@ public class TestKitSilo
         var codecProvider = new CodecProvider(ServiceProvider, mockOptionsManager.Object);
         LogConsistencyProvider = new TestLogConsistencyProvider(TestGrainStorage);
         ServiceProvider.AddKeyedService<ILogViewAdaptorFactory>("LogStorage", LogConsistencyProvider);
+        // Create DeepCopier instance for testing - this won't be mocked by Moq
+        var deepCopier = new DeepCopier(codecProvider, new CopyContextPool(codecProvider));
+        // Register DeepCopier service so dependency injection won't try to create a Mock
+        ServiceProvider.AddService<DeepCopier>(deepCopier);
+        // Register Logger services to avoid Mock Logger issues that cause NullReferenceException
+        ServiceProvider.AddService<Microsoft.Extensions.Logging.ILoggerFactory>(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
         ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
-            new DeepCopier(codecProvider, new CopyContextPool(codecProvider)), null!);
+            deepCopier, null!);
         ServiceProvider.AddService<ILogConsistencyProtocolServices>(ProtocolServices);
-        ServiceProvider.AddService<Factory<IGrainContext, ILogConsistencyProtocolServices>>(sp =>
-            ProtocolServices);
     }
 
     /// <summary>
