@@ -107,11 +107,11 @@ public class TestKitSilo
         var deepCopier = new DeepCopier(codecProvider, new CopyContextPool(codecProvider));
         // Register DeepCopier service so dependency injection won't try to create a Mock
         ServiceProvider.AddService<DeepCopier>(deepCopier);
+        // Register Logger services to avoid Mock Logger issues that cause NullReferenceException
+        ServiceProvider.AddService<Microsoft.Extensions.Logging.ILoggerFactory>(Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
         ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
             deepCopier, null!);
         ServiceProvider.AddService<ILogConsistencyProtocolServices>(ProtocolServices);
-        ServiceProvider.AddService<Factory<IGrainContext, ILogConsistencyProtocolServices>>(sp =>
-            ProtocolServices);
     }
 
     /// <summary>
