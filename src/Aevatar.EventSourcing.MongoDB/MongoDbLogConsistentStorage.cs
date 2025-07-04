@@ -2,11 +2,11 @@ using System.Diagnostics;
 using System.Text.Json;
 using Aevatar.EventSourcing.Core.Storage;
 using Aevatar.EventSourcing.MongoDB.Options;
+using Aevatar.EventSourcing.MongoDB.Serializers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using Aevatar.EventSourcing.MongoDB.Serializers;
 using MongoDB.Driver;
 using Orleans.Configuration;
 using Orleans.Storage;
@@ -59,6 +59,14 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             var database = GetDatabase();
             var collection = database.GetCollection<BsonDocument>(collectionName);
 
+            // First check if we have Orleans LogStateWithMetaData format data
+            var orleansData = await TryReadOrleansFormatAsync<TLogEntry>(collection, grainId, fromVersion, maxCount);
+            if (orleansData != null)
+            {
+                return orleansData;
+            }
+
+            // Regular MongoDB format reading
             var filter = Builders<BsonDocument>.Filter.And(
                 Builders<BsonDocument>.Filter.Eq("GrainId", grainId.ToString()),
                 Builders<BsonDocument>.Filter.Gte("Version", fromVersion)
@@ -293,5 +301,150 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
     private string GetStreamName(GrainId grainId)
     {
         return $"{_serviceId}/{_name}/log/{grainId.Type}";
+    }
+
+    /// <summary>
+    /// Try to read Orleans LogStateWithMetaData format data and extract events
+    /// This handles transparent migration from Orleans native EventSourcing to MongoDB
+    /// </summary>
+    private async Task<IReadOnlyList<TLogEntry>?> TryReadOrleansFormatAsync<TLogEntry>(
+        IMongoCollection<BsonDocument> collection, GrainId grainId, int fromVersion, int maxCount)
+    {
+        try
+        {
+            // Look for a single document that might contain Orleans LogStateWithMetaData
+            var filter = Builders<BsonDocument>.Filter.Eq("GrainId", grainId.ToString());
+            var orleansDocument = await collection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
+            
+            if (orleansDocument == null || !orleansDocument.Contains("Data"))
+            {
+                return null;
+            }
+
+            var jsonData = orleansDocument["Data"].AsString;
+            if (!OrleansDataExtractor.IsOrleansLogStateWithMetaData(jsonData))
+            {
+                return null;
+            }
+
+            _logger.LogInformation("Detected Orleans LogStateWithMetaData format for {GrainId}, extracting events", grainId);
+
+            // Extract events from Orleans format
+            var allEvents = ExtractEventsFromOrleansData<TLogEntry>(jsonData);
+            
+            // Apply version filtering
+            var filteredEvents = allEvents
+                .Skip(fromVersion)
+                .Take(maxCount)
+                .ToList();
+
+            // Background migration: convert to MongoDB format
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await MigrateOrleansDataToMongoDbFormatAsync(collection, grainId, allEvents, orleansDocument);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Background migration failed for {GrainId}", grainId);
+                }
+            });
+
+            return filteredEvents;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read Orleans format data for {GrainId}", grainId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Extract events from Orleans LogStateWithMetaData format
+    /// </summary>
+    private List<TLogEntry> ExtractEventsFromOrleansData<TLogEntry>(string jsonData)
+    {
+        var events = new List<TLogEntry>();
+        
+        using var document = JsonDocument.Parse(jsonData);
+        var root = document.RootElement;
+        
+        if (root.TryGetProperty("Log", out var logElement) &&
+            logElement.TryGetProperty("__values", out var valuesElement) &&
+            valuesElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var eventElement in valuesElement.EnumerateArray())
+            {
+                try
+                {
+                    var eventJson = eventElement.GetRawText();
+                    var logEntry = JsonSerializer.Deserialize<TLogEntry>(eventJson)!;
+                    events.Add(logEntry);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to deserialize event from Orleans LogStateWithMetaData");
+                }
+            }
+        }
+        
+        return events;
+    }
+
+    /// <summary>
+    /// Migrate Orleans LogStateWithMetaData to MongoDB separated format
+    /// </summary>
+    private async Task MigrateOrleansDataToMongoDbFormatAsync<TLogEntry>(
+        IMongoCollection<BsonDocument> collection, GrainId grainId, 
+        List<TLogEntry> events, BsonDocument originalDocument)
+    {
+        try
+        {
+            var grainIdString = grainId.ToString();
+            var documents = new List<BsonDocument>();
+
+            // Create individual event documents
+            for (int i = 0; i < events.Count; i++)
+            {
+                var version = i + 1;
+                var data = _grainStateSerializer.Serialize(events[i]);
+                
+                var document = new BsonDocument
+                {
+                    ["GrainId"] = grainIdString,
+                    ["Version"] = version,
+                    [_fieldData] = data
+                };
+                
+                documents.Add(document);
+            }
+
+            // Replace Orleans document with individual event documents
+            using var session = await _client!.StartSessionAsync();
+            await session.WithTransactionAsync(async (session, cancellationToken) =>
+            {
+                // Delete original Orleans document
+                await collection.DeleteOneAsync(session, 
+                    Builders<BsonDocument>.Filter.Eq("_id", originalDocument["_id"]), 
+                    cancellationToken: cancellationToken);
+                
+                // Insert individual event documents
+                if (documents.Count > 0)
+                {
+                    await collection.InsertManyAsync(session, documents, cancellationToken: cancellationToken);
+                }
+
+                return true;
+            });
+
+            _logger.LogInformation("Successfully migrated Orleans data to MongoDB format for {GrainId}, {EventCount} events", 
+                grainId, events.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to migrate Orleans data for {GrainId}", grainId);
+            throw;
+        }
     }
 }
