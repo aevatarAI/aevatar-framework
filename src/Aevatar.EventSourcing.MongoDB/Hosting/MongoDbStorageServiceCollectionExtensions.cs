@@ -95,8 +95,10 @@ public static class MongoDbStorageServiceCollectionExtensions
     public static IServiceCollection AddOrleansCompatibleMongoDbBasedLogConsistencyProvider(this IServiceCollection services,
         string name, Action<OptionsBuilder<MongoDbStorageOptions>>? configureOptions = null)
     {
-        // Register the Orleans-compatible serializer
+        // Register the Orleans-compatible serializer both as keyed and default service
+        // This ensures it has higher priority than any globally registered serializer
         services.AddKeyedSingleton<IGrainStateSerializer>(name, (sp, key) => new OrleansCompatibleGrainSerializer());
+        services.TryAddSingleton<IGrainStateSerializer>(sp => new OrleansCompatibleGrainSerializer());
         
         // Use the standard MongoDB provider setup
         return services.AddMongoDbBasedLogConsistencyProvider(name, configureOptions);
