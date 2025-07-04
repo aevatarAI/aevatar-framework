@@ -1,6 +1,8 @@
 using Aevatar.EventSourcing.Core.LogConsistency;
 using Aevatar.EventSourcing.Core.Storage;
 using Aevatar.EventSourcing.MongoDB.Options;
+using Aevatar.EventSourcing.MongoDB.Configuration;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -43,7 +45,7 @@ public static class MongoDbStorageServiceCollectionExtensions
                 sp.GetRequiredService<IOptionsMonitor<MongoDbStorageOptions>>().Get(name), name));
         services
             .AddTransient<IPostConfigureOptions<MongoDbStorageOptions>,
-                DefaultStorageProviderSerializerOptionsConfigurator<MongoDbStorageOptions>>();
+                MongoDBGrainStorageConfigurator>();
         services.ConfigureNamedOptionForLogging<MongoDbStorageOptions>(name);
         if (string.Equals(name, ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME, StringComparison.Ordinal))
         {
