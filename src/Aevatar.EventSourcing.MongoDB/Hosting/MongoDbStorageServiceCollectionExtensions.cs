@@ -2,6 +2,7 @@ using Aevatar.EventSourcing.Core.LogConsistency;
 using Aevatar.EventSourcing.Core.Storage;
 using Aevatar.EventSourcing.MongoDB.Options;
 using Aevatar.EventSourcing.MongoDB.Configuration;
+using Aevatar.EventSourcing.MongoDB.Serializers;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -10,6 +11,7 @@ using Orleans.Configuration;
 using Orleans.EventSourcing;
 using Orleans.Providers;
 using Orleans.Storage;
+using Orleans.Providers.MongoDB.StorageProviders.Serializers;
 
 namespace Aevatar.EventSourcing.MongoDB.Hosting;
 
@@ -51,14 +53,26 @@ public static class MongoDbStorageServiceCollectionExtensions
         {
             services.TryAddSingleton(sp =>
                 sp.GetKeyedService<ILogConsistentStorage>(ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME));
+            services.TryAddSingleton(sp =>
+                sp.GetKeyedService<IGrainStorage>(ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME));
         }
 
+        // Register both event storage (ILogConsistentStorage) and snapshot storage (IGrainStorage)
         services.AddKeyedSingleton<ILogConsistentStorage>(name, MongoDbLogConsistentStorageFactory.Create);
+        services.AddKeyedSingleton<IGrainStorage>(name, MongoDbGrainStorageFactory.Create);
+        
         services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>>(
             sp =>
             {
                 var participant =
                     (ILifecycleParticipant<ISiloLifecycle>)sp.GetRequiredKeyedService<ILogConsistentStorage>(name);
+                return participant;
+            });
+        services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>>(
+            sp =>
+            {
+                var participant =
+                    (ILifecycleParticipant<ISiloLifecycle>)sp.GetRequiredKeyedService<IGrainStorage>(name);
                 return participant;
             });
 
@@ -82,4 +96,67 @@ public static class MongoDbStorageServiceCollectionExtensions
         services.AddKeyedSingleton(name, LogConsistencyProviderFactory.Create);
         return services;
     }
+
+    /// <summary>
+    /// Adds MongoDB-based log consistency provider with backward compatibility for Memory storage format
+    /// </summary>
+    public static IServiceCollection AddCompatibleMongoDbBasedLogConsistencyProvider(this IServiceCollection services,
+        string name, Action<OptionsBuilder<MongoDbStorageOptions>>? configureOptions = null)
+    {
+        // Register the compatible serializer
+        services.AddKeyedSingleton<IGrainStateSerializer>(name, (sp, key) => new CompatibleGrainSerializer());
+        
+        // Use the standard MongoDB provider setup
+        return services.AddMongoDbBasedLogConsistencyProvider(name, configureOptions);
+    }
+
+    /// <summary>
+    /// Adds MongoDB-based log consistency provider as default with backward compatibility for Memory storage format
+    /// </summary>
+    public static IServiceCollection AddCompatibleMongoDbBasedLogConsistencyProviderAsDefault(this IServiceCollection services,
+        Action<OptionsBuilder<MongoDbStorageOptions>>? configureOptions = null)
+    {
+        return services.AddCompatibleMongoDbBasedLogConsistencyProvider(
+            ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME, configureOptions);
+    }
+
+    /// <summary>
+    /// Adds MongoDB-based log consistency provider with backward compatibility and custom serializer configuration
+    /// </summary>
+    public static IServiceCollection AddCompatibleMongoDbBasedLogConsistencyProvider(this IServiceCollection services,
+        string name, Action<MongoDbStorageOptions> configureOptions, bool useCompatibleSerializer = true)
+    {
+        if (useCompatibleSerializer)
+        {
+            // Register the compatible serializer
+            services.AddKeyedSingleton<IGrainStateSerializer>(name, (sp, key) => new CompatibleGrainSerializer());
+        }
+        
+        return services.AddMongoDbBasedLogConsistencyProvider(name, configureOptions);
+    }
+
+
+    /// <summary>
+    /// Adds Orleans-compatible MongoDB provider that can handle Orleans LogStateWithMetaData format
+    /// </summary>
+    public static IServiceCollection AddOrleansCompatibleMongoDbBasedLogConsistencyProvider(this IServiceCollection services,
+        string name, Action<OptionsBuilder<MongoDbStorageOptions>>? configureOptions = null)
+    {
+        // Register the Orleans-compatible serializer
+        services.AddKeyedSingleton<IGrainStateSerializer>(name, (sp, key) => new OrleansCompatibleGrainSerializer());
+        
+        // Use the standard MongoDB provider setup
+        return services.AddMongoDbBasedLogConsistencyProvider(name, configureOptions);
+    }
+
+    /// <summary>
+    /// Adds Orleans-compatible MongoDB provider as default
+    /// </summary>
+    public static IServiceCollection AddOrleansCompatibleMongoDbBasedLogConsistencyProviderAsDefault(this IServiceCollection services,
+        Action<OptionsBuilder<MongoDbStorageOptions>>? configureOptions = null)
+    {
+        return services.AddOrleansCompatibleMongoDbBasedLogConsistencyProvider(
+            ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME, configureOptions);
+    }
+
 }

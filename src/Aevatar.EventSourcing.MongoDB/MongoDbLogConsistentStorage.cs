@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Aevatar.EventSourcing.Core.Storage;
 using Aevatar.EventSourcing.MongoDB.Options;
 using Microsoft.Extensions.Logging;
@@ -74,9 +75,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
 
             await documents.ForEachAsync(document =>
             {
-                // Use our grain state serializer to deserialize
-                var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document[_fieldData]);
-                
+                var logEntry = DeserializeLogEntry<TLogEntry>(document);
                 results.Add(logEntry);
             }).ConfigureAwait(false);
 
@@ -95,6 +94,44 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
     private IMongoDatabase GetDatabase()
     {
         return _client!.GetDatabase(_mongoDbOptions.Database);
+    }
+
+    /// <summary>
+    /// Deserializes log entry with backward compatibility for Memory storage format
+    /// </summary>
+    private TLogEntry DeserializeLogEntry<TLogEntry>(BsonDocument document)
+    {
+        // Check if this document has the new MongoDB format (with "snapshot" field)
+        if (document.Contains(_fieldData))
+        {
+            // New MongoDB format: use the grain state serializer
+            return _grainStateSerializer.Deserialize<TLogEntry>(document[_fieldData]);
+        }
+        
+        // Check if this document has the Memory format (with "Data" field containing JSON string)
+        if (document.Contains("Data"))
+        {
+            // Memory format: Data field contains JSON string
+            var jsonData = document["Data"].AsString;
+            return JsonSerializer.Deserialize<TLogEntry>(jsonData)!;
+        }
+        
+        // Fallback: try to deserialize the entire document as the log entry
+        try
+        {
+            // Remove MongoDB specific fields before deserializing
+            var logEntryDoc = document.Clone().AsBsonDocument;
+            logEntryDoc.Remove("_id");
+            logEntryDoc.Remove("GrainId");
+            logEntryDoc.Remove("Version");
+            
+            return BsonSerializer.Deserialize<TLogEntry>(logEntryDoc);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize log entry from document: {Document}", document.ToJson());
+            throw new MongoDbStorageException($"Unable to deserialize log entry of type {typeof(TLogEntry).Name} from document format.");
+        }
     }
 
     public async Task<int> GetLastVersionAsync(string grainTypeName, GrainId grainId)
