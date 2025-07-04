@@ -5,10 +5,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
+using Aevatar.EventSourcing.MongoDB.Serializers;
 using MongoDB.Driver;
 using Orleans.Configuration;
 using Orleans.Storage;
+using Orleans.Providers.MongoDB.StorageProviders.Serializers;
 
 namespace Aevatar.EventSourcing.MongoDB;
 
@@ -23,6 +24,8 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
     private bool _initialized;
     private readonly string _serviceId;
 
+    private readonly string _fieldData = "snapshot";
+    private readonly IGrainStateSerializer _grainStateSerializer;
     public MongoDbLogConsistentStorage(string name, MongoDbStorageOptions options,
         IOptions<ClusterOptions> clusterOptions, ILogger<MongoDbLogConsistentStorage> logger)
     {
@@ -30,9 +33,15 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         _mongoDbOptions = options;
         _serviceId = clusterOptions.Value.ServiceId;
         _logger = logger;
-
-        BsonSerializer.TryRegisterSerializer(new GrainTypeBsonSerializer());
-        BsonSerializer.TryRegisterSerializer(new IdSpanBsonSerializer());
+        
+        if (options.GrainStateSerializer is null)
+        {
+            throw new ArgumentNullException(nameof(options.GrainStateSerializer), "GrainStateSerializer is required");
+        }
+        else
+        {
+            _grainStateSerializer = options.GrainStateSerializer;
+        }
     }
 
     public async Task<IReadOnlyList<TLogEntry>> ReadAsync<TLogEntry>(string grainTypeName, GrainId grainId,
@@ -65,7 +74,9 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
 
             await documents.ForEachAsync(document =>
             {
-                var logEntry = BsonSerializer.Deserialize<TLogEntry>(document);
+                // Use our grain state serializer to deserialize
+                var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document[_fieldData]);
+                
                 results.Add(logEntry);
             }).ConfigureAwait(false);
 
@@ -73,7 +84,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            _logger.LogError(ex,
                 "Failed to read log entries for {GrainType} grain with ID {GrainId} and collection {CollectionName}",
                 grainTypeName, grainId, collectionName);
             throw new MongoDbStorageException(FormattableString.Invariant(
@@ -99,7 +110,8 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             var database = GetDatabase();
             var collection = database.GetCollection<BsonDocument>(collectionName);
 
-            var filter = Builders<BsonDocument>.Filter.Eq("GrainId", grainId.ToString());
+            var grainIdString = grainId.ToString();
+            var filter = Builders<BsonDocument>.Filter.Eq("GrainId", grainIdString);
             var sort = Builders<BsonDocument>.Sort.Descending("Version");
             var options = new FindOptions<BsonDocument>
             {
@@ -118,7 +130,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            _logger.LogError(ex,
                 "Failed to read last log entry for {GrainType} grain with ID {GrainId} and collection {CollectionName}",
                 grainTypeName, grainId, collectionName);
             throw new MongoDbStorageException(FormattableString.Invariant(
@@ -152,13 +164,25 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
                     $"Version conflict ({nameof(AppendAsync)}): ServiceId={_serviceId} ProviderName={_name} GrainType={grainTypeName} GrainId={grainId} Version={expectedVersion}.");
             }
 
-            var documents = entries.Select(entry =>
+            var grainIdString = grainId.ToString();
+            var documents = new List<BsonDocument>();
+
+            foreach (var entry in entries)
             {
-                var document = entry.ToBsonDocument();
-                document["GrainId"] = grainId.ToString();
-                document["Version"] = ++currentVersion;
-                return document;
-            }).ToList();
+                currentVersion++;
+                
+                // Serialize the entry using our grain state serializer
+                var data = _grainStateSerializer.Serialize(entry);
+                
+                var document = new BsonDocument
+                {
+                    ["GrainId"] = grainIdString,
+                    ["Version"] = currentVersion,
+                    [_fieldData] = data
+                };
+                
+                documents.Add(document);
+            }
 
             await collection.InsertManyAsync(documents).ConfigureAwait(false);
 
@@ -166,7 +190,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         }
         catch (Exception ex) when (ex is not InconsistentStateException)
         {
-            _logger.LogError(
+            _logger.LogError(ex,
                 "Failed to write log entries for {GrainType} grain with ID {GrainId} and collection {CollectionName}",
                 grainTypeName, grainId, collectionName);
             throw new MongoDbStorageException(FormattableString.Invariant(
@@ -180,7 +204,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         observer.Subscribe(name, _mongoDbOptions.InitStage, Init, Close);
     }
 
-    private Task Init(CancellationToken cancellationToken)
+    private async Task Init(CancellationToken cancellationToken)
     {
         var timer = Stopwatch.StartNew();
         try
@@ -192,6 +216,7 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             }
 
             _client = new MongoClient(_mongoDbOptions.ClientSettings);
+            
             _initialized = true;
             if (_logger.IsEnabled(LogLevel.Debug))
             {
@@ -208,9 +233,8 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             throw new MongoDbStorageException(FormattableString.Invariant($"{ex.GetType()}: {ex.Message}"));
         }
 
-        return Task.CompletedTask;
+        return;
     }
-
     private async Task Close(CancellationToken cancellationToken)
     {
         if (_initialized == false || _client == null)
