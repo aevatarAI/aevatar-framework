@@ -53,26 +53,16 @@ public static class MongoDbStorageServiceCollectionExtensions
         {
             services.TryAddSingleton(sp =>
                 sp.GetKeyedService<ILogConsistentStorage>(ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME));
-            services.TryAddSingleton(sp =>
-                sp.GetKeyedService<IGrainStorage>(ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME));
         }
 
-        // Register both event storage (ILogConsistentStorage) and snapshot storage (IGrainStorage)
+        // Register event storage (ILogConsistentStorage) - snapshot storage uses Orleans standard providers
         services.AddKeyedSingleton<ILogConsistentStorage>(name, MongoDbLogConsistentStorageFactory.Create);
-        services.AddKeyedSingleton<IGrainStorage>(name, MongoDbGrainStorageFactory.Create);
         
         services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>>(
             sp =>
             {
                 var participant =
                     (ILifecycleParticipant<ISiloLifecycle>)sp.GetRequiredKeyedService<ILogConsistentStorage>(name);
-                return participant;
-            });
-        services.AddSingleton<ILifecycleParticipant<ISiloLifecycle>>(
-            sp =>
-            {
-                var participant =
-                    (ILifecycleParticipant<ISiloLifecycle>)sp.GetRequiredKeyedService<IGrainStorage>(name);
                 return participant;
             });
 
