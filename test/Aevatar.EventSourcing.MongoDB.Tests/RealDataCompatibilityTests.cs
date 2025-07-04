@@ -67,27 +67,6 @@ public class RealDataCompatibilityTests
         Assert.NotNull(result);
     }
 
-    [Fact]
-    public void CompatibleGrainSerializer_CanDeserializeRealMemoryFormat()
-    {
-        // Arrange - 使用原始的兼容序列化器测试简单格式
-        var simpleJson = """
-        {
-            "PromptTemplate": "Test prompt template",
-            "Id": "00000000-0000-0000-0000-000000000000",
-            "Ctime": "0001-01-01T00:00:00"
-        }
-        """;
-
-        var bsonString = new BsonString(simpleJson);
-        var serializer = new CompatibleGrainSerializer();
-
-        // Act
-        var result = serializer.Deserialize<object>(bsonString);
-
-        // Assert
-        Assert.NotNull(result);
-    }
 
     [Fact]
     public void TestComplexTypeDeserialization()

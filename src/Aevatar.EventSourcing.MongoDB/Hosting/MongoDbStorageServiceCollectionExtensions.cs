@@ -87,43 +87,6 @@ public static class MongoDbStorageServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// Adds MongoDB-based log consistency provider with backward compatibility for Memory storage format
-    /// </summary>
-    public static IServiceCollection AddCompatibleMongoDbBasedLogConsistencyProvider(this IServiceCollection services,
-        string name, Action<OptionsBuilder<MongoDbStorageOptions>>? configureOptions = null)
-    {
-        // Register the compatible serializer
-        services.AddKeyedSingleton<IGrainStateSerializer>(name, (sp, key) => new CompatibleGrainSerializer());
-        
-        // Use the standard MongoDB provider setup
-        return services.AddMongoDbBasedLogConsistencyProvider(name, configureOptions);
-    }
-
-    /// <summary>
-    /// Adds MongoDB-based log consistency provider as default with backward compatibility for Memory storage format
-    /// </summary>
-    public static IServiceCollection AddCompatibleMongoDbBasedLogConsistencyProviderAsDefault(this IServiceCollection services,
-        Action<OptionsBuilder<MongoDbStorageOptions>>? configureOptions = null)
-    {
-        return services.AddCompatibleMongoDbBasedLogConsistencyProvider(
-            ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME, configureOptions);
-    }
-
-    /// <summary>
-    /// Adds MongoDB-based log consistency provider with backward compatibility and custom serializer configuration
-    /// </summary>
-    public static IServiceCollection AddCompatibleMongoDbBasedLogConsistencyProvider(this IServiceCollection services,
-        string name, Action<MongoDbStorageOptions> configureOptions, bool useCompatibleSerializer = true)
-    {
-        if (useCompatibleSerializer)
-        {
-            // Register the compatible serializer
-            services.AddKeyedSingleton<IGrainStateSerializer>(name, (sp, key) => new CompatibleGrainSerializer());
-        }
-        
-        return services.AddMongoDbBasedLogConsistencyProvider(name, configureOptions);
-    }
 
 
     /// <summary>
