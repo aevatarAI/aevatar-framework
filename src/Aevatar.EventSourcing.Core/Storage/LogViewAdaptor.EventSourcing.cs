@@ -72,21 +72,39 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
             try
             {
                 var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
+                Services.Log(LogLevel.Information, "Starting ReadAsync for grain {GrainId}", grainId);
                 
                 // 1. First read framework format snapshot
                 var snapshot = new ViewStateSnapshot<TLogView>();
-                await ReadStateAsync(snapshot);
-                _globalSnapshot = snapshot;
+                try
+                {
+                    await ReadStateAsync(snapshot);
+                    _globalSnapshot = snapshot;
+                    Services.Log(LogLevel.Information, "Successfully read snapshot: RecordExists={RecordExists}, SnapshotVersion={SnapshotVersion}", 
+                        _globalSnapshot.RecordExists, _globalSnapshot.State.SnapshotVersion);
+                }
+                catch (Exception readEx)
+                {
+                    Services.Log(LogLevel.Warning, "Failed to read snapshot: {Exception}, attempting Orleans format conversion", readEx.Message);
+                    
+                    // If reading snapshot fails, try Orleans format conversion directly
+                    _globalSnapshot = new ViewStateSnapshot<TLogView>();
+                    await TryConvertOrleansLogStorageAsync(grainId);
+                    
+                    LastPrimaryIssue.Resolve(Host, Services);
+                    break; // successful
+                }
                 
                 // 2. If snapshot data exists, process normally
                 if (_globalSnapshot.State.SnapshotVersion > 0)
                 {
-                    Services.Log(LogLevel.Debug, "Found framework snapshot, processing normally");
+                    Services.Log(LogLevel.Information, "Found framework snapshot, processing normally");
                     await ProcessFrameworkDataAsync(grainId);
                 }
                 else
                 {
                     // 3. Check if Orleans memory event structure needs conversion
+                    Services.Log(LogLevel.Information, "No framework snapshot found, attempting Orleans format conversion");
                     await TryConvertOrleansLogStorageAsync(grainId);
                 }
                 
@@ -305,9 +323,11 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
     /// </summary>
     private async Task TryConvertOrleansLogStorageAsync(GrainId grainId)
     {
+        Services.Log(LogLevel.Information, "TryConvertOrleansLogStorageAsync called for grain {GrainId}", grainId);
+        
         if (_grainStorage == null) 
         {
-            Services.Log(LogLevel.Debug, "No grain storage available, using initial state");
+            Services.Log(LogLevel.Information, "No grain storage available, using initial state");
             return;
         }
         
@@ -315,7 +335,12 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
         {
             // Use Orleans LogStateWithMetaDataAndETag class directly
             var orleansLogState = new Orleans.EventSourcing.LogStorage.LogStateWithMetaDataAndETag<TLogEntry>();
+            Services.Log(LogLevel.Information, "Attempting to read Orleans LogStorage for grain {GrainId}", grainId);
+            
             await _grainStorage.ReadStateAsync(_grainTypeName, grainId, orleansLogState);
+            
+            Services.Log(LogLevel.Information, "Orleans LogStorage read result: RecordExists={RecordExists}, LogCount={LogCount}", 
+                orleansLogState.RecordExists, orleansLogState.State?.Log?.Count ?? 0);
             
             if (orleansLogState.RecordExists && orleansLogState.State.Log.Count > 0)
             {
@@ -353,12 +378,14 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
             }
             else
             {
-                Services.Log(LogLevel.Debug, "No Orleans LogStorage found, using initial state");
+                Services.Log(LogLevel.Information, "No Orleans LogStorage found (RecordExists={RecordExists}), using initial state", 
+                    orleansLogState.RecordExists);
             }
         }
         catch (Exception ex)
         {
-            Services.Log(LogLevel.Debug, "Failed to read Orleans LogStorage: {Exception}", ex.Message);
+            Services.Log(LogLevel.Warning, "Failed to read Orleans LogStorage: {Exception}", ex.Message);
+            Services.Log(LogLevel.Debug, "Orleans LogStorage exception details: {ExceptionDetails}", ex.ToString());
             // If reading fails, continue with initial state
         }
     }
