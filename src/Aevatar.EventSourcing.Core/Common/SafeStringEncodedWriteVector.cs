@@ -16,7 +16,15 @@ public static class SafeStringEncodedWriteVector
             return false;
             
         var pos = writeVector.IndexOf(replica);
-        return pos > 0 && writeVector[pos - 1] == ',';
+        if (pos == -1)
+            return false;
+            
+        // Handle case where replica is at position 0 (WriteVector starts with comma)
+        if (pos == 0)
+            return writeVector.Length == replica.Length || writeVector[replica.Length] == ',';
+            
+        // Handle normal case where replica is preceded by comma
+        return writeVector[pos - 1] == ',';
     }
 
     /// <summary>
@@ -33,13 +41,28 @@ public static class SafeStringEncodedWriteVector
             return false;
             
         var pos = writeVector.IndexOf(replica);
-        if (pos > 0 && writeVector[pos - 1] == ',')
+        bool bitIsSet = false;
+        
+        if (pos >= 0)
+        {
+            // Check if the replica is at position 0 or preceded by comma
+            if (pos == 0)
+                bitIsSet = writeVector.Length == replica.Length || writeVector[replica.Length] == ',';
+            else
+                bitIsSet = writeVector[pos - 1] == ',';
+        }
+        
+        if (bitIsSet)
         {
             // Bit is set, remove it
-            var pos2 = writeVector.IndexOf(',', pos + 1);
-            if (pos2 == -1)
-                pos2 = writeVector.Length;
-            writeVector = writeVector.Remove(pos - 1, pos2 - pos + 1);
+            var startPos = pos == 0 ? 0 : pos - 1; // Include comma if not at start
+            var endPos = writeVector.IndexOf(',', pos + replica.Length);
+            if (endPos == -1)
+                endPos = writeVector.Length;
+            else if (pos == 0)
+                endPos = endPos + 1; // Remove the comma after replica when at start
+                
+            writeVector = writeVector.Remove(startPos, endPos - startPos);
             return false;
         }
         else

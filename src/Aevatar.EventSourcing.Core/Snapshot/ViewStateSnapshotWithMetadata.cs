@@ -1,5 +1,5 @@
 using Orleans;
-using Aevatar.EventSourcing.Core.Common;
+using Orleans.EventSourcing.Common;
 
 namespace Aevatar.EventSourcing.Core.Snapshot;
 
@@ -24,13 +24,13 @@ public sealed class ViewStateSnapshotWithMetadata<TLogView>
 
     public bool GetBit(string replica)
     {
-        return SafeStringEncodedWriteVector.GetBit(WriteVector, replica);
+        return StringEncodedWriteVector.GetBit(WriteVector, replica);
     }
 
     public bool FlipBit(string replica)
     {
         var str = WriteVector;
-        var result = SafeStringEncodedWriteVector.FlipBit(ref str, replica);
+        var result = StringEncodedWriteVector.FlipBit(ref str, replica);
         WriteVector = str;
         return result;
     }
