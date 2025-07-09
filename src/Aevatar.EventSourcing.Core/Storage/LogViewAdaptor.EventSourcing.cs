@@ -344,7 +344,9 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
                 // Create framework snapshot
                 _globalSnapshot.State.Snapshot = DeepCopy(_confirmedView);
                 _globalSnapshot.State.SnapshotVersion = _confirmedVersion;
-                _globalSnapshot.State.WriteVector = orleansLogState.State.WriteVector;
+                // Reset WriteVector to empty string to avoid format compatibility issues
+                // between Orleans WriteVector format and framework WriteVector format
+                _globalSnapshot.State.WriteVector = string.Empty;
                 
                 Services.Log(LogLevel.Information, "Converted Orleans LogStorage to snapshot: {EventCount} events, version {Version}", 
                     orleansLogState.State.Log.Count, _confirmedVersion);
