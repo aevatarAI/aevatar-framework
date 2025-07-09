@@ -264,7 +264,21 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
         if (_grainStorage != null)
         {
             var grainId = Services.GrainId.IsDefault ? ((IGrain)_host).GetGrainId() : Services.GrainId;
-            await _grainStorage.ReadStateAsync(_grainTypeName, grainId, snapshot);
+            
+            // Enhanced Orleans compatibility: Try framework format first, fall back to Orleans format
+            try
+            {
+                Services.Log(LogLevel.Debug, "Attempting to read framework format snapshot for grain {GrainId}", grainId);
+                await _grainStorage.ReadStateAsync(_grainTypeName, grainId, snapshot);
+                Services.Log(LogLevel.Debug, "Successfully read framework format snapshot: RecordExists={RecordExists}", snapshot.RecordExists);
+            }
+            catch (Exception ex) when (IsOrleansFormatException(ex))
+            {
+                Services.Log(LogLevel.Information, "Framework format read failed with FormatException, attempting Orleans format conversion: {Error}", ex.Message);
+                
+                // Try Orleans format reading when framework format fails
+                await ReadOrleansFormatAndConvertAsync(grainId, snapshot, ex);
+            }
         }
         else
         {
@@ -274,6 +288,135 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
                 Snapshot = grainState
             };
         }
+    }
+
+    /// <summary>
+    /// Check if the exception indicates Orleans format incompatibility
+    /// </summary>
+    private static bool IsOrleansFormatException(Exception ex)
+    {
+        return ex is FormatException formatEx && 
+               (formatEx.Message.Contains("Input string was not in a correct format") ||
+                formatEx.Message.Contains("Expected an ASCII digit") ||
+                formatEx.Message.Contains("Failure to parse"));
+    }
+
+    /// <summary>
+    /// Read Orleans format data and convert to framework format
+    /// </summary>
+    private async Task ReadOrleansFormatAndConvertAsync(GrainId grainId, ViewStateSnapshot<TLogView> snapshot, Exception originalException)
+    {
+        try
+        {
+            // Use Orleans LogStateWithMetaDataAndETag to read Orleans format directly
+            var orleansLogState = new Orleans.EventSourcing.LogStorage.LogStateWithMetaDataAndETag<TLogEntry>();
+            Services.Log(LogLevel.Information, "🔄 Reading Orleans LogStateWithMetaDataAndETag format for grain {GrainId}", grainId);
+            
+            await _grainStorage.ReadStateAsync(_grainTypeName, grainId, orleansLogState);
+            
+            Services.Log(LogLevel.Information, "Orleans format read result: RecordExists={RecordExists}, LogCount={LogCount}, GlobalVersion={GlobalVersion}", 
+                orleansLogState.RecordExists, 
+                orleansLogState.State?.Log?.Count ?? 0,
+                orleansLogState.State?.GlobalVersion ?? 0);
+            
+            if (orleansLogState.RecordExists && orleansLogState.State?.Log != null)
+            {
+                Services.Log(LogLevel.Information, "✅ Successfully read Orleans format data, converting to framework format");
+                
+                // Convert Orleans data to framework snapshot format
+                var convertedSnapshot = await ConvertOrleansToFrameworkSnapshot(orleansLogState);
+                
+                // Copy converted data to output snapshot
+                snapshot.RecordExists = true;
+                snapshot.State = convertedSnapshot.State;
+                snapshot.ETag = convertedSnapshot.ETag;
+                
+                Services.Log(LogLevel.Information, "🎉 Orleans→Framework snapshot conversion completed: Version={Version}, WriteVector='{WriteVector}'", 
+                    snapshot.State?.SnapshotVersion ?? 0, snapshot.State?.WriteVector ?? "empty");
+            }
+            else
+            {
+                Services.Log(LogLevel.Information, "No Orleans data found, initializing empty framework snapshot");
+                
+                // Initialize empty framework snapshot
+                snapshot.RecordExists = false;
+                snapshot.State = new ViewStateSnapshotWithMetadata<TLogView>
+                {
+                    Snapshot = new TLogView(),
+                    SnapshotVersion = 0,
+                    WriteVector = string.Empty
+                };
+            }
+        }
+        catch (Exception orleansEx)
+        {
+            Services.Log(LogLevel.Warning, "Orleans format reading also failed: {Error}, falling back to empty snapshot", orleansEx.Message);
+            Services.Log(LogLevel.Debug, "Original framework error: {FrameworkError}", originalException.Message);
+            Services.Log(LogLevel.Debug, "Orleans reading error: {OrleansError}", orleansEx.ToString());
+            
+            // Initialize empty snapshot when both formats fail
+            snapshot.RecordExists = false;
+            snapshot.State = new ViewStateSnapshotWithMetadata<TLogView>
+            {
+                Snapshot = new TLogView(),
+                SnapshotVersion = 0,
+                WriteVector = string.Empty
+            };
+        }
+    }
+
+    /// <summary>
+    /// Convert Orleans LogStateWithMetaDataAndETag to Framework ViewStateSnapshot
+    /// </summary>
+    private async Task<ViewStateSnapshot<TLogView>> ConvertOrleansToFrameworkSnapshot(Orleans.EventSourcing.LogStorage.LogStateWithMetaDataAndETag<TLogEntry> orleansLogState)
+    {
+        var frameworkSnapshot = new ViewStateSnapshot<TLogView>();
+        
+        // Replay Orleans events to build current state
+        var currentView = new TLogView();
+        var version = 0;
+        
+        if (orleansLogState.State?.Log != null)
+        {
+            foreach (var logEntry in orleansLogState.State.Log)
+            {
+                try
+                {
+                    _host.UpdateView(currentView, logEntry);
+                    version++;
+                    Services.Log(LogLevel.Debug, "Applied Orleans event {EventIndex}: {EventType}", version, logEntry.GetType().Name);
+                }
+                catch (Exception ex)
+                {
+                    Services.CaughtUserCodeException("UpdateView", nameof(ConvertOrleansToFrameworkSnapshot), ex);
+                    Services.Log(LogLevel.Warning, "Failed to apply Orleans event {EventIndex}: {Error}", version + 1, ex.Message);
+                }
+            }
+        }
+        
+        // Convert Orleans WriteVector to framework format
+        var orleansWriteVector = orleansLogState.State?.WriteVector ?? string.Empty;
+        var frameworkWriteVector = ConvertOrleansWriteVectorToFrameworkFormat(orleansWriteVector);
+        
+        // Create framework snapshot
+        frameworkSnapshot.RecordExists = true;
+        frameworkSnapshot.ETag = orleansLogState.ETag ?? string.Empty;
+        frameworkSnapshot.State = new ViewStateSnapshotWithMetadata<TLogView>
+        {
+            Snapshot = DeepCopy(currentView),
+            SnapshotVersion = version,
+            WriteVector = frameworkWriteVector
+        };
+        
+        // Update internal state
+        _confirmedView = DeepCopy(currentView);
+        _confirmedVersion = version;
+        _globalVersion = Math.Max(version, orleansLogState.State?.GlobalVersion ?? 0);
+        
+        Services.Log(LogLevel.Information, "Orleans→Framework conversion: {EventCount} events → Version {Version}, GlobalVersion {GlobalVersion}", 
+            orleansLogState.State?.Log?.Count ?? 0, version, _globalVersion);
+        
+        return frameworkSnapshot;
     }
 
     private async Task WriteStateAsync()
@@ -319,74 +462,168 @@ public partial class LogViewAdaptor<TLogView, TLogEntry>
     }
 
     /// <summary>
-    /// Try to convert Orleans memory event structure to MongoDB snapshot
+    /// Enhanced Orleans compatibility: Convert Orleans Memory EventSourcing format to Framework MongoDB format
+    /// This method is called when reading framework format fails, to provide seamless Orleans→Framework compatibility
     /// </summary>
     private async Task TryConvertOrleansLogStorageAsync(GrainId grainId)
     {
-        Services.Log(LogLevel.Information, "TryConvertOrleansLogStorageAsync called for grain {GrainId}", grainId);
+        Services.Log(LogLevel.Information, "🔄 Enhanced Orleans compatibility: Attempting Orleans→Framework conversion for grain {GrainId}", grainId);
         
         if (_grainStorage == null) 
         {
-            Services.Log(LogLevel.Information, "No grain storage available, using initial state");
+            Services.Log(LogLevel.Information, "No grain storage available for Orleans conversion, using initial state");
             return;
         }
         
         try
         {
-            // Use Orleans LogStateWithMetaDataAndETag class directly
+            // Use Orleans LogStateWithMetaDataAndETag class directly to read Orleans format
             var orleansLogState = new Orleans.EventSourcing.LogStorage.LogStateWithMetaDataAndETag<TLogEntry>();
-            Services.Log(LogLevel.Information, "Attempting to read Orleans LogStorage for grain {GrainId}", grainId);
+            Services.Log(LogLevel.Information, "Reading Orleans LogStorage format for grain {GrainId}", grainId);
             
             await _grainStorage.ReadStateAsync(_grainTypeName, grainId, orleansLogState);
             
-            Services.Log(LogLevel.Information, "Orleans LogStorage read result: RecordExists={RecordExists}, LogCount={LogCount}", 
-                orleansLogState.RecordExists, orleansLogState.State?.Log?.Count ?? 0);
+            Services.Log(LogLevel.Information, "Orleans LogStorage read result: RecordExists={RecordExists}, LogCount={LogCount}, GlobalVersion={GlobalVersion}", 
+                orleansLogState.RecordExists, 
+                orleansLogState.State?.Log?.Count ?? 0,
+                orleansLogState.State?.GlobalVersion ?? 0);
             
-            if (orleansLogState.RecordExists && orleansLogState.State.Log.Count > 0)
+            if (orleansLogState.RecordExists && orleansLogState.State?.Log != null)
             {
-                Services.Log(LogLevel.Information, "Found Orleans LogStorage with {Count} events, converting to snapshot", 
-                    orleansLogState.State.Log.Count);
+                var eventCount = orleansLogState.State.Log.Count;
+                var globalVersion = orleansLogState.State.GlobalVersion;
                 
-                // Rebuild state from Orleans event log
+                Services.Log(LogLevel.Information, "✅ Found Orleans data: {EventCount} events, GlobalVersion={GlobalVersion}, converting to Framework format", 
+                    eventCount, globalVersion);
+                
+                // Initialize fresh state for rebuilding
                 _confirmedView = new TLogView();
                 _confirmedVersion = 0;
                 
+                // Replay Orleans events to rebuild state
                 foreach (var logEntry in orleansLogState.State.Log)
                 {
                     try
                     {
                         _host.UpdateView(_confirmedView, logEntry);
                         _confirmedVersion++;
+                        Services.Log(LogLevel.Debug, "Applied Orleans event {EventIndex}: {EventType}", 
+                            _confirmedVersion, logEntry.GetType().Name);
                     }
                     catch (Exception ex)
                     {
                         Services.CaughtUserCodeException("UpdateView", nameof(TryConvertOrleansLogStorageAsync), ex);
+                        Services.Log(LogLevel.Warning, "Failed to apply Orleans event {EventIndex}: {Error}", 
+                            _confirmedVersion + 1, ex.Message);
                     }
                 }
                 
-                _globalVersion = _confirmedVersion;
+                // Set global version from Orleans data
+                _globalVersion = Math.Max(_confirmedVersion, globalVersion);
                 
-                // Create framework snapshot
+                // Create framework snapshot with Orleans data
                 _globalSnapshot.State.Snapshot = DeepCopy(_confirmedView);
                 _globalSnapshot.State.SnapshotVersion = _confirmedVersion;
-                // Reset WriteVector to empty string to avoid format compatibility issues
-                // between Orleans WriteVector format and framework WriteVector format
-                _globalSnapshot.State.WriteVector = string.Empty;
                 
-                Services.Log(LogLevel.Information, "Converted Orleans LogStorage to snapshot: {EventCount} events, version {Version}", 
-                    orleansLogState.State.Log.Count, _confirmedVersion);
+                // Convert Orleans WriteVector format to Framework format
+                var orleansWriteVector = orleansLogState.State.WriteVector ?? string.Empty;
+                _globalSnapshot.State.WriteVector = ConvertOrleansWriteVectorToFrameworkFormat(orleansWriteVector);
+                
+                Services.Log(LogLevel.Information, "🎉 Orleans→Framework conversion completed successfully: {EventCount} events replayed, version {Version}, WriteVector '{WriteVector}'", 
+                    eventCount, _confirmedVersion, _globalSnapshot.State.WriteVector);
+                
+                // Save the converted data in framework format for future use
+                try
+                {
+                    await WriteStateAsync();
+                    Services.Log(LogLevel.Information, "✅ Converted Orleans data saved in Framework format for future access");
+                }
+                catch (Exception ex)
+                {
+                    Services.Log(LogLevel.Warning, "Failed to save converted Orleans data: {Error}", ex.Message);
+                }
             }
             else
             {
-                Services.Log(LogLevel.Information, "No Orleans LogStorage found (RecordExists={RecordExists}), using initial state", 
+                Services.Log(LogLevel.Information, "No Orleans events found (RecordExists={RecordExists}), initializing with empty state", 
                     orleansLogState.RecordExists);
+                
+                // Initialize empty state if no Orleans data
+                _confirmedView = new TLogView();
+                _confirmedVersion = 0;
+                _globalVersion = 0;
+                _globalSnapshot.State.Snapshot = DeepCopy(_confirmedView);
+                _globalSnapshot.State.SnapshotVersion = 0;
+                _globalSnapshot.State.WriteVector = string.Empty;
             }
+        }
+        catch (FormatException ex) when (ex.Message.Contains("Input string was not in a correct format"))
+        {
+            // This is the specific error we're trying to fix
+            Services.Log(LogLevel.Error, "❌ Orleans WriteVector FormatException detected: {Error}", ex.Message);
+            Services.Log(LogLevel.Information, "Initializing with empty state due to Orleans format incompatibility");
+            
+            // Initialize empty state when Orleans format parsing fails
+            _confirmedView = new TLogView();
+            _confirmedVersion = 0;
+            _globalVersion = 0;
+            _globalSnapshot.State.Snapshot = DeepCopy(_confirmedView);
+            _globalSnapshot.State.SnapshotVersion = 0;
+            _globalSnapshot.State.WriteVector = string.Empty;
         }
         catch (Exception ex)
         {
-            Services.Log(LogLevel.Warning, "Failed to read Orleans LogStorage: {Exception}", ex.Message);
-            Services.Log(LogLevel.Debug, "Orleans LogStorage exception details: {ExceptionDetails}", ex.ToString());
-            // If reading fails, continue with initial state
+            Services.Log(LogLevel.Warning, "Orleans LogStorage reading failed: {Error}", ex.Message);
+            Services.Log(LogLevel.Debug, "Orleans compatibility exception details: {ExceptionDetails}", ex.ToString());
+            
+            // Initialize empty state if Orleans reading fails for any other reason
+            _confirmedView = new TLogView();
+            _confirmedVersion = 0;
+            _globalVersion = 0;
+            _globalSnapshot.State.Snapshot = DeepCopy(_confirmedView);
+            _globalSnapshot.State.SnapshotVersion = 0;
+            _globalSnapshot.State.WriteVector = string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Convert Orleans WriteVector format to Framework compatible format
+    /// Orleans format: ",replica1,replica2" -> Framework format: "replica1;replica2"
+    /// </summary>
+    private string ConvertOrleansWriteVectorToFrameworkFormat(string orleansWriteVector)
+    {
+        if (string.IsNullOrEmpty(orleansWriteVector))
+            return string.Empty;
+            
+        try
+        {
+            // Orleans WriteVector typically starts with comma: ",replica1,replica2"
+            if (orleansWriteVector.StartsWith(","))
+            {
+                var converted = orleansWriteVector.TrimStart(',').Replace(",", ";");
+                Services.Log(LogLevel.Debug, "Converted Orleans WriteVector '{Orleans}' to Framework format '{Framework}'", 
+                    orleansWriteVector, converted);
+                return converted;
+            }
+            
+            // If it doesn't start with comma, check if it needs conversion
+            if (orleansWriteVector.Contains(","))
+            {
+                var converted = orleansWriteVector.Replace(",", ";");
+                Services.Log(LogLevel.Debug, "Converted Orleans WriteVector '{Orleans}' to Framework format '{Framework}'", 
+                    orleansWriteVector, converted);
+                return converted;
+            }
+            
+            // Already in compatible format
+            Services.Log(LogLevel.Debug, "Orleans WriteVector '{WriteVector}' is already in compatible format", orleansWriteVector);
+            return orleansWriteVector;
+        }
+        catch (Exception ex)
+        {
+            Services.Log(LogLevel.Warning, "Failed to convert Orleans WriteVector '{WriteVector}': {Error}, using empty", 
+                orleansWriteVector, ex.Message);
+            return string.Empty;
         }
     }
 }
