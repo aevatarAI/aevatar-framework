@@ -77,8 +77,8 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             {
                 try
                 {
-                    // 🔄 Enhanced Orleans compatibility - Check for Orleans format data
-                    var logEntry = DeserializeLogEntryWithOrleansCompatibility<TLogEntry>(document, grainId, fromVersion);
+                    // Deserialize using framework format (Orleans data should already be converted)
+                    var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document[_fieldData]);
                     results.Add(logEntry);
                 }
                 catch (Exception ex)
@@ -236,8 +236,8 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
             
             await collection.InsertOneAsync(placeholderDocument).ConfigureAwait(false);
             
-            _logger.LogInformation("Set initial version {InitialVersion} for grain {GrainId} in collection {CollectionName}", 
-                initialVersion, grainId, collectionName);
+            _logger.LogDebug("Set initial version {InitialVersion} for grain {GrainId}", 
+                initialVersion, grainId);
         }
         catch (Exception ex)
         {
@@ -309,134 +309,4 @@ public class MongoDbLogConsistentStorage : ILogConsistentStorage, ILifecyclePart
         return $"{_serviceId}/{_name}/log/{grainId.Type}";
     }
 
-    /// <summary>
-    /// 🔄 Enhanced Orleans compatibility - Deserialize log entry with Orleans format detection
-    /// </summary>
-    private TLogEntry DeserializeLogEntryWithOrleansCompatibility<TLogEntry>(BsonDocument document, GrainId grainId, int fromVersion)
-    {
-        // First, try to deserialize using Aevatar framework format
-        try
-        {
-            if (document.Contains(_fieldData))
-            {
-                _logger.LogDebug("🔄 Attempting Aevatar framework deserialization for grain {GrainId}", grainId);
-                var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document[_fieldData]);
-                _logger.LogDebug("✅ Successfully deserialized using Aevatar framework format for grain {GrainId}", grainId);
-                return logEntry;
-            }
-        }
-        catch (Exception ex) when (IsOrleansFormatException(ex))
-        {
-            _logger.LogWarning("🔄 Framework deserialization failed with Orleans format pattern - attempting Orleans compatibility mode for grain {GrainId}. Error: {Error}", 
-                grainId, ex.Message);
-        }
-
-        // Attempt Orleans format deserialization
-        try
-        {
-            _logger.LogInformation("🔄 Attempting Orleans format deserialization for grain {GrainId}", grainId);
-            
-            // Check for Orleans format: document should have _doc.data structure
-            if (document.Contains("_doc"))
-            {
-                var docField = document["_doc"];
-                if (docField is BsonDocument docDocument && docDocument.Contains("data"))
-                {
-                    _logger.LogInformation("🔍 Orleans format detected: _doc.data structure found for grain {GrainId}", grainId);
-                    
-                    var dataField = docDocument["data"];
-                    if (dataField is BsonBinaryData binaryData)
-                    {
-                        _logger.LogInformation("📦 Orleans binary data found - size: {Size} bytes for grain {GrainId}", 
-                            binaryData.Bytes.Length, grainId);
-                        
-                        // Try to deserialize the binary data using Orleans serialization
-                        var logEntry = DeserializeOrleansData<TLogEntry>(binaryData.Bytes, grainId);
-                        
-                        _logger.LogInformation("✅ Orleans→Framework Successfully converted Orleans format data for grain {GrainId}", grainId);
-                        return logEntry;
-                    }
-                }
-            }
-            
-            // Alternative: Check for direct binary data field (Orleans might store data differently)
-            if (document.Contains("data") && document["data"] is BsonBinaryData directBinaryData)
-            {
-                _logger.LogInformation("🔍 Orleans format detected: direct data field found for grain {GrainId}", grainId);
-                var logEntry = DeserializeOrleansData<TLogEntry>(directBinaryData.Bytes, grainId);
-                _logger.LogInformation("✅ Orleans→Framework Successfully converted direct Orleans format data for grain {GrainId}", grainId);
-                return logEntry;
-            }
-
-            _logger.LogError("❌ No recognizable data format found in document for grain {GrainId}. Document structure: {Document}", 
-                grainId, document.ToJson());
-            throw new MongoDbStorageException($"No recognizable data format found for grain {grainId}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Orleans format deserialization failed for grain {GrainId}", grainId);
-            throw new MongoDbStorageException($"Both Aevatar and Orleans format deserialization failed for grain {grainId}: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 🔍 Check if exception indicates Orleans format incompatibility
-    /// </summary>
-    private static bool IsOrleansFormatException(Exception ex)
-    {
-        // Check for the specific FormatException pattern we've observed
-        return ex is FormatException formatEx &&
-               (formatEx.Message.Contains("Input string was not in a correct format") ||
-                formatEx.Message.Contains("Failure to parse near offset") ||
-                formatEx.Message.Contains("Expected an ASCII digit"));
-    }
-
-    /// <summary>
-    /// 🔄 Deserialize Orleans binary data to framework format
-    /// </summary>
-    private TLogEntry DeserializeOrleansData<TLogEntry>(byte[] binaryData, GrainId grainId)
-    {
-        try
-        {
-            _logger.LogDebug("🔄 Attempting Orleans binary deserialization for grain {GrainId} - data size: {Size}", 
-                grainId, binaryData.Length);
-
-            // For now, attempt to use BsonSerializer to deserialize the binary data
-            // This may need to be enhanced based on actual Orleans serialization format
-            using var memoryStream = new MemoryStream(binaryData);
-            using var bsonReader = new BsonBinaryReader(memoryStream);
-            
-            var document = BsonSerializer.Deserialize<BsonDocument>(bsonReader);
-            _logger.LogDebug("📖 Successfully parsed Orleans binary data to BSON for grain {GrainId}", grainId);
-            
-            // Try to deserialize as our expected format
-            var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document);
-            _logger.LogDebug("✅ Successfully deserialized Orleans binary data for grain {GrainId}", grainId);
-            
-            return logEntry;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Failed to deserialize Orleans binary data for grain {GrainId}", grainId);
-            
-            // Alternative approach: try direct JSON deserialization if BSON fails
-            try
-            {
-                var jsonString = System.Text.Encoding.UTF8.GetString(binaryData);
-                _logger.LogDebug("🔄 Attempting Orleans JSON deserialization for grain {GrainId}: {Json}", 
-                    grainId, jsonString.Length > 200 ? jsonString.Substring(0, 200) + "..." : jsonString);
-                
-                var document = BsonDocument.Parse(jsonString);
-                var logEntry = _grainStateSerializer.Deserialize<TLogEntry>(document);
-                
-                _logger.LogInformation("✅ Successfully deserialized Orleans JSON data for grain {GrainId}", grainId);
-                return logEntry;
-            }
-            catch (Exception jsonEx)
-            {
-                _logger.LogError(jsonEx, "❌ Both BSON and JSON Orleans deserialization failed for grain {GrainId}", grainId);
-                throw new MongoDbStorageException($"Orleans data deserialization failed for grain {grainId}: BSON error: {ex.Message}, JSON error: {jsonEx.Message}");
-            }
-        }
-    }
 }
