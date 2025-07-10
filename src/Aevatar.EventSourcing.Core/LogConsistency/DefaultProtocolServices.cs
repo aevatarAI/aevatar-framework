@@ -73,12 +73,34 @@ public class DefaultProtocolServices : ILogConsistencyProtocolServices
     /// <inheritdoc />
     public void Log(LogLevel level, string format, params object[] args)
     {
-        if (_logger == null || !_logger.IsEnabled(level))
+        try
         {
-            return;
+            var message = args?.Length > 0 ? string.Format(format, args) : format;
+        
+            if (_logger != null)
+            {
+                _logger.Log(level, message);
+            }
+            else
+            {
+               
+                Console.WriteLine($"[{level}] {message}");
+            }
         }
-
-        var msg = $"{_grainContext.GrainId} {string.Format(format, args)}";
-        _logger.Log(level, 0, msg, null, (m, _) => $"{m}");
+        catch (FormatException)
+        {
+           
+            var safeArgs = args?.Select(arg => arg?.ToString() ?? "null").ToArray() ?? Array.Empty<string>();
+            var safeMessage = $"[FORMAT ERROR] {format} | Args: [{string.Join(", ", safeArgs)}]";
+        
+            if (_logger != null)
+            {
+                _logger.Log(level, safeMessage);
+            }
+            else
+            {
+                Console.WriteLine($"[{level}] {safeMessage}");
+            }
+        }
     }
 }

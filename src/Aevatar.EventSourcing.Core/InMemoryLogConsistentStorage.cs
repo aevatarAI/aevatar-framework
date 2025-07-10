@@ -91,6 +91,11 @@ public class InMemoryLogConsistentStorage : ILogConsistentStorage
         return currentVersion;
     }
 
+    public Task SetInitialVersionAsync(string grainTypeName, GrainId grainId, int initialVersion)
+    {
+        throw new NotImplementedException();
+    }
+
     private string GetStreamName(GrainId grainId)
     {
         return $"{_serviceId}/{_name}/log/{grainId}";

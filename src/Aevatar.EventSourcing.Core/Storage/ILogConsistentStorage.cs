@@ -35,4 +35,14 @@ public interface ILogConsistentStorage
     /// <returns></returns>
     Task<int> AppendAsync<TLogEntry>(string grainTypeName, GrainId grainId, IList<TLogEntry> entries,
         int expectedVersion);
+
+    /// <summary>
+    /// Set the initial version for a grain's event log to preserve version continuity during migration.
+    /// This method creates a placeholder entry with the specified version number.
+    /// </summary>
+    /// <param name="grainTypeName"></param>
+    /// <param name="grainId"></param>
+    /// <param name="initialVersion"></param>
+    /// <returns></returns>
+    Task SetInitialVersionAsync(string grainTypeName, GrainId grainId, int initialVersion);
 }
