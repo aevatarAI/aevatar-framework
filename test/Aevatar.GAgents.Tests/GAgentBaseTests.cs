@@ -53,8 +53,8 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         await developingLeader.RegisterAsync(developer2);
         await developingLeader.RegisterAsync(developer3);
 
-        var investor1 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(guid);
-        var investor2 = _grainFactory.GetGrain<IStateGAgent<InvestorTestGAgentState>>(Guid.NewGuid());
+        var investor1 = _grainFactory.GetGrain<IInvestorTestGAgent>(guid);
+        var investor2 = _grainFactory.GetGrain<IInvestorTestGAgent>(Guid.NewGuid());
         await marketingLeader.RegisterAsync(investor1);
         await marketingLeader.RegisterAsync(investor2);
 
@@ -70,13 +70,26 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
             Description = "New demand from customer."
         });
 
-        await TestHelper.WaitUntilAsync(_ => CheckState(investor1), TimeSpan.FromSeconds(20));
+        await TestHelper.CheckStateAsync(investor1, 2);
+
+        var marketingLeaderState = await marketingLeader.GetStateAsync();
+        marketingLeaderState.PublishedEventList.Count.ShouldBe(2);
+        marketingLeaderState.PublishedEventList.ShouldContain(nameof(WorkingOnTestEvent));
+
+        var developingLeaderState = await developingLeader.GetStateAsync();
+        developingLeaderState.PublishedEventList.Count.ShouldBe(2);
+        developingLeaderState.PublishedEventList.ShouldContain(nameof(DevelopTaskTestEvent));
+        developingLeaderState.PublishedEventList.ShouldContain(nameof(NewFeatureCompletedTestEvent));
+
+        var developer1State = await developer1.GetStateAsync();
+        developer1State.PublishedEventList.Count.ShouldBe(1);
+
+        var investor1State = await investor1.GetStateAsync();
+        investor1State.Content.Count.ShouldBe(2);
+        investor1State.PublishedEventList.Count.ShouldBe(2);
 
         var groupState = await groupGAgent.GetStateAsync();
         groupState.RegisteredGAgents.ShouldBe(2);
-
-        var investorState = await investor1.GetStateAsync();
-        investorState.Content.Count.ShouldBe(2);
     }
 
     [Fact(DisplayName = "SyncWorker should be worked and not block current GAgent.")]
@@ -107,9 +120,22 @@ public sealed class GAgentBaseTests : AevatarGAgentsTestBase
         state.Called.ShouldBe(true);
     }
 
-    private async Task<bool> CheckState(IStateGAgent<InvestorTestGAgentState> investor1)
+    [Fact(DisplayName = "Can handle multiple inherited event types.")]
+    public async Task EventBaseTypeTest()
     {
-        var state = await investor1.GetStateAsync();
-        return !state.Content.IsNullOrEmpty() && state.Content.Count == 2;
+        var gAgent = await _gAgentFactory.GetGAgentAsync<IStateGAgent<EventBaseTypeTestGAgentState>>();
+        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
+        await publishingGAgent.RegisterAsync(gAgent);
+        await publishingGAgent.PublishEventAsync(new TestPermissionEvent());
+        await TestHelper.CheckStateAsync(gAgent);
+        var state = await gAgent.GetStateAsync();
+        state.Content.Count.ShouldBePositive();
+    }
+
+    private async Task<bool> CheckState<TState>(IStateGAgent<TState> testGAgent, int expectedCount = 1)
+        where TState : NaiveTestGAgentState, new()
+    {
+        var state = await testGAgent.GetStateAsync();
+        return !state.Content.IsNullOrEmpty() && state.Content.Count == expectedCount;
     }
 }
